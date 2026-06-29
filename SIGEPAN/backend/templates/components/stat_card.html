@@ -1,0 +1,43 @@
+<div class="card border-0 shadow-sm h-100">
+
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+
+                <h6 class="text-muted mb-2">
+
+                    {{ titulo }}
+
+                </h6>
+
+                <h2 class="fw-bold">
+
+                    {{ valor }}
+
+                </h2>
+
+                {% if descripcion %}
+
+                    <small class="text-muted">
+
+                        {{ descripcion }}
+
+                    </small>
+
+                {% endif %}
+
+            </div>
+
+            <div>
+
+                <i class="bi {{ icono }} display-5 {{ color }}"></i>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

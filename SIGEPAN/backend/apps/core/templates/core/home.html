@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | SIGEPAN{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- Encabezado -->
+    <div class="row mb-4">
+
+        <div class="col-md-8">
+
+            <h2 class="fw-bold">
+                Bienvenido a SIGEPAN
+            </h2>
+
+            <p class="text-muted">
+                Sistema Integral de Gestión para Panaderías
+            </p>
+
+            <h5>
+                Empresa:
+                <strong>La Paná</strong>
+            </h5>
+
+            <p class="fst-italic">
+                "El sabor de la felicidad"
+            </p>
+
+        </div>
+
+        <div class="col-md-4 text-end">
+
+            {% load static %}
+
+            <img src="{% static 'img/logos/lapana-logo.jpg' %}"
+                 class="img-fluid"
+                 style="max-height:170px;">
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

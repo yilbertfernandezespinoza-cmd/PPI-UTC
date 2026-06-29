@@ -41,7 +41,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    #SIGEPAN
     'apps.core',
+    'apps.security',
+    'apps.productos',
+    'apps.categorias',
+    'apps.clientes',
+    'apps.proveedores',
+    'apps.inventario',
+    'apps.compras',
+    'apps.ventas',
+    'apps.caja',
+    'apps.reportes',
+    'apps.configuracion',
 ]
 
 MIDDLEWARE = [

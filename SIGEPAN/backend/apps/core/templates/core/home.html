@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | SIGEPAN{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- Encabezado -->
+    <div class="row mb-4">
+
+        <div class="col-md-8">
+
+            <h2 class="fw-bold">
+                Bienvenido a SIGEPAN
+            </h2>
+
+            <p class="text-muted">
+                Sistema Integral de Gestión para Panaderías
+            </p>
+
+            <h5>
+                Empresa:
+                <strong>La Paná</strong>
+            </h5>
+
+            <p class="fst-italic">
+                "El sabor de la felicidad"
+            </p>
+
+        </div>
+
+        <div class="col-md-4 text-end">
+
+            {% load static %}
+
+            <img src="{% static 'img/logos/lapana-logo.jpeg' %}"
+                 class="img-fluid"
+                 style="max-height:170px;">
+
+        </div>
+
+    </div>
+
+    <!-- ===========================
+     Indicadores del Sistema
+    ============================ -->
+
+    <div class="row">
+
+        <!-- Productos -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include 'components/stat_card.html' with titulo='Productos' valor='0' descripcion='Productos registrados' icono='bi-box-seam' color='text-warning' %}
+            </div>
+
+        <!-- Clientes -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include 'components/stat_card.html' with titulo='Clientes' valor='0' descripcion='Clientes registrados' icono='bi-people' color='text-primary' %}
+            </div>
+
+        <!-- Ventas -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include 'components/stat_card.html' with titulo='Ventas Hoy' valor='0' descripcion='Ventas del día' icono='bi-cart-check' color='text-success' %}
+            </div>
+
+        <!-- Inventario -->
+            <div class="col-xl-3 col-md-6 mb-4">
+            {% include 'components/stat_card.html' with titulo='Inventario Bajo' valor='0' descripcion='Productos por reabastecer' icono='bi-exclamation-triangle' color='text-danger' %}
+            </div>
+
+    </div>
+
+    <!-- ==========================================
+     ACCESOS RÁPIDOS
+    ========================================== -->
+
+    <div class="row mt-4">
+
+        <div class="col-12">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-header bg-white">
+
+                    <h5 class="mb-0">
+
+                        Accesos rápidos
+
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-lg-3 col-md-6">
+                            {% include 'components/quick_access_card.html' with titulo='Productos' icono='bi-box-seam' color='warning' url='#' %}
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            {% include 'components/quick_access_card.html' with titulo='Ventas' icono='bi-cart-check' color='success' url='#' %}
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            {% include 'components/quick_access_card.html' with titulo='Clientes' icono='bi-people' color='primary' url='#' %}
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            {% include 'components/quick_access_card.html' with titulo='Inventario' icono='bi-clipboard-data' color='danger' url='#' %}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

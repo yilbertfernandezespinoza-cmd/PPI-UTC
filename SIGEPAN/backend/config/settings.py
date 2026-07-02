@@ -140,3 +140,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
 
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# Modelo de Usuario Personalizado
+
+AUTH_USER_MODEL = "security.User"

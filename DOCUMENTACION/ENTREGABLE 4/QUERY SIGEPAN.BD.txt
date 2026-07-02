@@ -1,0 +1,274 @@
+-- 1. Tabla ROL
+CREATE TABLE ROL (
+    idRol NUMBER(10) PRIMARY KEY,
+    nombreRol VARCHAR2(50) NOT NULL,
+    descripcion_Rol VARCHAR2(255),
+    estado_Rol CHAR(1) NOT NULL
+);
+
+-- 2. Tabla USUARIO
+CREATE TABLE USUARIO (
+    usuario VARCHAR2(50) PRIMARY KEY,
+    idEmpleado NUMBER(10) NOT NULL,
+    idSucursal NUMBER(10) NOT NULL,
+    contrasena VARCHAR2(255) NOT NULL,
+    CONSTRAINT uq_usuario UNIQUE (usuario),
+    CONSTRAINT fk_usuario_empleado FOREIGN KEY (idEmpleado) REFERENCES EMPLEADO(idEmpleado),
+    CONSTRAINT fk_usuario_sucursal FOREIGN KEY (idSucursal) REFERENCES SUCURSAL(idSucursal)
+);
+
+-- 3. Tabla PERMISO
+CREATE TABLE PERMISO (
+    idPermiso NUMBER(10) PRIMARY KEY,
+    nombrePermiso VARCHAR2(80) NOT NULL,
+    descripcion_Permiso VARCHAR2(255)
+);
+
+-- 4. Tabla ROL_PERMISO
+CREATE TABLE ROL_PERMISO (
+    idRol NUMBER(10),
+    idPermiso NUMBER(10),
+    PRIMARY KEY (idRol, idPermiso),
+    CONSTRAINT fk_rolpermiso_rol FOREIGN KEY (idRol) REFERENCES ROL(idRol),
+    CONSTRAINT fk_rolpermiso_permiso FOREIGN KEY (idPermiso) REFERENCES PERMISO(idPermiso)
+);
+
+-- 5. Tabla SUCURSAL
+CREATE TABLE SUCURSAL (
+    idSucursal NUMBER(10) PRIMARY KEY,
+    nombre_Sucursal VARCHAR2(100) NOT NULL,
+    direccion_Sucursal VARCHAR2(200),
+    telefono_Sucursal VARCHAR2(20),
+    encargado_Sucursal VARCHAR2(100),
+    estado_Sucursal CHAR(1) NOT NULL
+);
+
+-- 6. Tabla CATEGORIA
+CREATE TABLE CATEGORIA (
+    idCategoria NUMBER(10) PRIMARY KEY,
+    nombre_Categoria VARCHAR2(80) NOT NULL,
+    descripcion_Categoria VARCHAR2(255),
+    estado_Categoria CHAR(1) NOT NULL
+);
+
+-- 7. Tabla PRODUCTO
+CREATE TABLE PRODUCTO (
+    idProducto NUMBER(10) PRIMARY KEY,
+    codigo_Producto VARCHAR2(30) UNIQUE NOT NULL,
+    nombre_Producto VARCHAR2(120) NOT NULL,
+    precioCompra NUMBER(10,2) NOT NULL,
+    precioVenta NUMBER(10,2) NOT NULL,
+    impuesto NUMBER(5,2),
+    estado_Producto CHAR(1) NOT NULL,
+    idSucursal NUMBER(10) NOT NULL,
+    idCategoria NUMBER(10) NOT NULL,
+    idConfigTributaria NUMBER(10) NOT NULL,
+    CONSTRAINT fk_producto_sucursal FOREIGN KEY (idSucursal) REFERENCES SUCURSAL(idSucursal),
+    CONSTRAINT fk_producto_categoria FOREIGN KEY (idCategoria) REFERENCES CATEGORIA(idCategoria),
+    CONSTRAINT fk_producto_config FOREIGN KEY (idConfigTributaria) REFERENCES CONFIGURACION_TRIBUTARIA(idConfigTributaria)
+);
+
+-- 8. Tabla HISTORIAL_PRECIO
+CREATE TABLE HISTORIAL_PRECIO (
+    idHistorial NUMBER(10) PRIMARY KEY,
+    precioCompra NUMBER(10,2),
+    precioVenta NUMBER(10,2),
+    fechaRegistro DATE NOT NULL,
+    idProducto NUMBER(10) NOT NULL,
+    CONSTRAINT fk_historial_producto FOREIGN KEY (idProducto) REFERENCES PRODUCTO(idProducto)
+);
+
+-- 9. Tabla CLIENTE
+CREATE TABLE CLIENTE (
+    idCliente NUMBER(10) PRIMARY KEY,
+    nombre_Cliente VARCHAR2(100) NOT NULL,
+    direccion_Cliente VARCHAR2(200),
+    telefono_Cliente VARCHAR2(20),
+    correo_Cliente VARCHAR2(100),
+    tipoCliente VARCHAR2(30),
+    estado_Cliente CHAR(1) NOT NULL
+);
+
+-- 10. Tabla CAJA
+CREATE TABLE CAJA (
+    idCaja NUMBER(10) PRIMARY KEY,
+    fechaApertura DATE,
+    fechaCierre DATE,
+    montoApertura NUMBER(12,2),
+    montoCierre NUMBER(12,2),
+    diferencia_Caja NUMBER(12,2),
+    estado_Caja CHAR(1),
+    idSucursal NUMBER(10) NOT NULL,
+    idUsuario VARCHAR2(50) NOT NULL,
+    CONSTRAINT fk_caja_sucursal FOREIGN KEY (idSucursal) REFERENCES SUCURSAL(idSucursal),
+    CONSTRAINT fk_caja_usuario FOREIGN KEY (idUsuario) REFERENCES USUARIO(usuario)
+);
+
+-- 11. Tabla VENTA
+CREATE TABLE VENTA (
+    idVenta NUMBER(10) PRIMARY KEY,
+    numeroVenta VARCHAR2(20) UNIQUE NOT NULL,
+    fecha_Venta DATE DEFAULT SYSDATE,
+    tipoComprobante VARCHAR2(30),
+    metodoPago VARCHAR2(30),
+    subtotal_Venta NUMBER(12,2),
+    total_Venta NUMBER(12,2),
+    impuesto NUMBER(12,2),
+    idCliente NUMBER(10) NOT NULL,
+    idCaja NUMBER(10) NOT NULL,
+    CONSTRAINT fk_venta_cliente FOREIGN KEY (idCliente) REFERENCES CLIENTE(idCliente),
+    CONSTRAINT fk_venta_caja FOREIGN KEY (idCaja) REFERENCES CAJA(idCaja)
+);
+
+-- 12. Tabla DETALLE_VENTA
+CREATE TABLE DETALLE_VENTA (
+    idDetalle NUMBER(10) PRIMARY KEY,
+    idVenta NUMBER(10) NOT NULL,
+    idProducto NUMBER(10) NOT NULL,
+    cantidad NUMBER(10),
+    precioUnitario NUMBER(10,2),
+    impuesto NUMBER(12,2),
+    subtotal_Detalle NUMBER(12,2),
+    total_Detalle NUMBER(12,2),
+    CONSTRAINT fk_detalleventa_venta FOREIGN KEY (idVenta) REFERENCES VENTA(idVenta),
+    CONSTRAINT fk_detalleventa_producto FOREIGN KEY (idProducto) REFERENCES PRODUCTO(idProducto)
+);
+
+-- 13. Tabla LOG_ACCIONES
+CREATE TABLE LOG_ACCIONES (
+    idLog NUMBER(10) PRIMARY KEY,
+    idUsuario VARCHAR2(50) NOT NULL,
+    fechahora_Log TIMESTAMP,
+    accion_Log VARCHAR2(50),
+    modulo_Log VARCHAR2(50),
+    detalle_Log VARCHAR2(500),
+    CONSTRAINT fk_log_usuario FOREIGN KEY (idUsuario) REFERENCES USUARIO(usuario)
+);
+
+-- 14. Tabla METODO_PAGO
+CREATE TABLE METODO_PAGO (
+    idMetodoPago NUMBER(10) PRIMARY KEY,
+    nombreMetodo VARCHAR2(50) NOT NULL,
+    descripcion_Meto VARCHAR2(255),
+    estado_Metodo CHAR(1)
+);
+
+-- 15. Tabla MERMA
+CREATE TABLE MERMA (
+    idMerma NUMBER(10) PRIMARY KEY,
+    cantidad_Merma NUMBER(10),
+    motivo_Merma VARCHAR2(255),
+    fecha_Merma DATE,
+    idUsuario VARCHAR2(50) NOT NULL,
+    idProducto NUMBER(10) NOT NULL,
+    CONSTRAINT fk_merma_usuario FOREIGN KEY (idUsuario) REFERENCES USUARIO(usuario),
+    CONSTRAINT fk_merma_producto FOREIGN KEY (idProducto) REFERENCES PRODUCTO(idProducto)
+);
+
+-- 16. Tabla AJUSTE
+CREATE TABLE AJUSTE (
+    idAjuste NUMBER(10) PRIMARY KEY,
+    tipoAjuste VARCHAR2(50),
+    motivo_Ajuste VARCHAR2(255),
+    fecha_Ajuste DATE,
+    cantidad_Ajuste NUMBER(10),
+    idUsuario VARCHAR2(50) NOT NULL,
+    idProducto NUMBER(10) NOT NULL,
+    CONSTRAINT fk_ajuste_usuario FOREIGN KEY (idUsuario) REFERENCES USUARIO(usuario),
+    CONSTRAINT fk_ajuste_producto FOREIGN KEY (idProducto) REFERENCES PRODUCTO(idProducto)
+);
+
+-- 17. Tabla INVENTARIO
+CREATE TABLE INVENTARIO (
+    idInventario NUMBER(10) PRIMARY KEY,
+    stockActual NUMBER(10),
+    stockMinimo NUMBER(10),
+    estado_Inventario CHAR(1),
+    idProducto NUMBER(10) NOT NULL,
+    CONSTRAINT fk_inventario_producto FOREIGN KEY (idProducto) REFERENCES PRODUCTO(idProducto)
+);
+
+-- 18. Tabla PROVEEDOR
+CREATE TABLE PROVEEDOR (
+    idProveedor NUMBER(10) PRIMARY KEY,
+    nombre_Proveedor VARCHAR2(100) NOT NULL,
+    contacto_Proveedor VARCHAR2(100),
+    telefono_Proveedor VARCHAR2(20),
+    correo_Proveedor VARCHAR2(100),
+    direccion_Proveedor VARCHAR2(200),
+    estado_Proveedor CHAR(1)
+);
+
+-- 19. Tabla COMPRA
+CREATE TABLE COMPRA (
+    idCompra NUMBER(10) PRIMARY KEY,
+    fechaCompra DATE,
+    subtotal_compra NUMBER(12,2),
+    impuesto NUMBER(12,2),
+    total_compra NUMBER(12,2),
+    estado_Compra CHAR(1),
+    idProveedor NUMBER(10) NOT NULL,
+    idConfigTributaria NUMBER(10) NOT NULL,
+    CONSTRAINT fk_compra_proveedor FOREIGN KEY (idProveedor) REFERENCES PROVEEDOR(idProveedor),
+    CONSTRAINT fk_compra_config FOREIGN KEY (idConfigTributaria) REFERENCES CONFIGURACION_TRIBUTARIA(idConfigTributaria)
+);
+
+-- 20. Tabla DETALLE_COMPRA
+CREATE TABLE DETALLE_COMPRA (
+    idDetalleCompra NUMBER(10) PRIMARY KEY,
+    cantidad_DetalleCompra NUMBER(10),
+    precioUnitario_DetalleCompra NUMBER(10,2),
+    subtotal_DetalleCompra NUMBER(12,2),
+    impuesto_DetalleCompra NUMBER(12,2),
+    total_DetalleCompra NUMBER(12,2),
+    idCompra NUMBER(10) NOT NULL,
+    idProducto NUMBER(10) NOT NULL,
+    CONSTRAINT fk_detallecompra_compra FOREIGN KEY (idCompra) REFERENCES COMPRA(idCompra),
+    CONSTRAINT fk_detallecompra_producto FOREIGN KEY (idProducto) REFERENCES PRODUCTO(idProducto)
+);
+
+-- 21. Tabla GASTO_OPERATIVO
+CREATE TABLE GASTO_OPERATIVO (
+    idGasto NUMBER(10) PRIMARY KEY,
+    descripcion_gastoOperativo VARCHAR2(255),
+    monto_gastoOperativo NUMBER(12,2),
+    fecha_gastoOperativo DATE,
+    estado_gastoOperativo CHAR(1),
+    idUsuario VARCHAR2(50) NOT NULL,
+    idCaja NUMBER(10) NOT NULL,
+    idSucursal NUMBER(10) NOT NULL,
+    CONSTRAINT fk_gasto_usuario FOREIGN KEY (idUsuario) REFERENCES USUARIO(usuario),
+    CONSTRAINT fk_gasto_caja FOREIGN KEY (idCaja) REFERENCES CAJA(idCaja),
+    CONSTRAINT fk_gasto_sucursal FOREIGN KEY (idSucursal) REFERENCES SUCURSAL(idSucursal)
+);
+
+-- 22. Tabla CONFIGURACION_TRIBUTARIA
+CREATE TABLE CONFIGURACION_TRIBUTARIA (
+    idConfigTributaria NUMBER(10) PRIMARY KEY,
+    nombreImpuesto VARCHAR2(100) NOT NULL,
+    porcentaje_Configuracion_Tributaria NUMBER(5,2),
+    descripcion_Configuracion_Tributaria VARCHAR2(255),
+    estado_Configuracion_Tributaria CHAR(1)
+);
+
+-- 23. Tabla CONFIGURACION_GENERAL
+CREATE TABLE CONFIGURACION_GENERAL (
+    idConfiguracion NUMBER(10) PRIMARY KEY,
+    nombreParametro_configuracion_general VARCHAR2(100) NOT NULL,
+    valor_configuracion_general VARCHAR2(255),
+    descripcion_configuracion_general VARCHAR2(255),
+    estado_configuracion_general CHAR(1)
+);
+
+-- 24. Tabla EMPLEADO
+CREATE TABLE EMPLEADO (
+    idEmpleado NUMBER(10) PRIMARY KEY,
+    nombre_empleado VARCHAR2(100) NOT NULL,
+    telefono_empleado VARCHAR2(20),
+    direccion_empleado VARCHAR2(200),
+    correo_empleado VARCHAR2(100),
+    estado_empleado CHAR(1)
+);
+
+    impuesto_DetalleCompra NUMBER(12,2),
+    total_DetalleCompra NUMBER(12

@@ -42,8 +42,8 @@ class PermisoListView(ListView):
     def get_queryset(self):
         return (
             Permiso.objects
-            .select_related("modulo")
-            .order_by("modulo__nombre", "accion")
+            .select_related("id_modulo")
+            .order_by("id_modulo__nombre", "accion")
         )
 
 

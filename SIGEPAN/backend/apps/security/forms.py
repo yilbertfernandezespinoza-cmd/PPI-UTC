@@ -41,14 +41,14 @@ class PermisoForm(forms.ModelForm):
         model = Permiso
 
         fields = [
-            "modulo",
+            "id_modulo",
             "accion",
             "descripcion",
             "estado",
         ]
 
         widgets = {
-            "modulo": forms.Select(attrs={"class": "form-select"}),
+            "id_modulo": forms.Select(attrs={"class": "form-select"}),
             "accion": forms.TextInput(attrs={"class": "form-control"}),
             "descripcion": forms.Textarea(
                 attrs={
@@ -61,4 +61,3 @@ class PermisoForm(forms.ModelForm):
             ),
         }        
 
-        

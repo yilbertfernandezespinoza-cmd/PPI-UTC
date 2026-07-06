@@ -1,44 +1,93 @@
-from django.contrib.auth.models import AbstractUser
 from django.db import models
 from apps.core.base_models import BaseModel
 
-class Usuario(AbstractUser):
+class Usuario(BaseModel):
     """
-    Modelo de usuario personalizado para SIGEPAN.
+    Modelo que representa la tabla usuario.
     """
 
-    telefono = models.CharField(
-        max_length=20,
+    id_usuario = models.AutoField(
+        primary_key=True,
+        db_column="id_usuario"
+    )
+
+    id_empleado = models.ForeignKey(
+        "empleados.Empleado",
+        on_delete=models.DO_NOTHING,
+        db_column="id_empleado",
+        verbose_name="Empleado"
+    )
+
+    id_rol = models.ForeignKey(
+        "security.Rol",
+        on_delete=models.DO_NOTHING,
+        db_column="id_rol",
+        verbose_name="Rol"
+    )
+
+    id_sucursal = models.ForeignKey(
+        "configuracion.Sucursal",
+        on_delete=models.DO_NOTHING,
+        db_column="id_sucursal",
         blank=True,
         null=True,
-        verbose_name="Teléfono"
+        verbose_name="Sucursal"
     )
 
-    fotografia = models.ImageField(
-        upload_to="usuarios/",
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        db_column="username"
+    )
+
+    password = models.CharField(
+        max_length=255,
+        db_column="password"
+    )
+
+    email = models.EmailField(
+        max_length=150,
         blank=True,
         null=True,
-        verbose_name="Fotografía"
+        unique=True,
+        db_column="email"
     )
 
-    creado_en = models.DateTimeField(
-        auto_now_add=True
+    google_email = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        unique=True,
+        db_column="google_email"
     )
 
-    actualizado_en = models.DateTimeField(
-        auto_now=True
+    google_id = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        db_column="google_id"
+    )
+
+    google_token = models.TextField(
+        blank=True,
+        null=True,
+        db_column="google_token"
+    )
+
+    ultimo_acceso = models.DateTimeField(
+        blank=True,
+        null=True,
+        db_column="ultimo_acceso"
     )
 
     class Meta:
-
+        db_table = "usuario"
         verbose_name = "Usuario"
-
         verbose_name_plural = "Usuarios"
 
     def __str__(self):
+        return self.username
 
-        return self.get_full_name() or self.username
-    
 class Rol(BaseModel):
     """
     Modelo que representa la tabla rol de la base de datos.
@@ -65,7 +114,6 @@ class Rol(BaseModel):
     )
 
     class Meta:
-        managed = False
         db_table = "rol"
         verbose_name = "Rol"
         verbose_name_plural = "Roles"
@@ -107,12 +155,11 @@ class Permiso(BaseModel):
     )
 
     class Meta:
-        managed = False
         db_table = "permiso"
         verbose_name = "Permiso"
         verbose_name_plural = "Permisos"
         ordering = ["accion"]
 
     def __str__(self):
-        return f"{self.id_modulo} - {self.accion}" 
+        return f"{self.id_modulo.nombre} - {self.accion}" 
     

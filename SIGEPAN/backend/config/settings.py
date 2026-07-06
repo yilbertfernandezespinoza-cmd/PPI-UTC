@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 
     #SIGEPAN
     'apps.core',
+    'apps.empleados',
     'apps.security',
     'apps.productos',
     'apps.categorias',
@@ -91,6 +92,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# =============================================================================
+# SIGEPAN trabaja con una estrategia Database First.
+# La base de datos es la fuente de verdad.
+# Los modelos Django representan tablas existentes.
+# No se utilizan migraciones para crear el esquema del negocio.
+# Las migraciones de Django se reservan únicamente para componentes internos
+# como sessions, auth, admin y contenttypes, o para cambios futuros aprobados.
+# =============================================================================
+
 
 DATABASES = {
         "default": {
@@ -152,7 +162,3 @@ MEDIA_URL = 'media/'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
-# Modelo de Usuario Personalizado
-
-AUTH_USER_MODEL = "security.Usuario"

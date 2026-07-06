@@ -155,4 +155,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Modelo de Usuario Personalizado
 
-AUTH_USER_MODEL = "security.User"
+AUTH_USER_MODEL = "security.Usuario"

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Módulo</h2>
+
+<a href="{% url 'configuracion:modulo_create' %}" class="btn btn-primary">
+    Nuevo Módulo
+</a>
+
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    {% for modulo in modulos %}
+
+        <tr>
+
+            <td>{{ modulo.id_modulo }}</td>
+
+            <td>{{ modulo.nombre }}</td>
+
+            <td>
+                {% if modulo.estado %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-danger">Inactivo</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <a href="{% url 'security:modulo_update' modulo.id_modulo %}"
+                   class="btn btn-warning btn-sm">
+                    Editar
+                </a>
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

@@ -378,17 +378,21 @@ CREATE TABLE producto (
 -- TABLA: inventario
 -- ==========================================================
 
+DROP TABLE IF EXISTS inventario;
+
 CREATE TABLE inventario (
 
     id_inventario INT UNSIGNED AUTO_INCREMENT,
 
     id_producto INT UNSIGNED NOT NULL,
 
-    existencia INT NOT NULL DEFAULT 0,
+    id_sucursal INT UNSIGNED NOT NULL,
+
+    stock_actual INT NOT NULL DEFAULT 0,
 
     stock_minimo INT NOT NULL DEFAULT 0,
 
-    stock_maximo INT DEFAULT 0,
+    stock_maximo INT NOT NULL DEFAULT 0,
 
     ubicacion VARCHAR(100),
 
@@ -399,13 +403,19 @@ CREATE TABLE inventario (
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT pk_inventario PRIMARY KEY (id_inventario),
+    CONSTRAINT pk_inventario
+        PRIMARY KEY (id_inventario),
 
-    CONSTRAINT uk_inventario_producto UNIQUE (id_producto),
+    CONSTRAINT uk_inventario_producto_sucursal
+        UNIQUE (id_producto, id_sucursal),
 
     CONSTRAINT fk_inventario_producto
         FOREIGN KEY (id_producto)
-        REFERENCES producto(id_producto)
+        REFERENCES producto(id_producto),
+
+    CONSTRAINT fk_inventario_sucursal
+        FOREIGN KEY (id_sucursal)
+        REFERENCES sucursal(id_sucursal)
 
 ) ENGINE=InnoDB;
 

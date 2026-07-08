@@ -4,6 +4,11 @@ from .views import (
     ModuloListView,
     ModuloCreateView,
     ModuloUpdateView,
+    SucursalListView,
+    SucursalCreateView,
+    SucursalUpdateView,
+    SucursalUpdateView,
+
 )
 
 app_name = "configuracion"
@@ -26,5 +31,23 @@ urlpatterns = [
         "modulos/<int:id_modulo>/editar/",
         ModuloUpdateView.as_view(),
         name="modulo_update"
+    ),
+
+    path(
+    "sucursales/",
+    SucursalListView.as_view(),
+    name="sucursal_list"
+    ),
+
+    path(
+    "sucursales/nuevo/",
+    SucursalCreateView.as_view(),
+    name="sucursal_create"
+    ),
+
+    path(
+    "sucursales/<int:id_sucursal>/editar/",
+    SucursalUpdateView.as_view(),
+    name="sucursal_update"
     ),
 ]

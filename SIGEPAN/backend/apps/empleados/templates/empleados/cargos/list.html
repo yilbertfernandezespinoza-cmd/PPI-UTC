@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Permisos</h2>
 
-<a href="{% url 'security:permiso_create' %}" class="btn btn-primary">
-    Nuevo Permiso
+<h2>Cargos</h2>
+
+<a href="{% url 'empleados:cargo_create' %}" class="btn btn-primary mb-3">
+    Nuevo Cargo
 </a>
 
-<table class="table table-striped mt-3">
+<table class="table table-striped">
+
     <thead>
         <tr>
             <th>ID</th>
-            <th>Módulo</th>
-            <th>Acción</th>
+            <th>Nombre</th>
             <th>Descripción</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -21,17 +22,18 @@
 
     <tbody>
 
-    {% for permiso in permisos %}
+    {% for cargo in cargos %}
 
         <tr>
 
-            <td>{{ permiso.id_permiso }}</td>
-            <td>{{ permiso.id_modulo.nombre }}</td>
-            <td>{{ permiso.accion }}</td>
-            <td>{{ permiso.descripcion }}</td>
+            <td>{{ cargo.id_cargo }}</td>
+
+            <td>{{ cargo.nombre }}</td>
+
+            <td>{{ cargo.descripcion }}</td>
 
             <td>
-                {% if permiso.estado %}
+                {% if cargo.estado %}
                     <span class="badge bg-success">Activo</span>
                 {% else %}
                     <span class="badge bg-danger">Inactivo</span>
@@ -39,10 +41,26 @@
             </td>
 
             <td>
-                <a href="{% url 'security:permiso_update' permiso.id_permiso %}"
+
+                <a href="{% url 'empleados:cargo_update' cargo.id_cargo %}"
                    class="btn btn-warning btn-sm">
+
                     Editar
+
                 </a>
+
+            </td>
+
+        </tr>
+
+    {% empty %}
+
+        <tr>
+
+            <td colspan="5" class="text-center">
+
+                No existen cargos registrados.
+
             </td>
 
         </tr>

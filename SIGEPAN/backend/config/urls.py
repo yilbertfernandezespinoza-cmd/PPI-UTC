@@ -41,4 +41,7 @@ urlpatterns = [
     # Administración
     path("reportes/", include("apps.reportes.urls")),
     path("configuracion/", include("apps.configuracion.urls")),
+
+    # Empleados
+    path("empleados/", include("apps.empleados.urls")),
 ]

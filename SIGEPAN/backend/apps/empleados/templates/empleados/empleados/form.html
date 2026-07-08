@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>
+
+{% if object %}
+
+Editar Empleado
+
+{% else %}
+
+Nuevo Empleado
+
+{% endif %}
+
+</h2>
+
+<form method="post">
+
+{% csrf_token %}
+
+<div class="row">
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Cargo</label>
+        {{ form.id_cargo }}
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Identificación</label>
+        {{ form.identificacion }}
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Nombre</label>
+        {{ form.nombre }}
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Primer Apellido</label>
+        {{ form.apellido1 }}
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Segundo Apellido</label>
+        {{ form.apellido2 }}
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Teléfono</label>
+        {{ form.telefono }}
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Correo</label>
+        {{ form.correo }}
+    </div>
+
+    <div class="col-md-12 mb-3">
+        <label class="form-label">Dirección</label>
+        {{ form.direccion }}
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Fecha de Ingreso</label>
+        {{ form.fecha_ingreso }}
+    </div>
+
+    <div class="col-md-6 mb-3">
+
+        <div class="form-check mt-4">
+
+            {{ form.estado }}
+
+            <label class="form-check-label">
+
+                Activo
+
+            </label>
+
+        </div>
+
+    </div>
+
+</div>
+
+<button class="btn btn-success">
+
+Guardar
+
+</button>
+
+<a href="{% url 'empleados:empleado_list' %}"
+
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>
+    {% if object %}
+        Editar Usuario
+    {% else %}
+        Nuevo Usuario
+    {% endif %}
+</h2>
+
+<form method="post">
+
+    {% csrf_token %}
+
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Empleado</label>
+            {{ form.id_empleado }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Rol</label>
+            {{ form.id_rol }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Sucursal</label>
+            {{ form.id_sucursal }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Usuario</label>
+            {{ form.username }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Contraseña</label>
+            {{ form.password }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Correo</label>
+            {{ form.email }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Google Email</label>
+            {{ form.google_email }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Google ID</label>
+            {{ form.google_id }}
+        </div>
+
+        <div class="col-md-12 mb-3">
+            <label class="form-label">Google Token</label>
+            {{ form.google_token }}
+        </div>
+
+        <div class="col-md-12 mb-3">
+            <div class="form-check">
+                {{ form.estado }}
+                <label class="form-check-label">
+                    Activo
+                </label>
+            </div>
+        </div>
+
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        Guardar
+    </button>
+
+    <a href="{% url 'security:usuario_list' %}"
+       class="btn btn-secondary">
+        Cancelar
+    </a>
+
+</form>
+
+{% endblock %}

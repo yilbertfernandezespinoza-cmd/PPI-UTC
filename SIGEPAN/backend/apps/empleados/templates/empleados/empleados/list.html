@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Empleados</h2>
+
+<a href="{% url 'empleados:empleado_create' %}" class="btn btn-primary mb-3">
+    Nuevo Empleado
+</a>
+
+<table class="table table-striped">
+
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Identificación</th>
+            <th>Nombre Completo</th>
+            <th>Cargo</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    {% for empleado in empleados %}
+
+        <tr>
+
+            <td>{{ empleado.id_empleado }}</td>
+
+            <td>{{ empleado.identificacion }}</td>
+
+            <td>
+                {{ empleado.nombre }}
+                {{ empleado.apellido1 }}
+                {{ empleado.apellido2 }}
+            </td>
+
+            <td>{{ empleado.id_cargo.nombre }}</td>
+
+            <td>{{ empleado.telefono }}</td>
+
+            <td>{{ empleado.correo }}</td>
+
+            <td>
+                {% if empleado.estado %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-danger">Inactivo</span>
+                {% endif %}
+            </td>
+
+            <td>
+
+                <a href="{% url 'empleados:empleado_update' empleado.id_empleado %}"
+                   class="btn btn-warning btn-sm">
+
+                    Editar
+
+                </a>
+
+            </td>
+
+        </tr>
+
+    {% empty %}
+
+        <tr>
+
+            <td colspan="8" class="text-center">
+
+                No existen empleados registrados.
+
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

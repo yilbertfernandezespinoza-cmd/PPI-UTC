@@ -1,5 +1,5 @@
 from .repositories import (RolRepository, PermisoRepository)
-from .models import LogAcciones, RolPermiso
+from .models import LogAcciones, RolPermiso, Permiso
 from apps.configuracion.models import Modulo
 class RolService:
 
@@ -51,18 +51,52 @@ def registrar_log(
 class RolPermisoService:
 
     @staticmethod
-    def actualizar_permisos(
-        rol_id,
-        permisos,
-    ):
+    def actualizar_permisos(rol_id, seleccionados,):
 
+        # Elimina los permisos actuales del rol
         RolPermiso.objects.filter(
             id_rol_id=rol_id
         ).delete()
 
-        for permiso_id in permisos:
+        for valor in seleccionados:
+            
+            # -------------------------
+            # El permiso ya existe
+            # -------------------------
+            if valor.startswith("P-"):
 
-            RolPermiso.objects.create(
-                id_rol_id=rol_id,
-                id_permiso_id=permiso_id,
-            )    
+                permiso_id = int(
+                    valor.replace("P-", "")
+                )
+
+                RolPermiso.objects.get_or_create(
+                    id_rol_id=rol_id,
+                    id_permiso_id=permiso_id,
+                )
+
+            # -------------------------
+            # El permiso no existe
+            # -------------------------
+            elif valor.startswith("N-"):
+
+                _, modulo_id, accion = valor.split("-")
+
+                modulo = Modulo.objects.get(
+                    id_modulo=modulo_id
+                )
+
+                permiso, _ = Permiso.objects.get_or_create(
+                    id_modulo=modulo,
+                    accion=accion,
+                    defaults={
+                        "descripcion":(
+                            f"{accion.title()} en módulo"
+                            f"{modulo.nombre}"
+                        )
+                    }
+                )
+
+                RolPermiso.objects.get_or_create(
+                    id_rol_id=rol_id,
+                    id_permiso=permiso,
+                )

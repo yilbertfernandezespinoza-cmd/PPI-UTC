@@ -181,17 +181,19 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
                     accion=accion,
                 ).first()
 
+                if permiso:
+
+                    valor = f"P-{permiso.id_permiso}"
+
+                else:
+
+                    valor = f"N-{modulo.id_modulo}-{accion}"
+                
                 fila["permisos"].append({
 
                     "accion": accion,
 
-                    "permiso_id": (
-                        permiso.id_permiso
-                        if permiso
-                        else ""
-                    ),
-
-                    "existe": permiso is not None,
+                    "valor": valor,
 
                     "marcado": (
                         permiso.id_permiso in permisos_asignados
@@ -220,10 +222,10 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
 
             return redirect("security:rol_permiso_list")
 
-        permisos = request.POST.getlist("permisos")
+        seleccionados = request.POST.getlist("permisos")
 
         RolPermisoService.actualizar_permisos(
-            rol_id, permisos,
+            rol_id, seleccionados,
         )
 
         rol = Rol.objects.get(

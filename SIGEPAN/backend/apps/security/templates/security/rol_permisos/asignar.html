@@ -91,13 +91,10 @@
                     <input
                         type="checkbox"
                         name="permisos"
-                        value="{{ permiso.permiso_id }}"
+                        value="{{ permiso.valor }}"
                         {% if permiso.marcado %}
                             checked
-                        {% endif %}
-                        {% if not permiso.existe %}
-                            disabled
-                        {% endif %}
+                        {% endif %}                        
                     >
 
                 </td>

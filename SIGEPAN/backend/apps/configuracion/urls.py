@@ -34,20 +34,20 @@ urlpatterns = [
     ),
 
     path(
-    "sucursales/",
-    SucursalListView.as_view(),
-    name="sucursal_list"
+        "sucursales/",
+        SucursalListView.as_view(),
+        name="sucursal_list"
     ),
 
     path(
-    "sucursales/nuevo/",
-    SucursalCreateView.as_view(),
-    name="sucursal_create"
+        "sucursales/nuevo/",
+        SucursalCreateView.as_view(),
+        name="sucursal_create"
     ),
 
     path(
-    "sucursales/<int:id_sucursal>/editar/",
-    SucursalUpdateView.as_view(),
-    name="sucursal_update"
+        "sucursales/<int:id_sucursal>/editar/",
+        SucursalUpdateView.as_view(),
+        name="sucursal_update"
     ),
 ]

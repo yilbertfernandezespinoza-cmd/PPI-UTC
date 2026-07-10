@@ -24,19 +24,67 @@
 
         <nav class="mt-2">
 
-            <ul class="nav sidebar-menu flex-column">
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
+
+                <!-- Inicio -->
 
                 <li class="nav-item">
 
-                    <a href="{% url 'home' %}" class="nav-link active">
+                    <a href="{% url 'home' %}" class="nav-link">
 
-                        <i class="bi bi-house"></i>
+                        <i class="nav-icon bi bi-house"></i>
 
                         <p>Inicio</p>
 
                     </a>
 
                 </li>
+
+                <!-- Menú dinámico -->
+
+                {% for grupo in menu %}
+
+                <li class="nav-item {% if grupo.activo %}menu-open{% endif %}">
+
+                    <a href="javascript:void(0);" class="nav-link" >
+
+                        <i class="nav-icon bi {{ grupo.icono }}"></i>
+
+                        <p>
+
+                            {{ grupo.modulo }}
+
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+
+                        </p>
+
+                    </a>
+
+                    <ul class="nav nav-treeview">
+
+                        {% for opcion in grupo.opciones %}
+
+                        <li class="nav-item">
+
+                            <a href="{{opcion.url}}" class="nav-link {% if opcion.activa %}active{% endif %}">
+
+                                <i class="nav-icon bi {{ opcion.icono }}"></i>
+
+                                <p>
+                                    {{ opcion.titulo }} 
+                                </p>
+
+                            </a>
+
+                        </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </li>
+
+                {% endfor %}
 
             </ul>
 

@@ -1,6 +1,8 @@
 from .repositories import (RolRepository, PermisoRepository)
 from .models import LogAcciones, RolPermiso, Permiso
 from apps.configuracion.models import Modulo
+from .menu import MENU
+from django.urls import reverse
 class RolService:
 
     @staticmethod
@@ -100,3 +102,83 @@ class RolPermisoService:
                     id_rol_id=rol_id,
                     id_permiso=permiso,
                 )
+
+class MenuService:
+    """
+    Construye el menu lateral del sistema
+
+    proceso:
+    1. obtiene el usuario autenticado
+    2. consulta los modulos permitidos
+    3. filtra unicamente permisos CONSULTAR
+    4. contruye la estructura usando menu.py
+    5. devuelve el menu listo para renderizar
+
+    el template sidebar.html unicamente muestra la informacion.
+
+    """
+    @staticmethod
+    def obtener_menu_usuario(request):
+        """
+        Construye el menú dinámico según el rol del usuario.
+        """
+
+        usuario_id = request.session.get("usuario_id")
+
+        if not usuario_id:
+            return []
+
+        # Obtener nombres de módulos permitidos
+        modulos_permitidos = set(
+            Modulo.objects.filter(
+                permiso__accion="CONSULTAR",
+                permiso__rolpermiso__id_rol__usuario__id_usuario=usuario_id,
+                estado=True,
+            )
+            .distinct()
+            .values_list("nombre", flat=True)
+        )
+
+        menu = []
+
+        for grupo in MENU:
+
+            if grupo["modulo"] in modulos_permitidos:
+
+                nuevo_grupo = {
+
+                    "modulo": grupo["modulo"],
+
+                    "icono": grupo["icono"],
+
+                    "opciones": [],
+
+                    "activo": False,
+
+                }
+
+                for opcion in grupo["opciones"]:
+
+                    nueva_opcion = opcion.copy()
+
+                    url = reverse(opcion["url"])
+
+                    nueva_opcion["url"] = url
+
+                    # ¿La página actual corresponde a esta opción?
+                    nueva_opcion["activa"] = (
+                        request.path == url
+                    )
+
+                    # Si una opción está activa,
+                    # el grupo también debe estar activo.
+                    if nueva_opcion["activa"]:
+
+                        nuevo_grupo["activo"] = True
+
+                    nuevo_grupo["opciones"].append(
+                        nueva_opcion
+                    )
+
+                menu.append(nuevo_grupo)
+        return menu          

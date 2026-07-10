@@ -134,3 +134,4 @@ class LoginForm(forms.Form):
             }
         ),
     )   
+

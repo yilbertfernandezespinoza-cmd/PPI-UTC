@@ -33,10 +33,21 @@ MENU = [
                 "icono": "bi-building",
             },
             {
+                "titulo": "Cargos",
+                "url": "empleados:cargo_list",
+                "icono": "bi-briefcase",
+            },
+            {
+                "titulo": "Empleados",
+                "url": "empleados:empleado_list",
+                "icono": "bi-person-badge",
+            },
+            {
                 "titulo": "Módulos",
                 "url": "configuracion:modulo_list",
                 "icono": "bi-grid",
             },
+
 
         ]
     },

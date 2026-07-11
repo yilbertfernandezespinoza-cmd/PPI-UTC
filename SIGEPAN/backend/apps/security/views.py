@@ -8,7 +8,7 @@ from django.shortcuts import redirect, render
 from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm
 from .models import Rol, Permiso, Usuario, RolPermiso
 from .mixins import SessionRequiredMixin
-from .services import registrar_log, RolPermisoService
+from .services import registrar_log, RolPermisoService, RolService, BitacoraService
 from .audit import AuditMixin
 from .permissions import PermissionRequiredMixin
 from apps.configuracion.models import Modulo
@@ -208,10 +208,10 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         context["matriz_permisos"] = matriz_permisos
 
         context["rol_form"] = RolForm()
-        
+
         return context
     
-    def post(self, request, *args, **kwargs):
+    def _guardar_permisos(self, request):
 
         rol_id = request.POST.get("rol")
 
@@ -222,12 +222,17 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
                 "Debe seleccionar un rol."
             )
 
-            return redirect("security:rol_permiso_list")
+            return redirect(
+                "security:rol_permiso_list"
+            )
 
-        seleccionados = request.POST.getlist("permisos")
+        seleccionados = request.POST.getlist(
+            "permisos"
+        )
 
         RolPermisoService.actualizar_permisos(
-            rol_id, seleccionados,
+            rol_id,
+            seleccionados,
         )
 
         rol = Rol.objects.get(
@@ -250,8 +255,140 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         return redirect(
             f"{reverse_lazy('security:rol_permiso_list')}?rol={rol_id}"
         )
+    
+    def _crear_rol(self, request):
 
+        form = RolForm(request.POST)
 
+        if form.is_valid():
+
+            rol = form.save()
+
+            self.registrar_auditoria(
+                tipo_accion="CREAR",
+                descripcion=f"Se creó el rol {rol.nombre}",
+            )
+
+            messages.success(
+                request,
+                "Rol creado correctamente."
+            )
+
+            return redirect(
+                f"{reverse_lazy('security:rol_permiso_list')}?rol={rol.id_rol}"
+            )
+
+        messages.error(
+            request,
+            "Verifique la información del formulario."
+        )
+
+        return redirect(
+            reverse_lazy("security:rol_permiso_list")
+        )
+
+    def _editar_rol(self, request):
+
+        rol_id = request.POST.get("rol_id")
+
+        rol = RolService.obtener_rol(rol_id)
+
+        form = RolForm(
+            request.POST,
+            instance=rol,
+        )
+
+        if form.is_valid():
+
+            rol = RolService.actualizar_rol(
+                rol_id,
+                form.cleaned_data,
+            )
+
+            self.registrar_auditoria(
+                tipo_accion="MODIFICAR",
+                descripcion=f"Se actualizó el rol {rol.nombre}",
+            )
+
+            messages.success(
+                request,
+                "Rol actualizado correctamente."
+            )
+
+            return redirect(
+                f"{reverse_lazy('security:rol_permiso_list')}?rol={rol.id_rol}"
+            )
+
+        messages.error(
+            request,
+            "Verifique la información del formulario."
+        )
+
+        return redirect(
+            f"{reverse_lazy('security:rol_permiso_list')}?rol={rol_id}"
+        )
+
+    def _eliminar_rol(self, request):
+
+        rol_id = request.POST.get("rol_id")
+
+        rol = RolService.obtener_rol(rol_id)
+
+        nombre_rol = rol.nombre
+
+        try:
+    
+            RolService.eliminar_rol(rol_id)
+
+        except ValueError as error:
+
+            messages.error(
+                request,
+                str(error)
+            )
+
+            return redirect(
+                f"{reverse_lazy('security:rol_permiso_list')}?rol={rol_id}"
+            )
+
+        self.registrar_auditoria(
+            tipo_accion="ELIMINAR",
+            descripcion=f"Se eliminó el rol {nombre_rol}",
+        )
+
+        messages.success(
+            request,
+            "Rol eliminado correctamente."
+        )
+
+        return redirect(
+            reverse_lazy("security:rol_permiso_list")
+        )
+
+    def post(self, request, *args, **kwargs):
+        accion = request.POST.get("accion")
+        
+        if accion == "guardar_permisos":
+            return self._guardar_permisos(request)
+        
+        if accion == "crear_rol":
+            return self._crear_rol(request)
+           
+        if accion == "editar_rol":
+            return self._editar_rol(request)
+        
+        
+        if accion == "eliminar_rol":
+            return self._eliminar_rol(request)
+        
+        messages.error(
+            request,
+            "La acción solicitada no es válida."
+        )
+
+        return redirect(
+            reverse_lazy("security:rol_permiso_list")
+        )
 class UsuarioListView(SessionRequiredMixin, ListView):
     model = Usuario
     template_name = "security/usuarios/list.html"
@@ -404,3 +541,32 @@ def logout_view(request):
     )
 
     return redirect("security:login")
+
+
+class BitacoraIngresosListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    """
+    Muestra la bitácora de ingresos al sistema.
+    """
+
+    template_name = "security/bitacora_ingresos/list.html"
+    context_object_name = "registros"
+
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get_queryset(self):
+        return BitacoraService.listar_ingresos()
+    
+class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    """
+    Muestra la bitácora de movimientos del sistema.
+    """
+
+    template_name = "security/bitacora_movimientos/list.html"
+    context_object_name = "registros"
+
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+    
+    def get_queryset(self):
+        return BitacoraService.listar_movimientos()    

@@ -1,4 +1,6 @@
-from .repositories import (RolRepository, PermisoRepository)
+from .repositories import (
+    RolRepository, PermisoRepository, 
+    RolPermisoRepository, LogAccionesRepository)
 from .models import LogAcciones, RolPermiso, Permiso
 from apps.configuracion.models import Modulo
 from .menu import MENU
@@ -12,6 +14,39 @@ class RolService:
     @staticmethod
     def obtener_rol(id_rol):
         return RolRepository.obtener(id_rol)
+    
+    @staticmethod
+    def actualizar_rol(id_rol, datos):
+        """
+        Actualiza la información de un rol.
+        """
+
+        rol = RolRepository.obtener(id_rol)
+
+        rol.nombre = datos["nombre"]
+        rol.descripcion = datos["descripcion"]
+        rol.estado = datos["estado"]
+
+        return RolRepository.actualizar(rol)
+    
+    @staticmethod
+    def eliminar_rol(id_rol):
+        """
+        Elimina un rol si no tiene usuarios asignados.
+        """
+
+        rol = RolRepository.obtener(id_rol)
+
+        if rol.usuario_set.exists():
+            raise ValueError(
+                "No se puede eliminar el rol porque tiene usuarios asignados."
+            )
+
+        RolPermisoRepository.eliminar_por_rol(rol)
+        
+        RolRepository.eliminar(rol)
+
+        return rol
     
 
 class PermisoService:
@@ -49,7 +84,23 @@ def registrar_log(
         navegador=request.META.get("HTTP_USER_AGENT", "")[:150],
     )    
 
+class BitacoraService:
 
+    @staticmethod
+    def listar_ingresos():
+        """
+        Obtiene la bitácora de ingresos al sistema.
+        """
+
+        return LogAccionesRepository.listar_ingresos()
+
+    @staticmethod
+    def listar_movimientos():
+        """
+        Obtiene la bitácora de movimientos del sistema.
+        """
+
+        return LogAccionesRepository.listar_movimientos()
 class RolPermisoService:
 
     @staticmethod

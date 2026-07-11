@@ -21,12 +21,13 @@ class CargoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
     success_url = reverse_lazy("empleados:cargo_list")
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         self.registrar_auditoria(
             tipo_accion="CREAR",
             descripcion=f"Se creó el cargo {self.object.nombre}",
         )
         messages.success(self.request, "Cargo creado correctamente.")
-        return super().form_valid(form)
+        return response
 
 
 class CargoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
@@ -38,12 +39,13 @@ class CargoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
     pk_url_kwarg = "id_cargo"
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         self.registrar_auditoria(
             tipo_accion="MODIFICAR",
             descripcion=f"Se actualizó el cargo {self.object.nombre}",
         )
         messages.success(self.request, "Cargo actualizado correctamente.")
-        return super().form_valid(form)
+        return response
     
 class EmpleadoListView(SessionRequiredMixin, ListView):
     model = Empleado
@@ -66,12 +68,13 @@ class EmpleadoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
     success_url = reverse_lazy("empleados:empleado_list")
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         self.registrar_auditoria(
             tipo_accion="CREAR",
             descripcion=f"Se creó el empleado {self.object.nombre} {self.object.apellido1}",
         )
         messages.success(self.request, "Empleado creado correctamente.")
-        return super().form_valid(form)
+        return response
 
 
 class EmpleadoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
@@ -83,9 +86,10 @@ class EmpleadoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
     pk_url_kwarg = "id_empleado"
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         self.registrar_auditoria(
             tipo_accion="MODIFICAR",
             descripcion=f"Se actualizó el empleado {self.object.nombre} {self.object.apellido1}",
         )
         messages.success(self.request, "Empleado actualizado correctamente.")
-        return super().form_valid(form)    
+        return response    

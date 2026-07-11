@@ -207,6 +207,8 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
 
         context["matriz_permisos"] = matriz_permisos
 
+        context["rol_form"] = RolForm()
+        
         return context
     
     def post(self, request, *args, **kwargs):
@@ -302,7 +304,7 @@ class UsuarioUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
             descripcion = f"se modificó el usuario {self.object.username}",
         )
         messages.success(self.request, "Usuario actualizado correctamente.")
-        return super().form_valid(form)    
+        return response   
     
 def login_view(request):
 

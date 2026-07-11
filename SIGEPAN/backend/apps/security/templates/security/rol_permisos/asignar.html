@@ -8,42 +8,127 @@
 
     <div class="row mb-4">
 
-        <div class="col-md-4">
+    <div class="col-md-4">
 
-            <label class="form-label">
+        <label class="form-label">
 
-                Rol
+            Rol
 
-            </label>
+        </label>
 
-            <select
-                name="rol"
-                class="form-select"
-                onchange="this.form.submit()"
+        <select
+            name="rol"
+            class="form-select"
+            onchange="this.form.submit()"
+        >
+
+            {% for rol in roles %}
+
+            <option
+                value="{{ rol.id_rol }}"
+                {% if rol.id_rol == rol_seleccionado %}
+                    selected
+                {% endif %}
             >
 
-                {% for rol in roles %}
+                {{ rol.nombre }}
 
-                    <option
-                        value="{{ rol.id_rol }}"
-                        {% if rol.id_rol == rol_seleccionado %}
-                            selected
-                        {% endif %}
-                    >
+            </option>
 
-                        {{ rol.nombre }}
+            {% endfor %}
 
-                    </option>
+        </select>
 
-                {% endfor %}
+    </div>
 
-            </select>
+    <div class="col-md-8 d-flex align-items-end gap-2">
+
+        <button
+            type="button"
+            class="btn btn-success"
+            onclick="mostrarPanelRol()"
+        >
+
+            <i class="bi bi-plus-circle"></i>
+
+            Nuevo Rol
+
+        </button>
+
+        <button
+            type="button"
+            class="btn btn-warning"
+        >
+
+            <i class="bi bi-pencil"></i>
+
+            Editar
+
+        </button>
+
+        <button
+            type="button"
+            class="btn btn-danger"
+        >
+
+            <i class="bi bi-trash"></i>
+
+            Eliminar
+
+        </button>
+
+    </div>
+
+</div>
+
+</form>
+
+<div
+    id="panelRol"
+    class="card mt-3"
+    style="display:none;"
+>
+
+    <div class="card-header">
+
+        <strong>
+
+            Nuevo Rol
+
+        </strong>
+
+    </div>
+
+    <div class="card-body">
+
+        {{ rol_form.as_p }}
+        
+        <div class="d-flex justify-content-end gap-2 mt-3">
+
+            <button
+                type="button"
+                class="btn btn-success"
+            >
+                <i class="bi bi-check-circle"></i>
+
+                Guardar
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="ocultarPanelRol()"
+            >
+                Cancelar
+            </button>
 
         </div>
 
     </div>
 
-</form>
+</div>
+
+
 
     <hr>
 
@@ -135,5 +220,15 @@
     </div>
 
 </form>
+
+<script>
+
+function mostrarPanelRol(){
+
+    document.getElementById("panelRol").style.display = "block";
+
+}
+
+</script>
 
 {% endblock %}

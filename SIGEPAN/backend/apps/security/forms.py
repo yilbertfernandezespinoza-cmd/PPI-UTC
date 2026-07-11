@@ -101,14 +101,20 @@ class UsuarioForm(forms.ModelForm):
         }
 
     def save(self, commit=True):
+
+        print("===== UsuarioForm.save() =====")
+        print("Password recibida:", self.cleaned_data.get("password"))
+
         usuario = super().save(commit=False)
 
         if usuario.password:
+            print("Antes de encriptar:", usuario.password)
             usuario.password = make_password(usuario.password)
+            print("Después de encriptar:", usuario.password)
 
         if commit:
             usuario.save()
-
+            print("Usuario guardado")
         return usuario
     
 

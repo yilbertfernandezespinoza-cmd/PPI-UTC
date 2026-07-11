@@ -17,6 +17,7 @@
         </label>
 
         <select
+            id= "selectRol"
             name="rol"
             class="form-select"
             onchange="this.form.submit()"
@@ -26,6 +27,9 @@
 
             <option
                 value="{{ rol.id_rol }}"
+                data-nombre="{{ rol.nombre }}"
+                data-descripcion="{{ rol.descripcion|default:'' }}"
+                data-estado="{{ rol.estado|yesno:'true,false' }}"
                 {% if rol.id_rol == rol_seleccionado %}
                     selected
                 {% endif %}
@@ -58,6 +62,7 @@
         <button
             type="button"
             class="btn btn-warning"
+            onclick="mostrarPanelEditarRol()"
         >
 
             <i class="bi bi-pencil"></i>
@@ -69,6 +74,7 @@
         <button
             type="button"
             class="btn btn-danger"
+            onclick="eliminarRol()"
         >
 
             <i class="bi bi-trash"></i>
@@ -83,6 +89,30 @@
 
 </form>
 
+<form
+    id="formEliminarRol"
+    method="post"
+    style="display:none;"
+>
+
+    {% csrf_token %}
+
+    <input
+        type="hidden"
+        name="accion"
+        value="eliminar_rol"
+    >
+
+    <input
+        type="hidden"
+        id="rolIdEliminar"
+        name="rol_id"
+        value=""
+    >
+
+</form>
+
+
 <div
     id="panelRol"
     class="card mt-3"
@@ -91,7 +121,7 @@
 
     <div class="card-header">
 
-        <strong>
+        <strong id="tituloPanelRol">
 
             Nuevo Rol
 
@@ -100,30 +130,46 @@
     </div>
 
     <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
 
-        {{ rol_form.as_p }}
+            <input
+                type="hidden"
+                id="accionRol"
+                name="accion"
+                value="crear_rol"
+            >
+
+            <input
+                type="hidden"
+                id="rolIdEditar"
+                name="rol_id"
+                value=""
+            >
+
+            {{ rol_form.as_p }}
         
-        <div class="d-flex justify-content-end gap-2 mt-3">
+            <div class="d-flex justify-content-end gap-2 mt-3">
 
-            <button
-                type="button"
-                class="btn btn-success"
-            >
-                <i class="bi bi-check-circle"></i>
+                <button
+                    type="submit" class="btn btn-success">
 
-                Guardar
-            </button>
+                    <i class="bi bi-check-circle"></i>
 
-            <button
-                type="button"
-                class="btn btn-secondary"
-                onclick="ocultarPanelRol()"
-            >
-                Cancelar
-            </button>
+                    Guardar
 
-        </div>
+                </button>
 
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="ocultarPanelRol()"
+                >
+                    Cancelar
+                </button>
+
+            </div>
+        </form>
     </div>
 
 </div>
@@ -135,6 +181,12 @@
     <form method="post">
 
         {% csrf_token %}
+
+        <input
+            type="hidden"
+            name="accion"
+            value="guardar_permisos"
+        >
 
         <input
             type="hidden"
@@ -225,10 +277,74 @@
 
 function mostrarPanelRol(){
 
-    document.getElementById("panelRol").style.display = "block";
+    document
+        .getElementById("panelRol")
+        .style.display = "block";
 
 }
+function mostrarPanelEditarRol(){
+    const selectRol = document.getElementById("selectRol");
 
+    const opcionSeleccionada = selectRol.options[selectRol.selectedIndex];
+
+    document
+        .getElementById("rolIdEditar")
+        .value = opcionSeleccionada.value;
+
+    document
+        .getElementById("accionRol")
+        .value = "editar_rol";
+
+    document
+        .getElementById("tituloPanelRol")
+        .textContent = "Editar Rol";
+
+    document
+        .getElementById("id_nombre")
+        .value = opcionSeleccionada.dataset.nombre;
+    
+    document
+        .getElementById("id_descripcion")
+        .value = opcionSeleccionada.dataset.descripcion;
+
+    document
+        .getElementById("id_estado")
+        .cheacked = opcionSeleccionada.dataset === "true";        
+
+    document
+        .getElementById("panelRol")
+        .style.display = "block";   
+}
+function eliminarRol(){
+    const selectRol =
+        document.getElementById("selectRol");
+
+    const opcionSeleccionada =
+        selectRol.options[selectRol.selectedIndex];
+
+    const rolId =
+        opcionSeleccionada.value;
+
+    const nombreRol =
+        opcionSeleccionada.dataset.nombre;
+        
+    const confirmar = confirm(
+        `¿Esta seguro de eliminar el rol "${nombreRol}"?`
+    );
+
+    if (!confirmar){
+        return;
+    }
+        
+    document
+        .getElementById("rolIdEliminar")
+        .value = rolId;
+
+    document
+        .getElementById("formEliminarRol")
+        .submit();    
+
+}
 </script>
 
 {% endblock %}

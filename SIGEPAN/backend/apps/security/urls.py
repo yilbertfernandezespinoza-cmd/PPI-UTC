@@ -18,6 +18,8 @@ from .views import (
 
     RolPermisoListView,
     
+    BitacoraIngresosListView,
+    BitacoraMovimientosListView,
 )
 
 app_name = "security"
@@ -93,6 +95,18 @@ urlpatterns = [
         "usuarios/<int:id_usuario>/editar/",
         UsuarioUpdateView.as_view(),
         name="usuario_update",
+    ),
+
+    path(
+        "bitacoras/ingresos/",
+        BitacoraIngresosListView.as_view(),
+        name="bitacora_ingresos",
+    ),
+
+    path(
+        "bitacoras/movimientos/",
+        BitacoraMovimientosListView.as_view(),
+        name="bitacora_movimientos",
     ),
 ]
 

@@ -42,13 +42,6 @@ MENU = [
                 "url": "empleados:empleado_list",
                 "icono": "bi-person-badge",
             },
-            {
-                "titulo": "Módulos",
-                "url": "configuracion:modulo_list",
-                "icono": "bi-grid",
-            },
-
-
         ]
     },
 
@@ -66,6 +59,16 @@ MENU = [
                 "titulo": "Asignación de Permisos",
                 "url": "security:rol_permiso_list",
                 "icono": "bi-person-check",
+            },
+            {
+                "titulo": "Bitácora de Ingresos",
+                "url": "security:bitacora_ingresos",
+                "icono": "bi-box-arrow-in-right",
+            },
+            {
+                "titulo": "Bitácora de Movimientos",
+                "url": "security:bitacora_movimientos",
+                "icono": "bi-journal-text",
             },
 
         ]

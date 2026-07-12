@@ -4,16 +4,53 @@
 
 <h2>Usuarios</h2>
 
+<form method="get" class="row g-2 mb-3">
+
+    <div class="col-md-5">
+        <input
+            type="text"
+            name="buscar"
+            class="form-control"
+            placeholder="Buscar por usuario, empleado o correo"
+            value="{{ busqueda }}"
+        >
+    </div>
+
+    <div class="col-auto">
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-search"></i>
+            Buscar
+        </button>
+    </div>
+
+    {% if busqueda %}
+        <div class="col-auto">
+            <a
+                href="{% url 'security:usuario_list' %}"
+                class="btn btn-secondary"
+            >
+                Limpiar
+            </a>
+        </div>
+    {% endif %}
+
+</form>
+
+
 {% if puede_crear %}
 
-    <a href="{% url 'security:usuario_create' %}"
-       class="btn btn-primary mb-3">
-
+    <a
+        href="{% url 'security:usuario_create' %}"
+        class="btn btn-primary mb-3"
+    >
         Nuevo Usuario
-
     </a>
 
 {% endif %}
+
 
 <table class="table table-striped">
 
@@ -29,7 +66,7 @@
             <th>Email</th>
             <th>Estado</th>
 
-            {% if puede_modificar %}
+            {% if puede_modificar or puede_eliminar %}
                 <th>Acciones</th>
             {% endif %}
 
@@ -82,16 +119,44 @@
 
             </td>
 
-            {% if puede_modificar %}
+
+            {% if puede_modificar or puede_eliminar %}
 
                 <td>
 
-                    <a href="{% url 'security:usuario_update' usuario.id_usuario %}"
-                       class="btn btn-warning btn-sm">
+                    {% if puede_modificar %}
 
-                        Editar
+                        <a
+                            href="{% url 'security:usuario_update' usuario.id_usuario %}"
+                            class="btn btn-warning btn-sm"
+                        >
+                            Editar
+                        </a>
 
-                    </a>
+                    {% endif %}
+
+
+                    {% if puede_eliminar and usuario.estado %}
+
+                        <form
+                            method="post"
+                            action="{% url 'security:usuario_disable' usuario.id_usuario %}"
+                            class="d-inline"
+                            onsubmit="return confirm('¿Desea deshabilitar este usuario?');"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="btn btn-danger btn-sm"
+                            >
+                                Deshabilitar
+                            </button>
+
+                        </form>
+
+                    {% endif %}
 
                 </td>
 
@@ -99,17 +164,16 @@
 
         </tr>
 
+
     {% empty %}
 
         <tr>
 
             <td
-                colspan="{% if puede_modificar %}8{% else %}7{% endif %}"
+                colspan="{% if puede_modificar or puede_eliminar %}8{% else %}7{% endif %}"
                 class="text-center"
             >
-
                 No existen usuarios registrados.
-
             </td>
 
         </tr>

@@ -102,20 +102,43 @@ class UsuarioForm(forms.ModelForm):
 
     def save(self, commit=True):
 
-        print("===== UsuarioForm.save() =====")
-        print("Password recibida:", self.cleaned_data.get("password"))
-
         usuario = super().save(commit=False)
 
-        if usuario.password:
-            print("Antes de encriptar:", usuario.password)
-            usuario.password = make_password(usuario.password)
-            print("Después de encriptar:", usuario.password)
+        password = self.cleaned_data.get("password")
+
+        if self.instance and self.instance.pk:
+
+            if password:
+                usuario.password = make_password(password)
+
+            else:
+                usuario.password = (
+                    Usuario.objects
+                    .get(pk=self.instance.pk)
+                    .password
+                )
+
+        else:
+
+            usuario.password = make_password(password)
 
         if commit:
             usuario.save()
-            print("Usuario guardado")
+
         return usuario
+    
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+
+            self.fields["password"].required = False
+            self.fields["password"].initial = ""
+
+            self.fields["password"].widget.attrs[
+                "placeholder"
+            ] = "Dejar vacío para conservar la contraseña actual"
     
 
 class LoginForm(forms.Form):

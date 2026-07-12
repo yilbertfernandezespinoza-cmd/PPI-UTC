@@ -7,6 +7,7 @@ from .views import (
     UsuarioListView,
     UsuarioCreateView,
     UsuarioUpdateView,
+    UsuarioDisableView,
 
     RolPermisoListView,
     
@@ -51,6 +52,11 @@ urlpatterns = [
         "usuarios/<int:id_usuario>/editar/",
         UsuarioUpdateView.as_view(),
         name="usuario_update",
+    ),
+    path(
+        "usuarios/<int:id_usuario>/deshabilitar/",
+        UsuarioDisableView.as_view(),
+        name="usuario_disable",
     ),
 
     path(

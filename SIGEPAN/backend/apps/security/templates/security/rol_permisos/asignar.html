@@ -4,6 +4,29 @@
 
 <h2>Asignación de Permisos</h2>
 
+<div class="row mb-3">
+
+    <div class="col-md-4">
+
+        <label
+            for="buscarRol"
+            class="form-label"
+        >
+            Buscar Rol
+        </label>
+
+        <input
+            type="text"
+            id="buscarRol"
+            class="form-control"
+            placeholder="Buscar por nombre del rol"
+            oninput="filtrarRoles()"
+        >
+
+    </div>
+
+</div>
+
 <form method="get">
 
     <div class="row mb-4">
@@ -36,6 +59,10 @@
             >
 
                 {{ rol.nombre }}
+
+                {% if not rol.estado%}
+                    (Inactivo)
+                {% endif %}   
 
             </option>
 
@@ -74,12 +101,12 @@
         <button
             type="button"
             class="btn btn-danger"
-            onclick="eliminarRol()"
+            onclick="deshabilitarRol()"
         >
 
             <i class="bi bi-trash"></i>
 
-            Eliminar
+            Deshabilitar
 
         </button>
 
@@ -90,7 +117,7 @@
 </form>
 
 <form
-    id="formEliminarRol"
+    id="formDeshabilitarRol"
     method="post"
     style="display:none;"
 >
@@ -100,12 +127,12 @@
     <input
         type="hidden"
         name="accion"
-        value="eliminar_rol"
+        value="deshabilitar_rol"
     >
 
     <input
         type="hidden"
-        id="rolIdEliminar"
+        id="rolIdDeshabilitar"
         name="rol_id"
         value=""
     >
@@ -317,13 +344,14 @@ function mostrarPanelEditarRol(){
 
     document
         .getElementById("id_estado")
-        .cheacked = opcionSeleccionada.dataset === "true";        
+        .cheacked = opcionSeleccionada.dataset.estado === "true";        
 
     document
         .getElementById("panelRol")
         .style.display = "block";   
 }
-function eliminarRol(){
+function deshabilitarRol(){
+
     const selectRol =
         document.getElementById("selectRol");
 
@@ -335,24 +363,67 @@ function eliminarRol(){
 
     const nombreRol =
         opcionSeleccionada.dataset.nombre;
-        
+
     const confirmar = confirm(
-        `¿Esta seguro de eliminar el rol "${nombreRol}"?`
+        `¿Está seguro de deshabilitar el rol "${nombreRol}"?`
     );
 
     if (!confirmar){
         return;
     }
-        
+
     document
-        .getElementById("rolIdEliminar")
+        .getElementById("rolIdDeshabilitar")
         .value = rolId;
 
     document
-        .getElementById("formEliminarRol")
-        .submit();    
-
+        .getElementById("formDeshabilitarRol")
+        .submit();
 }
+
+function filtrarRoles(){
+
+    const busqueda = document
+        .getElementById("buscarRol")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const selectRol =
+        document.getElementById("selectRol");
+
+    for (const opcion of selectRol.options){
+
+        const nombre =
+            opcion.dataset.nombre.toLowerCase();
+
+        opcion.hidden = !nombre.includes(busqueda);
+    }
+
+    const opcionesVisibles = Array
+        .from(selectRol.options)
+        .filter(opcion => !opcion.hidden);
+
+    if (
+        busqueda &&
+        opcionesVisibles.length === 1
+    ){
+
+        const rolEncontrado =
+            opcionesVisibles[0];
+
+        if (
+            selectRol.value !== rolEncontrado.value
+        ){
+
+            selectRol.value =
+                rolEncontrado.value;
+
+            selectRol.form.submit();
+        }
+    }
+}
+
 </script>
 
 {% endblock %}

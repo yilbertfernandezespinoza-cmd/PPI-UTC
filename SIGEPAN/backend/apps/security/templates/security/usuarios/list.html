@@ -4,12 +4,16 @@
 
 <h2>Usuarios</h2>
 
-<a href="{% url 'security:usuario_create' %}"
-   class="btn btn-primary mb-3">
+{% if puede_crear %}
 
-    Nuevo Usuario
+    <a href="{% url 'security:usuario_create' %}"
+       class="btn btn-primary mb-3">
 
-</a>
+        Nuevo Usuario
+
+    </a>
+
+{% endif %}
 
 <table class="table table-striped">
 
@@ -24,7 +28,10 @@
             <th>Sucursal</th>
             <th>Email</th>
             <th>Estado</th>
-            <th>Acciones</th>
+
+            {% if puede_modificar %}
+                <th>Acciones</th>
+            {% endif %}
 
         </tr>
 
@@ -40,11 +47,20 @@
 
             <td>{{ usuario.username }}</td>
 
-            <td>{{ usuario.id_empleado }}</td>
+            <td>
+                {{ usuario.id_empleado.nombre }}
+                {{ usuario.id_empleado.apellido1 }}
+            </td>
 
-            <td>{{ usuario.id_rol }}</td>
+            <td>{{ usuario.id_rol.nombre }}</td>
 
-            <td>{{ usuario.id_sucursal }}</td>
+            <td>
+
+                {% if usuario.id_sucursal %}
+                    {{ usuario.id_sucursal.nombre }}
+                {% endif %}
+
+            </td>
 
             <td>{{ usuario.email }}</td>
 
@@ -66,16 +82,20 @@
 
             </td>
 
-            <td>
+            {% if puede_modificar %}
 
-                <a href="{% url 'security:usuario_update' usuario.id_usuario %}"
-                   class="btn btn-warning btn-sm">
+                <td>
 
-                    Editar
+                    <a href="{% url 'security:usuario_update' usuario.id_usuario %}"
+                       class="btn btn-warning btn-sm">
 
-                </a>
+                        Editar
 
-            </td>
+                    </a>
+
+                </td>
+
+            {% endif %}
 
         </tr>
 
@@ -83,7 +103,10 @@
 
         <tr>
 
-            <td colspan="8" class="text-center">
+            <td
+                colspan="{% if puede_modificar %}8{% else %}7{% endif %}"
+                class="text-center"
+            >
 
                 No existen usuarios registrados.
 

@@ -13,92 +13,6 @@ from .audit import AuditMixin
 from .permissions import PermissionRequiredMixin
 from apps.configuracion.models import Modulo
 
-class RolListView(SessionRequiredMixin, ListView):
-    model = Rol
-    template_name = "security/roles/list.html"
-    context_object_name = "roles"
-
-
-class RolCreateView(SessionRequiredMixin, AuditMixin, CreateView):
-    audit_module = "Seguridad"
-    model = Rol
-    form_class = RolForm
-    template_name = "security/roles/form.html"
-    success_url = reverse_lazy("security:rol_list")
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        self.registrar_auditoria(
-            tipo_accion="CREAR",
-            descripcion=f"Se creó el rol {self.object.nombre}",
-        )
-        messages.success(self.request, "Rol creado correctamente.")
-        return response
-
-
-class RolUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
-    audit_module = "Seguridad"
-    model = Rol
-    form_class = RolForm
-    pk_url_kwarg = "id_rol"
-    template_name = "security/roles/form.html"
-    success_url = reverse_lazy("security:rol_list")
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        self.registrar_auditoria(
-            tipo_accion="MODIFICAR",
-            descripcion=f"Se actualizó el rol {self.object.nombre}",
-        )
-        messages.success(self.request, "Rol actualizado correctamente.")
-        return response
-    
-class PermisoListView(SessionRequiredMixin, ListView):
-    model = Permiso
-    template_name = "security/permisos/list.html"
-    context_object_name = "permisos"
-
-    def get_queryset(self):
-        return (
-            Permiso.objects
-            .select_related("id_modulo")
-            .order_by("id_modulo__nombre", "accion")
-        )
-
-
-class PermisoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
-    audit_module = "Seguridad"
-    model = Permiso
-    form_class = PermisoForm
-    template_name = "security/permisos/form.html"
-    success_url = reverse_lazy("security:permiso_list")
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        self.registrar_auditoria(
-            tipo_accion="CREAR",
-            descripcion=f"Se creó el permiso {self.object.accion}",
-        )
-        messages.success(self.request, "Permiso creado correctamente.")
-        return response
-
-
-class PermisoUpdateView(SessionRequiredMixin,  AuditMixin, UpdateView):
-    audit_module = "Seguridad"
-    model = Permiso
-    form_class = PermisoForm
-    template_name = "security/permisos/form.html"
-    success_url = reverse_lazy("security:permiso_list")
-    pk_url_kwarg = "id_permiso"
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        self.registrar_auditoria(
-            tipo_accion="MODIFICAR",
-            descripcion=f"Se actualizó el permiso {self.object.accion}",
-        )
-        messages.success(self.request, "Permiso actualizado correctamente.")
-        return response
 class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, ListView):
     model = RolPermiso
     template_name = "security/rol_permisos/asignar.html"
@@ -389,7 +303,10 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         return redirect(
             reverse_lazy("security:rol_permiso_list")
         )
-class UsuarioListView(SessionRequiredMixin, ListView):
+class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+    
     model = Usuario
     template_name = "security/usuarios/list.html"
     context_object_name = "usuarios"
@@ -404,10 +321,30 @@ class UsuarioListView(SessionRequiredMixin, ListView):
             )
             .order_by("username")
         )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        usuario = self.request.usuario
+
+        context["puede_crear"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Seguridad",
+            id_permiso__accion="CREAR",
+        ).exists()
+
+        context["puede_modificar"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Seguridad",
+            id_permiso__accion="MODIFICAR",
+        ).exists()
+
+        return context
 
 class UsuarioCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
     permission_module = "Seguridad"
     permission_action = "CREAR"
+    
     audit_module = "Seguridad"
     model = Usuario
     form_class = UsuarioForm
@@ -425,7 +362,10 @@ class UsuarioCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixi
         return response
 
 
-class UsuarioUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
+class UsuarioUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, UpdateView):
+    permission_module = "Seguridad"
+    permission_action = "MODIFICAR"
+    
     audit_module = "Seguridad"
     model = Usuario
     form_class = UsuarioForm
@@ -567,6 +507,6 @@ class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin,
 
     permission_module = "Seguridad"
     permission_action = "CONSULTAR"
-    
+
     def get_queryset(self):
         return BitacoraService.listar_movimientos()    

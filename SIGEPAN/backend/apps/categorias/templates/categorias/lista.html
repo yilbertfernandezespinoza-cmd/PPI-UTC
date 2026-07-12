@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Gestión de Categorías</h3>
+        <a href="{% url 'categorias:nueva_categoria' %}" class="btn btn-primary float-right">Nueva Categoría</a>
+      </div>
+      <div class="card-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for categoria in categorias %}
+            <tr>
+              <td>{{ categoria.nombre }}</td>
+              <td>{{ categoria.descripcion }}</td>
+              <td>{{ categoria.estado|yesno:"Activo,Inactivo" }}</td>
+              <td>
+                <a href="{% url 'categorias:editar_categoria' categoria.id %}" class="btn btn-warning btn-sm">Editar</a>
+                <a href="{% url 'categorias:eliminar_categoria' categoria.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

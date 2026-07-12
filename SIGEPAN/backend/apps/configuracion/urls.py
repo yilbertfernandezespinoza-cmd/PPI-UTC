@@ -50,4 +50,5 @@ urlpatterns = [
         SucursalUpdateView.as_view(),
         name="sucursal_update"
     ),
+       
 ]

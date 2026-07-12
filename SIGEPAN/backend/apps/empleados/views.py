@@ -6,15 +6,22 @@ from .models import Cargo, Empleado
 from .forms import CargoForm, EmpleadoForm
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.audit import AuditMixin
+from apps.security.permissions import PermissionRequiredMixin
 
-class CargoListView(SessionRequiredMixin, ListView):
+class CargoListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_module = "Configuración"
+    permission_action = "CONSULTAR"
+    
     model = Cargo
     template_name = "empleados/cargos/list.html"
     context_object_name = "cargos"
 
 
-class CargoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
-    audit_module = "Empleados"
+class CargoCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
+    permission_module = "Configuración"
+    permission_action = "CREAR"
+    
+    audit_module = "Configuración"
     model = Cargo
     form_class = CargoForm
     template_name = "empleados/cargos/form.html"
@@ -30,8 +37,11 @@ class CargoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
         return response
 
 
-class CargoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
-    audit_module = "Empleados"
+class CargoUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, UpdateView):
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+
+    audit_module = "Configuración"
     model = Cargo
     form_class = CargoForm
     template_name = "empleados/cargos/form.html"
@@ -47,7 +57,10 @@ class CargoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
         messages.success(self.request, "Cargo actualizado correctamente.")
         return response
     
-class EmpleadoListView(SessionRequiredMixin, ListView):
+class EmpleadoListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_module = "Configuración"
+    permission_action = "CONSULTAR"
+
     model = Empleado
     template_name = "empleados/empleados/list.html"
     context_object_name = "empleados"
@@ -60,8 +73,12 @@ class EmpleadoListView(SessionRequiredMixin, ListView):
         )
 
 
-class EmpleadoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
-    audit_module = "Empleados"
+class EmpleadoCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
+    permission_module = "Configuración"
+    permission_action = "CREAR"
+
+    audit_module = "Configuración"
+    
     model = Empleado
     form_class = EmpleadoForm
     template_name = "empleados/empleados/form.html"
@@ -77,8 +94,12 @@ class EmpleadoCreateView(SessionRequiredMixin, AuditMixin, CreateView):
         return response
 
 
-class EmpleadoUpdateView(SessionRequiredMixin, AuditMixin, UpdateView):
-    audit_module = "Empleados"
+class EmpleadoUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, UpdateView):
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+
+    audit_module = "Configuración"
+    
     model = Empleado
     form_class = EmpleadoForm
     template_name = "empleados/empleados/form.html"

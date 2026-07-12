@@ -1,3 +1,4 @@
+import logging
 from .repositories import (
     RolRepository, PermisoRepository, 
     RolPermisoRepository, LogAccionesRepository)
@@ -5,6 +6,9 @@ from .models import LogAcciones, RolPermiso, Permiso
 from apps.configuracion.models import Modulo
 from .menu import MENU
 from django.urls import reverse
+from django.db import transaction
+
+logger = logging.getLogger(__name__)
 class RolService:
 
     @staticmethod
@@ -30,24 +34,21 @@ class RolService:
         return RolRepository.actualizar(rol)
     
     @staticmethod
-    def eliminar_rol(id_rol):
+    def deshabilitar_rol(id_rol):
         """
-        Elimina un rol si no tiene usuarios asignados.
+        Deshabilita un rol si no tiene usuarios activos asignados.
         """
 
         rol = RolRepository.obtener(id_rol)
 
-        if rol.usuario_set.exists():
+        if rol.usuario_set.filter(estado=True).exists():
             raise ValueError(
-                "No se puede eliminar el rol porque tiene usuarios asignados."
+                "No se puede deshabilitar el rol porque tiene usuarios activos asignados."
             )
 
-        RolPermisoRepository.eliminar_por_rol(rol)
-        
-        RolRepository.eliminar(rol)
+        rol.estado = False
 
-        return rol
-    
+        return RolRepository.actualizar(rol)
 
 class PermisoService:
 
@@ -73,6 +74,12 @@ def registrar_log(
     try:
         modulo_obj =  Modulo.objects.get(nombre=modulo)
     except Modulo.DoesNotExist:
+        logger.warning(
+            "No se registró la auditoría"
+            "El módulo '%s' no existe en la base de datos.",
+            modulo
+        )
+
         return
         
     LogAcciones.objects.create(
@@ -104,6 +111,7 @@ class BitacoraService:
 class RolPermisoService:
 
     @staticmethod
+    @transaction.atomic
     def actualizar_permisos(rol_id, seleccionados,):
 
         # Elimina los permisos actuales del rol

@@ -224,6 +224,7 @@ class LogAcciones(models.Model):
         ("CREAR", "CREAR"),
         ("MODIFICAR", "MODIFICAR"),
         ("ELIMINAR", "ELIMINAR"),
+        ("ACCESO_DENEGADO","ACCESO_DENEGADO"),
     ]
 
     tipo_accion = models.CharField(

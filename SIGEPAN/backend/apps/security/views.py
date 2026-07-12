@@ -1,9 +1,9 @@
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, View
 from django.contrib.auth.hashers import check_password
 from django.shortcuts import redirect, render
-
+from django.db.models import Q
 
 from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm
 from .models import Rol, Permiso, Usuario, RolPermiso
@@ -12,6 +12,7 @@ from .services import registrar_log, RolPermisoService, RolService, BitacoraServ
 from .audit import AuditMixin
 from .permissions import PermissionRequiredMixin
 from apps.configuracion.models import Modulo
+
 
 class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, ListView):
     model = RolPermiso
@@ -36,9 +37,11 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         context = super().get_context_data(**kwargs)
 
         # Todos los roles
-        context["roles"] = Rol.objects.filter(
-            estado=True
-        ).order_by("nombre")
+        context["roles"] = (
+            RolService
+            .listar_roles()
+            .order_by("nombre")
+        )
 
         # Rol seleccionado
         rol_id = self.request.GET.get("rol")
@@ -49,9 +52,12 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
 
         else:
 
-            primer_rol = Rol.objects.filter(
-                estado=True
-            ).order_by("nombre").first()
+            primer_rol = (
+                RolService
+                .listar_roles()
+                .order_by("nombre")
+                .first()
+            )
 
             context["rol_seleccionado"] = (
                 primer_rol.id_rol if primer_rol else None
@@ -242,7 +248,7 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
             f"{reverse_lazy('security:rol_permiso_list')}?rol={rol_id}"
         )
 
-    def _eliminar_rol(self, request):
+    def _deshabilitar_rol(self, request):
 
         rol_id = request.POST.get("rol_id")
 
@@ -251,8 +257,8 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         nombre_rol = rol.nombre
 
         try:
-    
-            RolService.eliminar_rol(rol_id)
+
+            RolService.deshabilitar_rol(rol_id)
 
         except ValueError as error:
 
@@ -267,34 +273,90 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
 
         self.registrar_auditoria(
             tipo_accion="ELIMINAR",
-            descripcion=f"Se eliminó el rol {nombre_rol}",
+            descripcion=f"Se deshabilitó el rol {nombre_rol}",
         )
 
         messages.success(
             request,
-            "Rol eliminado correctamente."
+            "Rol deshabilitado correctamente."
         )
 
         return redirect(
-            reverse_lazy("security:rol_permiso_list")
+            f"{reverse_lazy('security:rol_permiso_list')}?rol={rol_id}"
         )
 
     def post(self, request, *args, **kwargs):
+
         accion = request.POST.get("accion")
-        
+
         if accion == "guardar_permisos":
+
+            if not self.usuario_tiene_permiso(
+                "Seguridad",
+                "MODIFICAR",
+            ):
+                messages.error(
+                    request,
+                    "No tiene permisos para modificar permisos."
+                )
+
+                return redirect(
+                    reverse_lazy("security:rol_permiso_list")
+                )
+
             return self._guardar_permisos(request)
-        
+
         if accion == "crear_rol":
+
+            if not self.usuario_tiene_permiso(
+                "Seguridad",
+                "CREAR",
+            ):
+                messages.error(
+                    request,
+                    "No tiene permisos para crear roles."
+                )
+
+                return redirect(
+                    reverse_lazy("security:rol_permiso_list")
+                )
+
             return self._crear_rol(request)
-           
+
         if accion == "editar_rol":
+
+            if not self.usuario_tiene_permiso(
+                "Seguridad",
+                "MODIFICAR",
+            ):
+                messages.error(
+                    request,
+                    "No tiene permisos para modificar roles."
+                )
+
+                return redirect(
+                    reverse_lazy("security:rol_permiso_list")
+                )
+
             return self._editar_rol(request)
-        
-        
-        if accion == "eliminar_rol":
-            return self._eliminar_rol(request)
-        
+
+        if accion == "deshabilitar_rol":
+
+            if not self.usuario_tiene_permiso(
+                "Seguridad",
+                "ELIMINAR",
+            ):
+                messages.error(
+                    request,
+                    "No tiene permisos para deshabilitar roles."
+                )
+
+                return redirect(
+                reverse_lazy("security:rol_permiso_list")
+                )
+
+            return self._deshabilitar_rol(request)
+
         messages.error(
             request,
             "La acción solicitada no es válida."
@@ -312,15 +374,32 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     context_object_name = "usuarios"
 
     def get_queryset(self):
-        return (
+
+        queryset = (
             Usuario.objects
             .select_related(
                 "id_empleado",
                 "id_rol",
-                "id_sucursal"
+                "id_sucursal",
             )
             .order_by("username")
         )
+
+        busqueda = self.request.GET.get(
+            "buscar",
+            "",
+        ).strip()
+
+        if busqueda:
+
+            queryset = queryset.filter(
+                Q(username__icontains=busqueda)
+                | Q(email__icontains=busqueda)
+                | Q(id_empleado__nombre__icontains=busqueda)
+                | Q(id_empleado__apellido1__icontains=busqueda)
+            )
+
+        return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -337,6 +416,16 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
             id_rol=usuario.id_rol,
             id_permiso__id_modulo__nombre="Seguridad",
             id_permiso__accion="MODIFICAR",
+        ).exists()
+
+        context["busqueda"] = self.request.GET.get(
+            "buscar",
+            "",
+        )
+        context["puede_eliminar"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Seguridad",
+            id_permiso__accion="ELIMINAR",
         ).exists()
 
         return context
@@ -382,6 +471,57 @@ class UsuarioUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixi
         )
         messages.success(self.request, "Usuario actualizado correctamente.")
         return response   
+    
+
+class UsuarioDisableView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    AuditMixin,
+    View,
+):
+    permission_module = "Seguridad"
+    permission_action = "ELIMINAR"
+
+    audit_module = "Seguridad"
+
+    def post(self, request, id_usuario):
+
+        usuario = Usuario.objects.get(
+            id_usuario=id_usuario
+        )
+
+        if usuario.id_usuario == request.usuario.id_usuario:
+
+            messages.error(
+                request,
+                "No puede deshabilitar su propio usuario."
+            )
+
+            return redirect(
+                "security:usuario_list"
+            )
+
+        usuario.estado = False
+        usuario.save(
+            update_fields=["estado"]
+        )
+
+        self.registrar_auditoria(
+            tipo_accion="ELIMINAR",
+            descripcion=(
+                f"Se deshabilitó el usuario "
+                f"{usuario.username}"
+            ),
+        )
+
+        messages.success(
+            request,
+            "Usuario deshabilitado correctamente."
+        )
+
+        return redirect(
+            "security:usuario_list"
+        )    
     
 def login_view(request):
 

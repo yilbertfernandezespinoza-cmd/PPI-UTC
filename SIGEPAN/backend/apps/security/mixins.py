@@ -2,7 +2,6 @@ from django.shortcuts import redirect
 
 from .models import Usuario
 
-
 class SessionRequiredMixin:
     """
     Valida la sesión y carga la información del usuario autenticado.

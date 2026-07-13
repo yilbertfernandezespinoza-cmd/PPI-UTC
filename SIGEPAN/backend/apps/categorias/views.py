@@ -27,10 +27,17 @@ def editar_categoria(request, pk):
         form = CategoriaForm(instance=categoria)
     return render(request, 'categorias/editar.html', {'form': form})
 
-def eliminar_categoria(request, pk):
+def cambiar_estado_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)
-    categoria.estado = False  # deshabilitación lógica
-    categoria.save()
-    return redirect('categorias:lista_categorias')
 
+    if request.method == "POST":
+        categoria.estado = not categoria.estado
+        categoria.save()
+        return redirect("categorias:lista_categorias")
+
+    return render(
+        request,
+        "categorias/cambiar_estado.html",
+        {"categoria": categoria}
+    )
 

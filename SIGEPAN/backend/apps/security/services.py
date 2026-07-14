@@ -415,42 +415,46 @@ class MenuService:
 
         for grupo in MENU:
 
-            if grupo["modulo"] in modulos_permitidos:
+            nuevo_grupo = {
+                "modulo": grupo["modulo"],
+                "icono": grupo["icono"],
+                "opciones": [],
+                "activo": False,
+            }
 
-                nuevo_grupo = {
+            for opcion in grupo["opciones"]:
 
-                    "modulo": grupo["modulo"],
+                modulo_permiso = opcion.get(
+                    "modulo_permiso",
+                    grupo["modulo"],
+                )
 
-                    "icono": grupo["icono"],
+                if modulo_permiso not in modulos_permitidos:
+                    continue
 
-                    "opciones": [],
+                nueva_opcion = opcion.copy()
 
-                    "activo": False,
+                nueva_opcion.pop(
+                    "modulo_permiso",
+                    None,
+                )
 
-                }
+                url = reverse(opcion["url"])
 
-                for opcion in grupo["opciones"]:
+                nueva_opcion["url"] = url
 
-                    nueva_opcion = opcion.copy()
+                nueva_opcion["activa"] = (
+                    request.path == url
+                )
 
-                    url = reverse(opcion["url"])
+                if nueva_opcion["activa"]:
+                    nuevo_grupo["activo"] = True
 
-                    nueva_opcion["url"] = url
+                nuevo_grupo["opciones"].append(
+                    nueva_opcion
+                )
 
-                    # ¿La página actual corresponde a esta opción?
-                    nueva_opcion["activa"] = (
-                        request.path == url
-                    )
-
-                    # Si una opción está activa,
-                    # el grupo también debe estar activo.
-                    if nueva_opcion["activa"]:
-
-                        nuevo_grupo["activo"] = True
-
-                    nuevo_grupo["opciones"].append(
-                        nueva_opcion
-                    )
-
+            if nuevo_grupo["opciones"]:
                 menu.append(nuevo_grupo)
-        return menu          
+
+        return menu        

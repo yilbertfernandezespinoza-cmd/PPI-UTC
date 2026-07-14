@@ -4,6 +4,23 @@
 
     <div class="container-fluid">
 
+        <ul class="navbar-nav">
+
+            <li class="nav-item">
+
+                <a class="nav-link"
+                    data-lte-toggle="sidebar"
+                    href="#"
+                    role="button">
+
+                    <i class="bi bi-list"></i>
+
+                </a>
+
+            </li>
+
+        </ul>
+
         <a href="{% url 'home' %}" class="navbar-brand d-flex align-items-center">
 
             <img src="{% static 'img/logos/sigepan-icon.png' %}"
@@ -16,7 +33,7 @@
 
         <ul class="navbar-nav ms-auto">
 
-            <li class="nav-item">
+            <li class="nav-item d-none d-md-block">
 
                 <span class="nav-link">
 
@@ -33,9 +50,9 @@
                     class="nav-link text-danger">
 
                     <i class="bi bi-box-arrow-right"></i>
-
+                    <span class="d-none d-md-inline">
                     Cerrar sesión
-
+                    </span>
                 </a>
 
             </li>

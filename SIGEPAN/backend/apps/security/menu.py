@@ -46,6 +46,31 @@ MENU = [
     },
 
     {
+        "modulo": "Catálogos",
+        "icono": "bi-boxes",
+        "opciones": [
+            {
+                "modulo_permiso": "Categorías",
+                "titulo": "Categorías",
+                "url": "categorias:lista_categorias",
+                "icono": "bi-tags",
+            },
+            {
+                "modulo_permiso": "Productos",
+                "titulo": "Productos",
+                "url": "productos:lista_productos",
+                "icono": "bi-box",
+            },
+            {
+                "modulo_permiso": "Clientes",
+                "titulo": "Clientes",
+                "url": "clientes:lista_clientes",
+                "icono": "bi-people",
+            },
+        ]
+    },
+
+    {
         "modulo": "Seguridad",
         "icono": "bi-shield-lock",
         "opciones": [

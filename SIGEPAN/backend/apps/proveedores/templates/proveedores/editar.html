@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">{% if request.resolver_match.url_name == 'nuevo_proveedor' %}Nuevo Proveedor{% else %}Editar Proveedor{% endif %}</h3>
+        <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary float-right">Volver</a>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            {% if field.name != 'estado' %}
+              <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+              </div>
+            {% endif %}
+          {% endfor %}
+
+          <!-- Estado unificado -->
+          <div class="form-group">
+            <label for="id_estado">Estado:</label><br>
+            <input type="checkbox" id="id_estado" name="estado" {% if form.instance.estado %}checked{% endif %}>
+            <span id="estado_label" class="{% if form.instance.estado %}text-success{% else %}text-danger{% endif %}">
+              {% if form.instance.estado %}Activo{% else %}Inactivo{% endif %}
+            </span>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            {% if request.resolver_match.url_name == 'nuevo_proveedor' %}Guardar{% else %}Actualizar{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const checkbox = document.getElementById('id_estado');
+  const label = document.getElementById('estado_label');
+  checkbox.addEventListener('change', function() {
+    if (this.checked) {
+      label.textContent = 'Activo';
+      label.classList.remove('text-danger');
+      label.classList.add('text-success');
+    } else {
+      label.textContent = 'Inactivo';
+      label.classList.remove('text-success');
+      label.classList.add('text-danger');
+    }
+  });
+</script>
+{% endblock %}

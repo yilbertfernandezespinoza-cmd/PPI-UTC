@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Lista de Clientes</h3>
+        <a href="{% url 'clientes:nuevo_cliente' %}" class="btn btn-primary float-right">Nuevo Cliente</a>
+      </div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Identificación</th>
+              <th>Nombre</th>
+              <th>Apellidos</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th>Dirección</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in clientes %}
+            <tr>
+              <td>{{ cliente.identificacion }}</td>
+              <td>{{ cliente.nombre }}</td>
+              <td>{{ cliente.apellido1 }} {{ cliente.apellido2 }}</td>
+              <td>{{ cliente.telefono }}</td>
+              <td>{{ cliente.correo }}</td>
+              <td>{{ cliente.direccion }}</td>
+              <td>
+                <span class="{% if cliente.estado %}text-success{% else %}text-danger{% endif %}">
+                  {{ cliente.estado|yesno:"Activo,Inactivo" }}
+                </span>
+              </td>
+              <td>
+                <a href="{% url 'clientes:editar_cliente' cliente.id_cliente %}" class="btn btn-primary btn-sm">Editar</a>
+                <a href="{% url 'clientes:eliminar_cliente' cliente.id_cliente %}" class="btn btn-danger btn-sm">Eliminar</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

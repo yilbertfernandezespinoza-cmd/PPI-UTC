@@ -14,73 +14,257 @@
 
     {% csrf_token %}
 
+    {% if form.non_field_errors %}
+
+        <div class="alert alert-danger">
+
+            {{ form.non_field_errors }}
+
+        </div>
+
+    {% endif %}
+
     <div class="row">
 
         <div class="col-md-6 mb-3">
-            <label class="form-label">Empleado</label>
+
+            <label class="form-label">
+                Empleado
+            </label>
+
             {{ form.id_empleado }}
+
+            {% for error in form.id_empleado.errors %}
+
+                <div class="text-danger">
+                    {{ error }}
+                </div>
+
+            {% endfor %}
+
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="form-label">Rol</label>
+
+            <label class="form-label">
+                Correo
+            </label>
+
+            <input
+                type="email"
+                id="correoEmpleado"
+                class="form-control"
+                readonly
+                value="{% if object %}{{ object.id_empleado.correo|default:'' }}{% endif %}"
+            >
+
+        </div>
+
+        <div class="col-md-6 mb-3">
+
+            <label class="form-label">
+                Usuario
+            </label>
+
+            <input
+                type="text"
+                id="usernameGenerado"
+                class="form-control"
+                readonly
+                value="{% if object %}{{ object.username }}{% endif %}"
+            >
+
+        </div>
+
+        <div class="col-md-6 mb-3">
+
+            <label class="form-label">
+                Rol
+            </label>
+
             {{ form.id_rol }}
+
+            {% for error in form.id_rol.errors %}
+
+                <div class="text-danger">
+                    {{ error }}
+                </div>
+
+            {% endfor %}
+
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="form-label">Sucursal</label>
+
+            <label class="form-label">
+                Sucursal
+            </label>
+
             {{ form.id_sucursal }}
+
+            {% for error in form.id_sucursal.errors %}
+
+                <div class="text-danger">
+                    {{ error }}
+                </div>
+
+            {% endfor %}
+
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="form-label">Usuario</label>
-            {{ form.username }}
-        </div>
 
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Contraseña</label>
+            <label class="form-label">
+                Contraseña
+            </label>
+
             {{ form.password }}
+
+            {% for error in form.password.errors %}
+
+                <div class="text-danger">
+                    {{ error }}
+                </div>
+
+            {% endfor %}
+
         </div>
 
         <div class="col-md-6 mb-3">
-            <label class="form-label">Correo</label>
-            {{ form.email }}
-        </div>
 
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Google Email</label>
-            {{ form.google_email }}
-        </div>
+            <label class="form-label">
+                Confirmar contraseña
+            </label>
 
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Google ID</label>
-            {{ form.google_id }}
+            {{ form.confirmar_password }}
+
+            {% for error in form.confirmar_password.errors %}
+
+                <div class="text-danger">
+                    {{ error }}
+                </div>
+
+            {% endfor %}
+
         </div>
 
         <div class="col-md-12 mb-3">
-            <label class="form-label">Google Token</label>
-            {{ form.google_token }}
-        </div>
 
-        <div class="col-md-12 mb-3">
             <div class="form-check">
+
                 {{ form.estado }}
+
                 <label class="form-check-label">
                     Activo
                 </label>
+
             </div>
+
         </div>
 
     </div>
 
-    <button type="submit" class="btn btn-success">
+    <button
+        type="submit"
+        class="btn btn-success"
+    >
         Guardar
     </button>
 
-    <a href="{% url 'security:usuario_list' %}"
-       class="btn btn-secondary">
+    <a
+        href="{% url 'security:usuario_list' %}"
+        class="btn btn-secondary"
+    >
         Cancelar
     </a>
 
 </form>
+
+
+{% if not object %}
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const selectEmpleado =
+            document.getElementById("id_id_empleado");
+
+        const correoEmpleado =
+            document.getElementById("correoEmpleado");
+
+        const usernameGenerado =
+            document.getElementById("usernameGenerado");
+
+
+        async function cargarDatosEmpleado() {
+
+            const empleadoId =
+                selectEmpleado.value;
+
+            correoEmpleado.value = "";
+            usernameGenerado.value = "";
+
+            if (!empleadoId) {
+                return;
+            }
+
+            try {
+
+                const respuesta = await fetch(
+                    `/security/usuarios/empleado/${empleadoId}/datos/`
+                );
+
+                const datos = await respuesta.json();
+
+                if (!respuesta.ok) {
+
+                    alert(
+                        datos.error ||
+                        "No fue posible obtener los datos del empleado."
+                    );
+
+                    selectEmpleado.value = "";
+
+                    return;
+                }
+
+                correoEmpleado.value =
+                    datos.correo;
+
+                usernameGenerado.value =
+                    datos.username;
+
+            }
+
+            catch (error) {
+
+                alert(
+                    "Ocurrió un error al consultar "
+                    + "los datos del empleado."
+                );
+
+            }
+
+        }
+
+
+        selectEmpleado.addEventListener(
+            "change",
+            cargarDatosEmpleado
+        );
+
+        if(selectEmpleado.value){
+            cargarDatosEmpleado();
+        }
+
+    }
+);
+
+</script>
+
+{% endif %}
 
 {% endblock %}

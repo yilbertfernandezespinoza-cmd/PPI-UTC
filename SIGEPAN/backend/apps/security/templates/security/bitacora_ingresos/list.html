@@ -10,6 +10,82 @@
 
     <div class="card-body">
 
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+                    Usuario
+                </label>
+
+                <input
+                    type="text"
+                    name="usuario"
+                    class="form-control"
+                    value="{{ usuario }}"
+                    placeholder="Buscar por usuario"
+                >
+
+            </div>
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Fecha inicio
+                </label>
+
+                <input
+                    type="date"
+                    name="fecha_inicio"
+                    class="form-control"
+                    value="{{ fecha_inicio }}"
+                >
+
+            </div>
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Fecha fin
+                </label>
+
+                <input
+                    type="date"
+                    name="fecha_fin"
+                    class="form-control"
+                    value="{{ fecha_fin }}"
+                >
+
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary w-100"
+                >
+                    Consultar
+                </button>
+
+            </div>
+
+        </form>
+
+        {% if usuario or fecha_inicio or fecha_fin %}
+
+            <div class="mb-3">
+
+                <a
+                    href="{% url 'security:bitacora_ingresos' %}"
+                    class="btn btn-outline-secondary btn-sm"
+                >
+                    Limpiar filtros
+                </a>
+
+            </div>
+
+        {% endif %}
+
         <div
             class="table-responsive"
             style="max-height: 500px; overflow-y: auto;"

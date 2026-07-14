@@ -8,11 +8,15 @@ from .views import (
     UsuarioCreateView,
     UsuarioUpdateView,
     UsuarioDisableView,
+    UsuarioEmpleadoDatosView,
 
     RolPermisoListView,
     
     BitacoraIngresosListView,
     BitacoraMovimientosListView,
+
+    recuperar_password_view,
+    restablecer_password_view,
 )
 
 app_name = "security"
@@ -22,6 +26,18 @@ urlpatterns = [
         "login/",
         login_view,
         name="login",
+    ),
+
+    path(
+        "recuperar-contrasena/",
+        recuperar_password_view,
+        name="recuperar_password",
+    ),
+
+    path(
+        "restablecer-contrasena/<str:token>/",
+        restablecer_password_view,
+        name="restablecer_password",
     ),
 
     path(
@@ -46,6 +62,12 @@ urlpatterns = [
         "usuarios/nuevo/",
         UsuarioCreateView.as_view(),
         name="usuario_create",
+    ),
+
+    path(
+        "usuarios/empleado/<int:id_empleado>/datos/",
+        UsuarioEmpleadoDatosView.as_view(),
+        name="usuario_empleado_datos",
     ),
 
     path(

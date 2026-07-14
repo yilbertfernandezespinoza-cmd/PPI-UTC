@@ -1,14 +1,80 @@
 import logging
+import hashlib
+import unicodedata
 from .repositories import (
     RolRepository, PermisoRepository, 
     RolPermisoRepository, LogAccionesRepository)
-from .models import LogAcciones, RolPermiso, Permiso
+from .models import LogAcciones, RolPermiso, Permiso, Usuario
 from apps.configuracion.models import Modulo
 from .menu import MENU
 from django.urls import reverse
 from django.db import transaction
+from django.core import signing
+from django.core.mail import send_mail
+from django.db.models import Q
+from django.urls import reverse
+
 
 logger = logging.getLogger(__name__)
+
+class UsuarioService:
+    """
+    Servicio para gestionar la lógica de negocio de usuarios.
+    """
+
+    @staticmethod
+    def normalizar_texto(texto):
+        """
+        Convierte un texto a minúsculas y elimina tildes.
+        """
+
+        texto = texto.strip().lower()
+
+        texto = unicodedata.normalize(
+            "NFKD",
+            texto,
+        )
+
+        return "".join(
+            caracter
+            for caracter in texto
+            if not unicodedata.combining(caracter)
+        )
+
+    @classmethod
+    def generar_username(cls, empleado):
+        """
+        Genera un nombre de usuario único utilizando
+        la inicial del nombre y el primer apellido.
+        """
+
+        inicial_nombre = cls.normalizar_texto(
+            empleado.nombre
+        )[0]
+
+        apellido = cls.normalizar_texto(
+            empleado.apellido1
+        )
+
+        username_base = (
+            f"{inicial_nombre}{apellido}"
+        )
+
+        username = username_base
+        consecutivo = 2
+
+        while Usuario.objects.filter(
+            username=username
+        ).exists():
+
+            username = (
+                f"{username_base}{consecutivo}"
+            )
+
+            consecutivo += 1
+
+        return username
+
 class RolService:
 
     @staticmethod
@@ -161,6 +227,153 @@ class RolPermisoService:
                     id_rol_id=rol_id,
                     id_permiso=permiso,
                 )
+
+class RecuperacionPasswordService:
+    """
+    Gestiona los tokens temporales para recuperación
+    de contraseña.
+    """
+
+    SALT = "security.recuperacion_password"
+    TIEMPO_EXPIRACION = 1800
+
+    @staticmethod
+    def _obtener_firma_password(usuario):
+        """
+        Genera una firma basada en la contraseña actual.
+        """
+
+        return hashlib.sha256(
+            usuario.password.encode("utf-8")
+        ).hexdigest()
+
+    @classmethod
+    def generar_token(cls, usuario):
+        """
+        Genera un token firmado para el usuario.
+        """
+
+        datos = {
+            "usuario_id": usuario.id_usuario,
+            "password_firma": cls._obtener_firma_password(
+                usuario
+            ),
+        }
+
+        return signing.dumps(
+            datos,
+            salt=cls.SALT,
+            compress=True,
+        )
+
+    @classmethod
+    def validar_token(cls, token):
+        """
+        Valida el token y devuelve el usuario asociado.
+        """
+
+        try:
+
+            datos = signing.loads(
+                token,
+                salt=cls.SALT,
+                max_age=cls.TIEMPO_EXPIRACION,
+            )
+
+            usuario = Usuario.objects.select_related(
+                "id_rol"
+            ).get(
+                id_usuario=datos["usuario_id"],
+                estado=True,
+                id_rol__estado=True,
+            )
+
+            firma_actual = cls._obtener_firma_password(
+                usuario
+            )
+
+            if firma_actual != datos["password_firma"]:
+                return None
+
+            return usuario
+
+        except (
+            signing.BadSignature,
+            signing.SignatureExpired,
+            Usuario.DoesNotExist,
+            KeyError,
+        ):
+            return None
+
+    @classmethod
+    def solicitar_recuperacion(
+        cls,
+        request,
+        identificador,
+    ):
+        """
+        Busca un usuario activo y envía el enlace
+        de recuperación de contraseña.
+        """
+
+        usuario = (
+            Usuario.objects
+            .select_related(
+                "id_rol",
+                "id_empleado",
+            )
+            .filter(
+                Q(username__iexact=identificador)
+                | Q(
+                    id_empleado__correo__iexact=identificador
+                ),
+                estado=True,
+                id_rol__estado=True,
+            )
+            .first()
+        )
+
+        if not usuario:
+            return False
+
+        correo = usuario.id_empleado.correo
+
+        if not correo:
+            return False
+
+        token = cls.generar_token(usuario)
+
+        url = request.build_absolute_uri(
+            reverse(
+                "security:restablecer_password",
+                kwargs={
+                    "token": token,
+                },
+            )
+        )
+
+        send_mail(
+            subject=(
+                "Recuperación de contraseña - SIGEPAN"
+            ),
+            message=(
+                f"Hola {usuario.username},\n\n"
+                "Se solicitó restablecer su contraseña "
+                "de SIGEPAN.\n\n"
+                f"Utilice el siguiente enlace:\n{url}\n\n"
+                "El enlace tiene una vigencia "
+                "de 30 minutos.\n\n"
+                "Si usted no solicitó este cambio, "
+                "ignore este mensaje."
+            ),
+            from_email=None,
+            recipient_list=[
+                correo,
+            ],
+        )
+
+        return True
+    
 
 class MenuService:
     """

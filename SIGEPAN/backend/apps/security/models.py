@@ -45,14 +45,6 @@ class Usuario(BaseModel):
         db_column="password"
     )
 
-    email = models.EmailField(
-        max_length=150,
-        blank=True,
-        null=True,
-        unique=True,
-        db_column="email"
-    )
-
     google_email = models.CharField(
         max_length=150,
         blank=True,

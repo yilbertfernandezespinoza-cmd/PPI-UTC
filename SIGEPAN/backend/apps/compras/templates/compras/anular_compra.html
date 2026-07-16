@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Anular compra
+</h2>
+
+
+
+<div class="alert alert-warning">
+
+
+¿Está seguro que desea anular la compra?
+
+
+<br>
+
+
+<strong>
+Compra #{{ compra.id_compra }}
+</strong>
+
+
+</div>
+
+
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+
+<button class="btn btn-danger">
+
+Confirmar anulación
+
+</button>
+
+
+
+<a href="{% url 'compras:lista_compras' %}"
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+
+</form>
+
+
+
+</div>
+
+
+{% endblock %}

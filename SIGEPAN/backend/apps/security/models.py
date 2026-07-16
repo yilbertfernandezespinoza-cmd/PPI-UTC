@@ -114,7 +114,6 @@ class Rol(BaseModel):
     def __str__(self):
         return self.nombre
     
-
 class Permiso(BaseModel):
     """
     Modelo que representa la tabla permiso.

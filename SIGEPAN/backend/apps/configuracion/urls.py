@@ -7,7 +7,9 @@ from .views import (
     SucursalListView,
     SucursalCreateView,
     SucursalUpdateView,
-    SucursalUpdateView,
+    ConfiguracionTributariaListView,
+    ConfiguracionTributariaCreateView,
+    ConfiguracionTributariaUpdateView,
 
 )
 
@@ -49,6 +51,23 @@ urlpatterns = [
         "sucursales/<int:id_sucursal>/editar/",
         SucursalUpdateView.as_view(),
         name="sucursal_update"
+    ),
+        path(
+        "tributaria/",
+        ConfiguracionTributariaListView.as_view(),
+        name="tributaria_list"
+    ),
+
+    path(
+        "tributaria/nueva/",
+        ConfiguracionTributariaCreateView.as_view(),
+        name="tributaria_create"
+    ),
+
+    path(
+        "tributaria/<int:id_configuracion_tributaria>/editar/",
+        ConfiguracionTributariaUpdateView.as_view(),
+        name="tributaria_update"
     ),
        
 ]

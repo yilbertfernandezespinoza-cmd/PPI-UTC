@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+Acerca de | SIGEPAN
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+
+    <!-- ===================================================== -->
+    <!-- LOGO -->
+    <!-- ===================================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body text-center py-1">
+
+            <img
+                src="{% static 'img/logos/sigepan-logo.png' %}"
+                alt="SIGEPAN"
+                class="img-fluid mb-4 w-100"
+                style="max-width: 480px;"
+            >
+
+            <p class="lead text-muted mb-4">
+
+                {{ descripcion }}
+
+            </p>
+
+            <span class="badge text-bg-primary fs-6">
+
+                Versión {{ version }}
+
+            </span>
+
+            <span class="badge text-bg-secondary fs-6 ms-2">
+
+                Build {{ build }}
+
+            </span>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- INFORMACIÓN GENERAL / TECNOLOGÍAS -->
+    <!-- ===================================================== -->
+
+    <div class="row">
+
+        <!-- Información General -->
+
+        <div class="col-lg-6 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+
+                        <i class="bi bi-info-circle me-2"></i>
+
+                        Información General
+
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <table class="table table-borderless mb-0">
+
+                        <tbody>
+
+                            <tr>
+
+                                <th width="35%">
+
+                                    Sistema
+
+                                </th>
+
+                                <td>
+
+                                    {{ nombre_sistema }}
+
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <th>
+
+                                    Cliente
+
+                                </th>
+
+                                <td>
+
+                                    {{ empresa }}
+
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <th>
+
+                                    Desarrollado por
+
+                                </th>
+
+                                <td>
+
+                                    {{ desarrollado_por }}
+
+                                </td>
+
+                            </tr>
+
+                            <tr>
+
+                                <th>
+
+                                    Actualización
+
+                                </th>
+
+                                <td>
+
+                                    {{ ultima_actualizacion }}
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Tecnologías -->
+
+        <div class="col-lg-6 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-header">
+
+                    <h5 class="mb-0">
+
+                        <i class="bi bi-cpu me-2"></i>
+
+                        Tecnologías
+
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    {% for tecnologia in tecnologias %}
+
+                        <span class="badge text-bg-success fs-6 me-2 mb-2">
+
+                            {{ tecnologia }}
+
+                        </span>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- DESARROLLADORES -->
+    <!-- ===================================================== -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+
+                <i class="bi bi-people me-2"></i>
+
+                Desarrolladores
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                {% for desarrollador in desarrolladores %}
+
+                    <div class="col-md-6 mb-3">
+
+                        <div class="border rounded p-3 h-100">
+
+                            <i class="bi bi-person-badge-fill me-2"></i>
+
+                            {{ desarrollador }}
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- CARACTERÍSTICAS -->
+    <!-- ===================================================== -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+
+                <i class="bi bi-stars me-2"></i>
+
+                Características del Sistema
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                {% for caracteristica in caracteristicas %}
+
+                    <div class="col-md-6 mb-3">
+
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+
+                        {{ caracteristica }}
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+   
+
+</div>
+
+{% endblock %}

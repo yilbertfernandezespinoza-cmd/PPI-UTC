@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Anular venta
+</h2>
+
+
+<div class="alert alert-warning">
+
+Está a punto de anular la venta:
+
+<strong>
+{{ venta.numero_venta }}
+</strong>
+
+
+<br>
+
+Total:
+
+₡ {{ venta.total }}
+
+
+</div>
+
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+<button type="submit"
+class="btn btn-danger">
+
+Confirmar anulación
+
+</button>
+
+
+
+<a href="{% url 'ventas:lista_ventas' %}"
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+
+
+</form>
+
+
+</div>
+
+
+{% endblock %}

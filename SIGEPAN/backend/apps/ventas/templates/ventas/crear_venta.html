@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Registrar venta
+</h2>
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+
+<h4>
+Datos generales
+</h4>
+
+
+{{ venta_form.as_p }}
+
+
+
+<hr>
+
+
+<h4>
+Productos
+</h4>
+
+
+{{ detalle_formset.management_form }}
+
+
+{% for form in detalle_formset %}
+
+    <div class="card p-3 mb-2">
+
+        {{ form.as_p }}
+
+    </div>
+
+
+{% endfor %}
+
+
+
+<hr>
+
+
+
+<h4>
+Pagos
+</h4>
+
+
+{{ pago_formset.management_form }}
+
+
+
+{% for form in pago_formset %}
+
+
+<div class="card p-3 mb-2">
+
+    {{ form.as_p }}
+
+
+</div>
+
+
+{% endfor %}
+
+
+
+<button type="submit"
+        class="btn btn-success">
+
+Guardar venta
+
+</button>
+
+
+
+<a href="{% url 'ventas:lista_ventas' %}"
+   class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+
+</form>
+
+
+</div>
+
+
+{% endblock %}

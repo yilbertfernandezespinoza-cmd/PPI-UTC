@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Registrar compra
+</h2>
+
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+
+<h4>
+Datos generales
+</h4>
+
+
+{{ compra_form.as_p }}
+
+
+
+<hr>
+
+
+
+<h4>
+Productos
+</h4>
+
+
+
+{{ detalle_formset.management_form }}
+
+
+
+<table class="table">
+
+
+<thead>
+
+<tr>
+
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Precio</th>
+
+</tr>
+
+</thead>
+
+
+
+<tbody>
+
+
+{% for form in detalle_formset %}
+
+
+<tr>
+
+
+<td>
+
+{{ form.producto }}
+
+</td>
+
+
+<td>
+
+{{ form.cantidad }}
+
+</td>
+
+
+<td>
+
+{{ form.precio_unitario }}
+
+</td>
+
+
+</tr>
+
+
+{% endfor %}
+
+
+
+</tbody>
+
+
+</table>
+
+
+
+<button type="submit"
+class="btn btn-success">
+
+Guardar compra
+
+</button>
+
+
+
+<a href="{% url 'compras:lista_compras' %}"
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+
+
+</form>
+
+
+</div>
+
+
+{% endblock %}

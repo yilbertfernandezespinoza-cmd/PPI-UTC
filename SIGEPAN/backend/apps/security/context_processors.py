@@ -1,5 +1,5 @@
 from .services import MenuService
-
+from apps.core.system_info import SYSTEM_INFO
 
 def menu_usuario(request):
     """
@@ -13,5 +13,7 @@ def menu_usuario(request):
         }
 
     return {
-        "menu": MenuService.obtener_menu_usuario(request)
+        "menu": MenuService.obtener_menu_usuario(request),
+
+        "system_info": SYSTEM_INFO
     }

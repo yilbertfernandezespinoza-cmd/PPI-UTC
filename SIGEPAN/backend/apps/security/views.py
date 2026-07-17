@@ -689,6 +689,17 @@ def restablecer_password_view(request, token):
                 ]
             )
 
+            registrar_log(
+                request=request,
+                usuario=usuario,
+                modulo="Seguridad",
+                tipo_accion="CAMBIAR_PASSWORD",
+                descripcion=(
+                    "El usuario restableció su contraseña "
+                    "correctamente."
+                ),
+            )
+
             messages.success(
                 request,
                 (

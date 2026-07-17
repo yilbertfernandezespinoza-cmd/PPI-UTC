@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}
+Configuración Tributaria | SIGEPAN
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+            <h1 class="h3 mb-0">
+                Configuración Tributaria
+            </h1>
+
+            <p class="text-muted mb-0">
+                Administración de impuestos y porcentajes tributarios.
+            </p>
+        </div>
+        {%if puede_crear%}
+        <a
+            href="{% url 'configuracion:tributaria_create' %}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-plus-circle"></i>
+            Nueva configuración
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-striped table-hover align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Porcentaje</th>
+                            <th>Compras</th>
+                            <th>Ventas</th>
+                            <th>Estado</th>
+                            {% if puede_modificar %}
+                                <th class="text-end">Acciones</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for configuracion in configuraciones_tributarias %}
+
+                            <tr>
+
+                                <td>
+                                    {{ configuracion.nombre }}
+                                </td>
+
+                                <td>
+                                    {{ configuracion.descripcion|default:"-" }}
+                                </td>
+
+                                <td>
+                                    {{ configuracion.porcentaje }}%
+                                </td>
+
+                                <td>
+                                    {% if configuracion.aplica_compras %}
+                                        <span class="badge text-bg-success">
+                                            Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="badge text-bg-secondary">
+                                            No
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if configuracion.aplica_ventas %}
+                                        <span class="badge text-bg-success">
+                                            Sí
+                                        </span>
+                                    {% else %}
+                                        <span class="badge text-bg-secondary">
+                                            No
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if configuracion.estado %}
+                                        <span class="badge text-bg-success">
+                                            Activo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger">
+                                            Inactivo
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                {% if puede_modificar%}
+                                <td class="text-end">
+                                    
+                                    <a
+                                        href="{% url 'configuracion:tributaria_update' configuracion.id_configuracion_tributaria %}"
+                                        class="btn btn-sm btn-warning"
+                                    >
+                                        <i class="bi bi-pencil"></i>
+                                        Editar
+                                    </a>
+                                    
+                                </td>
+                                {% endif %}
+                            </tr>
+
+                        {% empty %}
+
+                            <tr>
+                                <td
+                                    colspan="{% if puede_modificar %}7{% else %}6{% endif %}"
+                                    class="text-center text-muted py-4"
+                                >
+                                    No existen configuraciones tributarias registradas.
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

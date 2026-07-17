@@ -33,6 +33,11 @@ MENU = [
                 "icono": "bi-building",
             },
             {
+                "titulo": "Configuración Tributaria",
+                "url": "configuracion:tributaria_list",
+                "icono": "bi-percent",
+            },
+            {
                 "titulo": "Cargos",
                 "url": "empleados:cargo_list",
                 "icono": "bi-briefcase",
@@ -94,6 +99,12 @@ MENU = [
                 "titulo": "Bitácora de Movimientos",
                 "url": "security:bitacora_movimientos",
                 "icono": "bi-journal-text",
+            },
+
+            {
+                "titulo": "Acerca de SIGEPAN",
+                "url":"acerca_de",
+                "icono":"bi-info-circle",
             },
 
         ]

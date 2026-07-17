@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if object %}
+Editar Configuración Tributaria
+{% else %}
+Nueva Configuración Tributaria
+{% endif %}
+| SIGEPAN
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="mb-3">
+
+        <h1 class="h3 mb-0">
+
+            {% if object %}
+                Editar Configuración Tributaria
+            {% else %}
+                Nueva Configuración Tributaria
+            {% endif %}
+
+        </h1>
+
+        <p class="text-muted mb-0">
+            Configure el porcentaje y las operaciones donde aplica.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <form method="post" novalidate>
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+
+                    <div class="alert alert-danger">
+
+                        {% for error in form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+                <div class="mb-3">
+
+                    <label
+                        for="{{ form.nombre.id_for_label }}"
+                        class="form-label"
+                    >
+                        Nombre
+                    </label>
+
+                    {{ form.nombre }}
+
+                    {% for error in form.nombre.errors %}
+                        <div class="text-danger small">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label
+                        for="{{ form.descripcion.id_for_label }}"
+                        class="form-label"
+                    >
+                        Descripción
+                    </label>
+
+                    {{ form.descripcion }}
+
+                    {% for error in form.descripcion.errors %}
+                        <div class="text-danger small">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label
+                        for="{{ form.porcentaje.id_for_label }}"
+                        class="form-label"
+                    >
+                        Porcentaje
+                    </label>
+
+                    <div class="input-group">
+
+                        {{ form.porcentaje }}
+
+                        <span class="input-group-text">
+                            %
+                        </span>
+
+                    </div>
+
+                    {% for error in form.porcentaje.errors %}
+                        <div class="text-danger small">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+
+                </div>
+
+                <div class="form-check mb-3">
+
+                    {{ form.aplica_compras }}
+
+                    <label
+                        for="{{ form.aplica_compras.id_for_label }}"
+                        class="form-check-label"
+                    >
+                        Aplica a compras
+                    </label>
+
+                </div>
+
+                <div class="form-check mb-3">
+
+                    {{ form.aplica_ventas }}
+
+                    <label
+                        for="{{ form.aplica_ventas.id_for_label }}"
+                        class="form-check-label"
+                    >
+                        Aplica a ventas
+                    </label>
+
+                </div>
+
+                <div class="form-check mb-4">
+
+                    {{ form.estado }}
+
+                    <label
+                        for="{{ form.estado.id_for_label }}"
+                        class="form-check-label"
+                    >
+                        Activo
+                    </label>
+
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        <i class="bi bi-save"></i>
+                        Guardar
+                    </button>
+
+                    <a
+                        href="{% url 'configuracion:tributaria_list' %}"
+                        class="btn btn-secondary"
+                    >
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

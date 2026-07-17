@@ -78,5 +78,8 @@ class LogAccionesRepository:
                 "CREAR",
                 "MODIFICAR",
                 "ELIMINAR",
+                "ACCESO_DENEGADO",
+                "RECUPERAR_PASSWORD",
+                "CAMBIAR_PASSWORD",
             ]
         ).order_by("-fecha_hora")      

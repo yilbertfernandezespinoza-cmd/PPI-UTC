@@ -199,6 +199,6 @@ EMAIL_HOST_PASSWORD = os.getenv(
 
 DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL",
-    "SIGEPAN <no-reply@sigepan.local>",
+    "Y&C SYSTEMS <soporte@ycsystemscr.com>",
 )
 

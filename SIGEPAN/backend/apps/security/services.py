@@ -7,12 +7,18 @@ from .repositories import (
 from .models import LogAcciones, RolPermiso, Permiso, Usuario
 from apps.configuracion.models import Modulo
 from .menu import MENU
+
 from django.urls import reverse
 from django.db import transaction
 from django.core import signing
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.db.models import Q
 from django.urls import reverse
+from django.template.loader import render_to_string
+from django.conf import settings
+
+from email.mime.image import MIMEImage
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -352,24 +358,92 @@ class RecuperacionPasswordService:
             )
         )
 
-        send_mail(
-            subject=(
-                "Recuperación de contraseña - SIGEPAN"
+        contexto = {
+            "titulo": "Recuperación de contraseña",
+            "nombre": str(usuario.id_empleado),
+            "url": url,
+            "tiempo_expiracion": 30,
+        }
+
+        html = render_to_string(
+            "emails/email_recuperar_password.html",
+            contexto,
+        )
+
+        correo_html = EmailMultiAlternatives(
+            subject="Recuperación de contraseña - SIGEPAN",
+            body=(
+                "Su cliente de correo no soporta "
+                "contenido HTML."
             ),
-            message=(
-                f"Hola {usuario.username},\n\n"
-                "Se solicitó restablecer su contraseña "
-                "de SIGEPAN.\n\n"
-                f"Utilice el siguiente enlace:\n{url}\n\n"
-                "El enlace tiene una vigencia "
-                "de 30 minutos.\n\n"
-                "Si usted no solicitó este cambio, "
-                "ignore este mensaje."
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[correo],
+        )
+
+        correo_html.attach_alternative(
+            html,
+            "text/html",
+        )
+
+        ruta_logo_sigepan = (
+            Path(settings.BASE_DIR)
+            / "static"
+            / "img"
+            / "logos"
+            / "sigepan-logo.png"
+        )
+
+        with open(ruta_logo_sigepan, "rb") as archivo:
+            logo_sigepan = MIMEImage(archivo.read())
+
+        logo_sigepan.add_header(
+            "Content-ID",
+            "<sigepan_logo>",
+        )
+
+        logo_sigepan.add_header(
+            "Content-Disposition",
+            "inline",
+            filename="sigepan-logo.png",
+        )
+
+        correo_html.attach(logo_sigepan)
+
+
+        ruta_logo_yc = (
+            Path(settings.BASE_DIR)
+            / "static"
+            / "img"
+            / "logos"
+            / "Y&C_fondo_transparente.png"
+        )
+
+        with open(ruta_logo_yc, "rb") as archivo:
+            logo_yc = MIMEImage(archivo.read())
+
+        logo_yc.add_header(
+            "Content-ID",
+            "<ycsystems_logo>",
+        )
+
+        logo_yc.add_header(
+            "Content-Disposition",
+            "inline",
+            filename="Y&C_fondo_transparente.png",
+        )
+
+        correo_html.attach(logo_yc)
+
+        correo_html.send()
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Seguridad",
+            tipo_accion="RECUPERAR_PASSWORD",
+            descripcion=(
+                "El usuario solicitó recuperar su contraseña."
             ),
-            from_email=None,
-            recipient_list=[
-                correo,
-            ],
         )
 
         return True

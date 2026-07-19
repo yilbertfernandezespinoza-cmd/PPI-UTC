@@ -8,67 +8,103 @@
     Nuevo Cargo
 </a>
 
-<table class="table table-striped">
+<div id="tablaCargos"></div>
 
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
+{% endblock %}
 
-    <tbody>
+{% block js %}
 
-    {% for cargo in cargos %}
+<script>
 
-        <tr>
+const cargos = [
 
-            <td>{{ cargo.id_cargo }}</td>
+{% for cargo in cargos %}
 
-            <td>{{ cargo.nombre }}</td>
+{
+    id: {{ cargo.id_cargo }},
+    nombre: "{{ cargo.nombre|escapejs }}",
+    descripcion: "{{ cargo.descripcion|default:'-'|escapejs }}",
+    estado: {{ cargo.estado|yesno:"true,false" }},
+    editar: "{% url 'empleados:cargo_update' cargo.id_cargo %}"
+}{% if not forloop.last %},{% endif %}
 
-            <td>{{ cargo.descripcion }}</td>
+{% endfor %}
 
-            <td>
-                {% if cargo.estado %}
-                    <span class="badge bg-success">Activo</span>
-                {% else %}
-                    <span class="badge bg-danger">Inactivo</span>
-                {% endif %}
-            </td>
+];
 
-            <td>
+console.log("Cargos:", cargos);
 
-                <a href="{% url 'empleados:cargo_update' cargo.id_cargo %}"
-                   class="btn btn-warning btn-sm">
+const columns = [
 
-                    Editar
+    {
+        title: "ID",
+        field: "id",
+        hozAlign: "center",
+        width: 90
+    },
 
-                </a>
+    {
+        title: "Nombre",
+        field: "nombre"
+    },
 
-            </td>
+    {
+        title: "Descripción",
+        field: "descripcion"
+    },
 
-        </tr>
+    {
+        title: "Estado",
+        field: "estado",
+        hozAlign: "center",
 
-    {% empty %}
+        formatter(cell) {
 
-        <tr>
+            return cell.getValue()
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-danger">Inactivo</span>';
 
-            <td colspan="5" class="text-center">
+        }
 
-                No existen cargos registrados.
+    },
 
-            </td>
+    {
+        title: "Acciones",
+        hozAlign: "center",
 
-        </tr>
+        formatter(cell) {
 
-    {% endfor %}
+            const data = cell.getRow().getData();
 
-    </tbody>
+            return `
+                <div class="d-flex justify-content-center">
 
-</table>
+                    <a
+                        href="${data.editar}"
+                        class="btn btn-warning btn-sm"
+                    >
+                        Editar
+                    </a>
+
+                </div>
+            `;
+
+        }
+
+    }
+
+];
+
+SIGEPAN.table.create({
+
+    selector: "#tablaCargos",
+
+    data: cargos,
+
+    columns
+
+});
+
+</script>
 
 {% endblock %}

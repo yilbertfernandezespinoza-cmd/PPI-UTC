@@ -8,80 +8,121 @@
     Nuevo Empleado
 </a>
 
-<table class="table table-striped">
+<div id="tablaEmpleados"></div>
 
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Identificación</th>
-            <th>Nombre Completo</th>
-            <th>Cargo</th>
-            <th>Teléfono</th>
-            <th>Correo</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
+{% endblock %}
 
-    <tbody>
+{% block js %}
 
-    {% for empleado in empleados %}
+<script>
 
-        <tr>
+const empleados = [
 
-            <td>{{ empleado.id_empleado }}</td>
+{% for empleado in empleados %}
 
-            <td>{{ empleado.identificacion }}</td>
+{
+    id: {{ empleado.id_empleado }},
+    identificacion: "{{ empleado.identificacion|escapejs }}",
+    nombre_completo: "{{ empleado.nombre|escapejs }} {{ empleado.apellido1|escapejs }} {{ empleado.apellido2|default:''|escapejs }}",
+    cargo: "{{ empleado.id_cargo.nombre|escapejs }}",
+    telefono: "{{ empleado.telefono|default:'-'|escapejs }}",
+    correo: "{{ empleado.correo|default:'-'|escapejs }}",
+    estado: {{ empleado.estado|yesno:"true,false" }},
+    editar: "{% url 'empleados:empleado_update' empleado.id_empleado %}"
+}{% if not forloop.last %},{% endif %}
 
-            <td>
-                {{ empleado.nombre }}
-                {{ empleado.apellido1 }}
-                {{ empleado.apellido2 }}
-            </td>
+{% endfor %}
 
-            <td>{{ empleado.id_cargo.nombre }}</td>
+];
 
-            <td>{{ empleado.telefono }}</td>
+console.log("Empleados:", empleados);
 
-            <td>{{ empleado.correo }}</td>
+const columns = [
 
-            <td>
-                {% if empleado.estado %}
-                    <span class="badge bg-success">Activo</span>
-                {% else %}
-                    <span class="badge bg-danger">Inactivo</span>
-                {% endif %}
-            </td>
+    {
+        title: "ID",
+        field: "id",
+        hozAlign: "center",
+        width: 90
+    },
 
-            <td>
+    {
+        title: "Identificación",
+        field: "identificacion"
+    },
 
-                <a href="{% url 'empleados:empleado_update' empleado.id_empleado %}"
-                   class="btn btn-warning btn-sm">
+    {
+        title: "Nombre Completo",
+        field: "nombre_completo"
+    },
 
-                    Editar
+    {
+        title: "Cargo",
+        field: "cargo"
+    },
 
-                </a>
+    {
+        title: "Teléfono",
+        field: "telefono"
+    },
 
-            </td>
+    {
+        title: "Correo",
+        field: "correo"
+    },
 
-        </tr>
+    {
+        title: "Estado",
+        field: "estado",
+        hozAlign: "center",
 
-    {% empty %}
+        formatter(cell) {
 
-        <tr>
+            return cell.getValue()
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-danger">Inactivo</span>';
 
-            <td colspan="8" class="text-center">
+        }
 
-                No existen empleados registrados.
+    },
 
-            </td>
+    {
+        title: "Acciones",
+        hozAlign: "center",
 
-        </tr>
+        formatter(cell) {
 
-    {% endfor %}
+            const data = cell.getRow().getData();
 
-    </tbody>
+            return `
+                <div class="d-flex justify-content-center">
 
-</table>
+                    <a
+                        href="${data.editar}"
+                        class="btn btn-warning btn-sm"
+                    >
+                        Editar
+                    </a>
+
+                </div>
+            `;
+
+        }
+
+    }
+
+];
+
+SIGEPAN.table.create({
+
+    selector: "#tablaEmpleados",
+
+    data: empleados,
+
+    columns
+
+});
+
+</script>
 
 {% endblock %}

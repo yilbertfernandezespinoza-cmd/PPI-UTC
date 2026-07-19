@@ -34,115 +34,135 @@ Configuración Tributaria | SIGEPAN
 
         <div class="card-body">
 
-            <div class="table-responsive">
-
-                <table class="table table-striped table-hover align-middle">
-
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Porcentaje</th>
-                            <th>Compras</th>
-                            <th>Ventas</th>
-                            <th>Estado</th>
-                            {% if puede_modificar %}
-                                <th class="text-end">Acciones</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        {% for configuracion in configuraciones_tributarias %}
-
-                            <tr>
-
-                                <td>
-                                    {{ configuracion.nombre }}
-                                </td>
-
-                                <td>
-                                    {{ configuracion.descripcion|default:"-" }}
-                                </td>
-
-                                <td>
-                                    {{ configuracion.porcentaje }}%
-                                </td>
-
-                                <td>
-                                    {% if configuracion.aplica_compras %}
-                                        <span class="badge text-bg-success">
-                                            Sí
-                                        </span>
-                                    {% else %}
-                                        <span class="badge text-bg-secondary">
-                                            No
-                                        </span>
-                                    {% endif %}
-                                </td>
-
-                                <td>
-                                    {% if configuracion.aplica_ventas %}
-                                        <span class="badge text-bg-success">
-                                            Sí
-                                        </span>
-                                    {% else %}
-                                        <span class="badge text-bg-secondary">
-                                            No
-                                        </span>
-                                    {% endif %}
-                                </td>
-
-                                <td>
-                                    {% if configuracion.estado %}
-                                        <span class="badge text-bg-success">
-                                            Activo
-                                        </span>
-                                    {% else %}
-                                        <span class="badge text-bg-danger">
-                                            Inactivo
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                {% if puede_modificar%}
-                                <td class="text-end">
-                                    
-                                    <a
-                                        href="{% url 'configuracion:tributaria_update' configuracion.id_configuracion_tributaria %}"
-                                        class="btn btn-sm btn-warning"
-                                    >
-                                        <i class="bi bi-pencil"></i>
-                                        Editar
-                                    </a>
-                                    
-                                </td>
-                                {% endif %}
-                            </tr>
-
-                        {% empty %}
-
-                            <tr>
-                                <td
-                                    colspan="{% if puede_modificar %}7{% else %}6{% endif %}"
-                                    class="text-center text-muted py-4"
-                                >
-                                    No existen configuraciones tributarias registradas.
-                                </td>
-                            </tr>
-
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
+            <div id="tablaConfiguracionTributaria"></div>
 
         </div>
 
     </div>
 
 </div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const configuraciones = [
+
+{% for configuracion in configuraciones_tributarias %}
+
+{
+    id: {{ configuracion.id_configuracion_tributaria }},
+    nombre: "{{ configuracion.nombre|escapejs }}",
+    descripcion: "{{ configuracion.descripcion|default:'-'|escapejs }}",
+    porcentaje: "{{ configuracion.porcentaje }}%",
+    compras: {{ configuracion.aplica_compras|yesno:"true,false" }},
+    ventas: {{ configuracion.aplica_ventas|yesno:"true,false" }},
+    estado: {{ configuracion.estado|yesno:"true,false" }},
+    editar: "{% url 'configuracion:tributaria_update' configuracion.id_configuracion_tributaria %}"
+}{% if not forloop.last %},{% endif %}
+
+{% endfor %}
+
+];
+
+console.log("Configuraciones Tributarias:", configuraciones);
+
+SIGEPAN.table.create({
+
+    selector: "#tablaConfiguracionTributaria",
+
+    data: configuraciones,
+
+    columns: [
+
+        {
+            title: "Nombre",
+            field: "nombre"
+        },
+
+        {
+            title: "Descripción",
+            field: "descripcion"
+        },
+
+        {
+            title: "Porcentaje",
+            field: "porcentaje"
+        },
+
+        {
+            title: "Compras",
+            field: "compras",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Sí</span>'
+                    : '<span class="badge bg-secondary">No</span>';
+            }
+        },
+
+        {
+            title: "Ventas",
+            field: "ventas",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Sí</span>'
+                    : '<span class="badge bg-secondary">No</span>';
+            }
+        },
+
+        {
+            title: "Estado",
+            field: "estado",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-danger">Inactivo</span>';
+            }
+        }
+
+        {% if puede_modificar %}
+
+        ,
+        {
+            title: "Acciones",
+            hozAlign: "center",
+
+            formatter(cell) {
+
+                const data = cell.getRow().getData();
+
+                return `
+                    <div class="d-flex justify-content-center">
+
+                        <a
+                            href="${data.editar}"
+                            class="btn btn-warning btn-sm"
+                        >
+                            Editar
+                        </a>
+
+                    </div>
+                `;
+
+            }
+
+        }
+
+        {% endif %}
+
+    ]
+
+});
+
+
+</script>
 
 {% endblock %}

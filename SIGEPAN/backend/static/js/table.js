@@ -100,6 +100,86 @@ SIGEPAN.table = {
 
         return tabla;
 
+    },
+
+    postAction({
+        url,
+        csrfToken,
+        message = "¿Está seguro de realizar esta acción?"
+    }) {
+
+        if (!confirm(message)) {
+            return;
+        }
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => {
+
+            if (!response.ok) {
+                throw new Error("Error al procesar la solicitud.");
+            }
+
+            location.reload();
+
+        })
+        .catch(error => {
+
+            alert(error.message);
+
+        });
+
+    },
+
+    actions(config) {
+
+        return function (cell) {
+
+            const data = cell.getRow().getData();
+
+            let html = '<div class="d-flex gap-1 justify-content-center">';
+
+            if (config.editField && data[config.editField]) {
+
+                html += `
+                    <a
+                        href="${data[config.editField]}"
+                        class="btn btn-warning btn-sm"
+                    >
+                        Editar
+                    </a>
+                `;
+
+            }
+
+            if (
+                config.disableField &&
+                data[config.disableField] &&
+                data.estado
+            ) {
+
+                html += `
+                    <button
+                        class="btn btn-danger btn-sm btn-deshabilitar"
+                    >
+                        Deshabilitar
+                    </button>
+                `;
+
+            }
+
+            html += '</div>';
+
+            return html;
+
+
+        };
+
     }
 
 };

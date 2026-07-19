@@ -8,61 +8,115 @@
     Nueva Sucursal
 </a>
 
-<table class="table table-striped">
+<div id="tablaSucursales"></div>
 
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Dirección</th>
-            <th>Teléfono</th>
-            <th>Encargado</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
+{% endblock %}
 
-    <tbody>
+{% block js %}
 
-    {% for sucursal in sucursales %}
+<script>
 
-        <tr>
+const sucursales = [
 
-            <td>{{ sucursal.id_sucursal }}</td>
-            <td>{{ sucursal.nombre }}</td>
-            <td>{{ sucursal.direccion }}</td>
-            <td>{{ sucursal.telefono }}</td>
-            <td>{{ sucursal.encargado }}</td>
+{% for sucursal in sucursales %}
 
-            <td>
-                {% if sucursal.estado %}
-                    <span class="badge bg-success">Activo</span>
-                {% else %}
-                    <span class="badge bg-danger">Inactivo</span>
-                {% endif %}
-            </td>
+{
+    id: {{ sucursal.id_sucursal }},
+    nombre: "{{ sucursal.nombre|escapejs }}",
+    direccion: "{{ sucursal.direccion|default:'-'|escapejs }}",
+    telefono: "{{ sucursal.telefono|default:'-'|escapejs }}",
+    encargado: "{{ sucursal.encargado|default:'-'|escapejs }}",
+    estado: {{ sucursal.estado|yesno:"true,false" }},
+    editar: "{% url 'configuracion:sucursal_update' sucursal.id_sucursal %}"
+}{% if not forloop.last %},{% endif %}
 
-            <td>
-                <a href="{% url 'configuracion:sucursal_update' sucursal.id_sucursal %}"
-                   class="btn btn-warning btn-sm">
-                    Editar
-                </a>
-            </td>
+{% endfor %}
 
-        </tr>
+];
 
-    {% empty %}
+console.log("Sucursales:", sucursales);
 
-        <tr>
-            <td colspan="7" class="text-center">
-                No existen sucursales registradas.
-            </td>
-        </tr>
+const columns = [
 
-    {% endfor %}
+    {
+        title: "ID",
+        field: "id",
+        hozAlign: "center",
+        width: 90
+    },
 
-    </tbody>
+    {
+        title: "Nombre",
+        field: "nombre"
+    },
 
-</table>
+    {
+        title: "Dirección",
+        field: "direccion"
+    },
+
+    {
+        title: "Teléfono",
+        field: "telefono"
+    },
+
+    {
+        title: "Encargado",
+        field: "encargado"
+    },
+
+    {
+        title: "Estado",
+        field: "estado",
+        hozAlign: "center",
+
+        formatter(cell){
+
+            return cell.getValue()
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-danger">Inactivo</span>';
+
+        }
+
+    },
+
+    {
+        title: "Acciones",
+        hozAlign: "center",
+
+        formatter(cell) {
+
+            const data = cell.getRow().getData();
+
+            return `
+                <div class="d-flex justify-content-center">
+
+                    <a
+                        href="${data.editar}"
+                        class="btn btn-warning btn-sm"
+                    >
+                        Editar
+                    </a>
+
+                </div>
+           `;
+
+        }
+
+    }
+
+];
+
+SIGEPAN.table.create({
+
+    selector: "#tablaSucursales",
+
+    data: sucursales,
+
+    columns
+
+});
+
+</script>
 
 {% endblock %}

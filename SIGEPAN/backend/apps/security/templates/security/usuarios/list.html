@@ -4,41 +4,20 @@
 
 <h2>Usuarios</h2>
 
-<form method="get" class="row g-2 mb-3">
+<div class="row mb-3">
 
     <div class="col-md-5">
+
         <input
             type="text"
-            name="buscar"
+            id="buscarUsuarios"
             class="form-control"
-            placeholder="Buscar por usuario, empleado o correo"
-            value="{{ busqueda }}"
+            placeholder="Buscar por usuario, empleado o correo..."
         >
+
     </div>
 
-    <div class="col-auto">
-        <button
-            type="submit"
-            class="btn btn-primary"
-        >
-            <i class="bi bi-search"></i>
-            Buscar
-        </button>
-    </div>
-
-    {% if busqueda %}
-        <div class="col-auto">
-            <a
-                href="{% url 'security:usuario_list' %}"
-                class="btn btn-secondary"
-            >
-                Limpiar
-            </a>
-        </div>
-    {% endif %}
-
-</form>
-
+</div>
 
 {% if puede_crear %}
 
@@ -51,137 +30,144 @@
 
 {% endif %}
 
+<div id="tablaUsuarios"></div>
 
-<table class="table table-striped">
+{% endblock %}
 
-    <thead>
+{% block js %}
 
-        <tr>
+<script>
 
-            <th>ID</th>
-            <th>Usuario</th>
-            <th>Empleado</th>
-            <th>Rol</th>
-            <th>Sucursal</th>
-            <th>Correo</th>
-            <th>Estado</th>
+const usuarios = [
 
-            {% if puede_modificar or puede_eliminar %}
-                <th>Acciones</th>
-            {% endif %}
+{% for usuario in usuarios %}
 
-        </tr>
+{
+    id: "{{ usuario.id_usuario }}",
+    usuario: "{{ usuario.username|escapejs }}",
+    empleado: "{{ usuario.id_empleado.nombre|escapejs }} {{ usuario.id_empleado.apellido1|escapejs }}",
+    rol: "{{ usuario.id_rol.nombre|escapejs }}",
+    sucursal: "{% if usuario.id_sucursal %}{{ usuario.id_sucursal.nombre|escapejs }}{% endif %}",
+    correo: "{{ usuario.id_empleado.correo|default:''|escapejs }}",
+    estado: {{ usuario.estado|yesno:"true,false" }},
+    editar: "{% url 'security:usuario_update' usuario.id_usuario %}",
 
-    </thead>
+    deshabilitar: "{% url 'security:usuario_disable' usuario.id_usuario %}",
+    csrfToken: "{{ csrf_token }}"
+}{% if not forloop.last %},{% endif %}
 
-    <tbody>
+{% endfor %}
 
-    {% for usuario in usuarios %}
+];
 
-        <tr>
+console.log("Usuarios:", usuarios);
 
-            <td>{{ usuario.id_usuario }}</td>
+SIGEPAN.table.create({
 
-            <td>{{ usuario.username }}</td>
+    selector: "#tablaUsuarios",
 
-            <td>
-                {{ usuario.id_empleado.nombre }}
-                {{ usuario.id_empleado.apellido1 }}
-            </td>
+    search: "#buscarUsuarios",
 
-            <td>{{ usuario.id_rol.nombre }}</td>
+    data: usuarios,
 
-            <td>
+    columns: [
 
-                {% if usuario.id_sucursal %}
-                    {{ usuario.id_sucursal.nombre }}
-                {% endif %}
+        {
+            title: "ID",
+            field: "id"
+        },
 
-            </td>
+        {
+            title: "Usuario",
+            field: "usuario"
+        },
 
-            <td>{{ usuario.id_empleado.correo | default:"-" }}</td>
+        {
+            title: "Empleado",
+            field: "empleado"
+        },
 
-            <td>
+        {
+            title: "Rol",
+            field: "rol"
+        },
 
-                {% if usuario.estado %}
+        {
+            title: "Sucursal",
+            field: "sucursal"
+        },
 
-                    <span class="badge bg-success">
-                        Activo
-                    </span>
+        {
+            title: "Correo",
+            field: "correo"
+        },
 
-                {% else %}
+        {
+            title: "Estado",
+            field: "estado",
 
-                    <span class="badge bg-danger">
-                        Inactivo
-                    </span>
+            formatter(cell){
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-danger">Inactivo</span>';
+            }
+        },
 
-                {% endif %}
+        {
+            title: "Acciones",
+            hozAlign: "center",
 
-            </td>
+            formatter(cell) {
 
+                const data = cell.getRow().getData();
 
-            {% if puede_modificar or puede_eliminar %}
-
-                <td>
-
-                    {% if puede_modificar %}
+                return `
+                    <div class="d-flex gap-1 justify-content-center">
 
                         <a
-                            href="{% url 'security:usuario_update' usuario.id_usuario %}"
+                            href="${data.editar}"
                             class="btn btn-warning btn-sm"
                         >
                             Editar
                         </a>
 
-                    {% endif %}
-
-
-                    {% if puede_eliminar and usuario.estado %}
-
-                        <form
-                            method="post"
-                            action="{% url 'security:usuario_disable' usuario.id_usuario %}"
-                            class="d-inline"
-                            onsubmit="return confirm('¿Desea deshabilitar este usuario?');"
+                        <button
+                            class="btn btn-danger btn-sm btn-deshabilitar"
                         >
+                            Deshabilitar
+                        </button>
 
-                            {% csrf_token %}
+                    </div>
+                `;
 
-                            <button
-                                type="submit"
-                                class="btn btn-danger btn-sm"
-                            >
-                                Deshabilitar
-                            </button>
+            },
 
-                        </form>
+            cellClick(e, cell) {
 
-                    {% endif %}
+                if (!e.target.classList.contains("btn-deshabilitar")) {
+                    return;
+                }
 
-                </td>
+                const data = cell.getRow().getData();
 
-            {% endif %}
+                SIGEPAN.table.postAction({
 
-        </tr>
+                    url: data.deshabilitar,
 
+                    csrfToken: data.csrfToken,
+            
+                    message: "¿Desea deshabilitar este usuario?"
 
-    {% empty %}
+                });
 
-        <tr>
+            }
 
-            <td
-                colspan="{% if puede_modificar or puede_eliminar %}8{% else %}7{% endif %}"
-                class="text-center"
-            >
-                No existen usuarios registrados.
-            </td>
+        }
 
-        </tr>
+    ]
 
-    {% endfor %}
+});
 
-    </tbody>
-
-</table>
+</script>
 
 {% endblock %}

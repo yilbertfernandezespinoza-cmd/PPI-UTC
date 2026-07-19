@@ -50,6 +50,7 @@ MENU = [
         ]
     },
 
+
     {
         "modulo": "Catálogos",
         "icono": "bi-boxes",
@@ -72,6 +73,49 @@ MENU = [
                 "url": "clientes:lista_clientes",
                 "icono": "bi-people",
             },
+        ]
+    },
+
+    {
+        "modulo": "Operaciones",
+        "icono": "bi-cart-check",
+        "opciones": [
+
+            {
+                "modulo_permiso": "Proveedores",
+                "titulo": "Proveedores",
+                "url": "proveedores:lista_proveedores",
+                "icono": "bi-truck",
+            },
+
+            {
+                "modulo_permiso": "Inventario",
+                "titulo": "Inventario",
+                "url": "inventario:lista_inventario",
+                "icono": "bi-box-seam",
+            },
+
+            {
+                "modulo_permiso": "Compras",
+                "titulo": "Compras",
+                "url": "compras:lista_compras",
+                "icono": "bi-cart-plus",
+            },
+
+            {
+                "modulo_permiso": "Ventas",
+                "titulo": "Ventas",
+                "url": "ventas:lista_ventas",
+                "icono": "bi-cash-stack",
+            },
+
+            {
+                "modulo_permiso": "Caja",
+                "titulo": "Caja",
+                "url": "caja:lista_cajas",
+                "icono": "bi-safe2",
+            },
+
         ]
     },
 

@@ -63,7 +63,7 @@
             <th>Empleado</th>
             <th>Rol</th>
             <th>Sucursal</th>
-            <th>Email</th>
+            <th>Correo</th>
             <th>Estado</th>
 
             {% if puede_modificar or puede_eliminar %}
@@ -99,7 +99,7 @@
 
             </td>
 
-            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.id_empleado.correo | default:"-" }}</td>
 
             <td>
 

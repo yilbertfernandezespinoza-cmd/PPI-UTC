@@ -45,14 +45,6 @@ class Usuario(BaseModel):
         db_column="password"
     )
 
-    email = models.EmailField(
-        max_length=150,
-        blank=True,
-        null=True,
-        unique=True,
-        db_column="email"
-    )
-
     google_email = models.CharField(
         max_length=150,
         blank=True,
@@ -122,7 +114,6 @@ class Rol(BaseModel):
     def __str__(self):
         return self.nombre
     
-
 class Permiso(BaseModel):
     """
     Modelo que representa la tabla permiso.
@@ -224,7 +215,13 @@ class LogAcciones(models.Model):
         ("CREAR", "CREAR"),
         ("MODIFICAR", "MODIFICAR"),
         ("ELIMINAR", "ELIMINAR"),
-        ("ACCESO_DENEGADO","ACCESO_DENEGADO"),
+        ("CONSULTAR","CONSULTAR"),
+        ("EXPORTAR","EXPORTAR"),
+        ("IMPORTAR","IMPORTAR"),
+        ("ERROR","ERROR"),
+        ("ACCESO_DENEGADO","ACCESO DENEGADO"),
+        ("RECUPERAR_PASSWORD","RECUPERAR CONTRASEÑA"),
+        ("CAMBIAR_PASSWORD","CAMBIAR CONTRASEÑA"),
     ]
 
     tipo_accion = models.CharField(

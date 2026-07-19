@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Caja abierta
+</h2>
+
+
+
+<div class="card mb-3">
+
+
+<div class="card-body">
+
+
+<p>
+Caja:
+{{ apertura.caja }}
+</p>
+
+
+<p>
+Fecha apertura:
+{{ apertura.fecha_apertura }}
+</p>
+
+
+<p>
+Monto inicial:
+₡ {{ apertura.monto_inicial }}
+</p>
+
+
+</div>
+
+</div>
+
+
+
+<div class="d-flex justify-content-between">
+
+
+<h4>
+Movimientos
+</h4>
+
+
+<a href="{% url 'caja:movimiento_caja' apertura.id_apertura %}"
+class="btn btn-primary">
+
+Nuevo movimiento
+
+</a>
+
+
+</div>
+
+
+
+
+<table class="table">
+
+
+<thead>
+
+<tr>
+
+<th>Tipo</th>
+<th>Monto</th>
+<th>Descripción</th>
+<th>Fecha</th>
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+
+{% for movimiento in movimientos %}
+
+
+<tr>
+
+
+<td>
+
+{{ movimiento.tipo_movimiento }}
+
+</td>
+
+
+<td>
+
+₡ {{ movimiento.monto }}
+
+</td>
+
+
+<td>
+
+{{ movimiento.descripcion }}
+
+</td>
+
+
+<td>
+
+{{ movimiento.fecha_movimiento }}
+
+</td>
+
+
+</tr>
+
+
+{% empty %}
+
+
+<tr>
+
+<td colspan="4">
+
+Sin movimientos registrados.
+
+</td>
+
+</tr>
+
+
+{% endfor %}
+
+
+</tbody>
+
+
+</table>
+
+
+
+
+<a href="{% url 'caja:cerrar_caja' apertura.id_apertura %}"
+class="btn btn-danger">
+
+Cerrar caja
+
+</a>
+
+
+</div>
+
+
+{% endblock %}

@@ -99,4 +99,110 @@ class Sucursal(BaseModel):
         verbose_name_plural = "Sucursales"
 
     def __str__(self):
+
         return self.nombre    
+    
+
+class MetodoPago(models.Model):
+
+    id_metodo_pago = models.AutoField(
+        primary_key=True,
+        db_column="id_metodo_pago"
+    )
+
+
+    nombre = models.CharField(
+        max_length=100,
+        db_column="nombre"
+    )
+
+
+    descripcion = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="descripcion"
+    )
+
+
+    estado = models.BooleanField(
+        default=True,
+        db_column="estado"
+    )
+
+
+    fecha_creacion = models.DateTimeField(
+        db_column="fecha_creacion"
+    )
+
+
+    fecha_actualizacion = models.DateTimeField(
+        db_column="fecha_actualizacion"
+    )
+
+
+    class Meta:
+
+        managed = False
+
+        db_table = "metodo_pago"
+
+
+    def __str__(self):
+        return self.nombre
+
+        return self.nombre   
+
+
+class ConfiguracionTributaria(BaseModel):
+    """
+    Modelo que representa la tabla configuracion_tributaria.
+    """
+
+    id_configuracion_tributaria = models.AutoField(
+        primary_key=True,
+        db_column="id_configuracion_tributaria"
+    )
+
+    nombre = models.CharField(
+        max_length=100,
+        unique=True,
+        db_column="nombre",
+        verbose_name="Nombre"
+    )
+
+    descripcion = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_column="descripcion",
+        verbose_name="Descripción"
+    )
+
+    porcentaje = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        db_column="porcentaje",
+        verbose_name="Porcentaje"
+    )
+
+    aplica_compras = models.BooleanField(
+        default=True,
+        db_column="aplica_compras",
+        verbose_name="Aplica a compras"
+    )
+
+    aplica_ventas = models.BooleanField(
+        default=True,
+        db_column="aplica_ventas",
+        verbose_name="Aplica a ventas"
+    )
+
+    class Meta:
+        db_table = "configuracion_tributaria"
+        verbose_name = "Configuración tributaria"
+        verbose_name_plural = "Configuraciones tributarias"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.porcentaje}%)"     
+

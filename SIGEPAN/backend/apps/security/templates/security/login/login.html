@@ -66,14 +66,35 @@
 
                         </div>
 
-                        <button class="btn btn-primary w-100">
+                        <div class="d-grid gap-2">
 
-                            Ingresar
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                            >
+                                Ingresar
+                            </button>
 
-                        </button>
+                            <a
+                                href="{% url 'security:login' %}"
+                                class="btn btn-secondary"
+                            >
+                                Cancelar
+                            </a>
+
+                        </div>
 
                     </form>
 
+                    <div class="text-center mt-3">
+
+                        <a href="{% url 'security:recuperar_password' %}">
+
+                            ¿Olvidó su contraseña?
+
+                        </a>
+
+                    </div>
                 </div>
 
             </div>

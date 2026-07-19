@@ -1,14 +1,86 @@
 import logging
+import hashlib
+import unicodedata
 from .repositories import (
     RolRepository, PermisoRepository, 
     RolPermisoRepository, LogAccionesRepository)
-from .models import LogAcciones, RolPermiso, Permiso
+from .models import LogAcciones, RolPermiso, Permiso, Usuario
 from apps.configuracion.models import Modulo
 from .menu import MENU
+
 from django.urls import reverse
 from django.db import transaction
+from django.core import signing
+from django.core.mail import EmailMultiAlternatives, send_mail
+from django.db.models import Q
+from django.urls import reverse
+from django.template.loader import render_to_string
+from django.conf import settings
+
+from email.mime.image import MIMEImage
+from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
+
+class UsuarioService:
+    """
+    Servicio para gestionar la lógica de negocio de usuarios.
+    """
+
+    @staticmethod
+    def normalizar_texto(texto):
+        """
+        Convierte un texto a minúsculas y elimina tildes.
+        """
+
+        texto = texto.strip().lower()
+
+        texto = unicodedata.normalize(
+            "NFKD",
+            texto,
+        )
+
+        return "".join(
+            caracter
+            for caracter in texto
+            if not unicodedata.combining(caracter)
+        )
+
+    @classmethod
+    def generar_username(cls, empleado):
+        """
+        Genera un nombre de usuario único utilizando
+        la inicial del nombre y el primer apellido.
+        """
+
+        inicial_nombre = cls.normalizar_texto(
+            empleado.nombre
+        )[0]
+
+        apellido = cls.normalizar_texto(
+            empleado.apellido1
+        )
+
+        username_base = (
+            f"{inicial_nombre}{apellido}"
+        )
+
+        username = username_base
+        consecutivo = 2
+
+        while Usuario.objects.filter(
+            username=username
+        ).exists():
+
+            username = (
+                f"{username_base}{consecutivo}"
+            )
+
+            consecutivo += 1
+
+        return username
+
 class RolService:
 
     @staticmethod
@@ -162,6 +234,221 @@ class RolPermisoService:
                     id_permiso=permiso,
                 )
 
+class RecuperacionPasswordService:
+    """
+    Gestiona los tokens temporales para recuperación
+    de contraseña.
+    """
+
+    SALT = "security.recuperacion_password"
+    TIEMPO_EXPIRACION = 1800
+
+    @staticmethod
+    def _obtener_firma_password(usuario):
+        """
+        Genera una firma basada en la contraseña actual.
+        """
+
+        return hashlib.sha256(
+            usuario.password.encode("utf-8")
+        ).hexdigest()
+
+    @classmethod
+    def generar_token(cls, usuario):
+        """
+        Genera un token firmado para el usuario.
+        """
+
+        datos = {
+            "usuario_id": usuario.id_usuario,
+            "password_firma": cls._obtener_firma_password(
+                usuario
+            ),
+        }
+
+        return signing.dumps(
+            datos,
+            salt=cls.SALT,
+            compress=True,
+        )
+
+    @classmethod
+    def validar_token(cls, token):
+        """
+        Valida el token y devuelve el usuario asociado.
+        """
+
+        try:
+
+            datos = signing.loads(
+                token,
+                salt=cls.SALT,
+                max_age=cls.TIEMPO_EXPIRACION,
+            )
+
+            usuario = Usuario.objects.select_related(
+                "id_rol"
+            ).get(
+                id_usuario=datos["usuario_id"],
+                estado=True,
+                id_rol__estado=True,
+            )
+
+            firma_actual = cls._obtener_firma_password(
+                usuario
+            )
+
+            if firma_actual != datos["password_firma"]:
+                return None
+
+            return usuario
+
+        except (
+            signing.BadSignature,
+            signing.SignatureExpired,
+            Usuario.DoesNotExist,
+            KeyError,
+        ):
+            return None
+
+    @classmethod
+    def solicitar_recuperacion(
+        cls,
+        request,
+        identificador,
+    ):
+        """
+        Busca un usuario activo y envía el enlace
+        de recuperación de contraseña.
+        """
+
+        usuario = (
+            Usuario.objects
+            .select_related(
+                "id_rol",
+                "id_empleado",
+            )
+            .filter(
+                Q(username__iexact=identificador)
+                | Q(
+                    id_empleado__correo__iexact=identificador
+                ),
+                estado=True,
+                id_rol__estado=True,
+            )
+            .first()
+        )
+
+        if not usuario:
+            return False
+
+        correo = usuario.id_empleado.correo
+
+        if not correo:
+            return False
+
+        token = cls.generar_token(usuario)
+
+        url = request.build_absolute_uri(
+            reverse(
+                "security:restablecer_password",
+                kwargs={
+                    "token": token,
+                },
+            )
+        )
+
+        contexto = {
+            "titulo": "Recuperación de contraseña",
+            "nombre": str(usuario.id_empleado),
+            "url": url,
+            "tiempo_expiracion": 30,
+        }
+
+        html = render_to_string(
+            "emails/email_recuperar_password.html",
+            contexto,
+        )
+
+        correo_html = EmailMultiAlternatives(
+            subject="Recuperación de contraseña - SIGEPAN",
+            body=(
+                "Su cliente de correo no soporta "
+                "contenido HTML."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[correo],
+        )
+
+        correo_html.attach_alternative(
+            html,
+            "text/html",
+        )
+
+        ruta_logo_sigepan = (
+            Path(settings.BASE_DIR)
+            / "static"
+            / "img"
+            / "logos"
+            / "sigepan-logo.png"
+        )
+
+        with open(ruta_logo_sigepan, "rb") as archivo:
+            logo_sigepan = MIMEImage(archivo.read())
+
+        logo_sigepan.add_header(
+            "Content-ID",
+            "<sigepan_logo>",
+        )
+
+        logo_sigepan.add_header(
+            "Content-Disposition",
+            "inline",
+            filename="sigepan-logo.png",
+        )
+
+        correo_html.attach(logo_sigepan)
+
+
+        ruta_logo_yc = (
+            Path(settings.BASE_DIR)
+            / "static"
+            / "img"
+            / "logos"
+            / "Y&C_fondo_transparente.png"
+        )
+
+        with open(ruta_logo_yc, "rb") as archivo:
+            logo_yc = MIMEImage(archivo.read())
+
+        logo_yc.add_header(
+            "Content-ID",
+            "<ycsystems_logo>",
+        )
+
+        logo_yc.add_header(
+            "Content-Disposition",
+            "inline",
+            filename="Y&C_fondo_transparente.png",
+        )
+
+        correo_html.attach(logo_yc)
+
+        correo_html.send()
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Seguridad",
+            tipo_accion="RECUPERAR_PASSWORD",
+            descripcion=(
+                "El usuario solicitó recuperar su contraseña."
+            ),
+        )
+
+        return True
+    
+
 class MenuService:
     """
     Construye el menu lateral del sistema
@@ -202,42 +489,46 @@ class MenuService:
 
         for grupo in MENU:
 
-            if grupo["modulo"] in modulos_permitidos:
+            nuevo_grupo = {
+                "modulo": grupo["modulo"],
+                "icono": grupo["icono"],
+                "opciones": [],
+                "activo": False,
+            }
 
-                nuevo_grupo = {
+            for opcion in grupo["opciones"]:
 
-                    "modulo": grupo["modulo"],
+                modulo_permiso = opcion.get(
+                    "modulo_permiso",
+                    grupo["modulo"],
+                )
 
-                    "icono": grupo["icono"],
+                if modulo_permiso not in modulos_permitidos:
+                    continue
 
-                    "opciones": [],
+                nueva_opcion = opcion.copy()
 
-                    "activo": False,
+                nueva_opcion.pop(
+                    "modulo_permiso",
+                    None,
+                )
 
-                }
+                url = reverse(opcion["url"])
 
-                for opcion in grupo["opciones"]:
+                nueva_opcion["url"] = url
 
-                    nueva_opcion = opcion.copy()
+                nueva_opcion["activa"] = (
+                    request.path == url
+                )
 
-                    url = reverse(opcion["url"])
+                if nueva_opcion["activa"]:
+                    nuevo_grupo["activo"] = True
 
-                    nueva_opcion["url"] = url
+                nuevo_grupo["opciones"].append(
+                    nueva_opcion
+                )
 
-                    # ¿La página actual corresponde a esta opción?
-                    nueva_opcion["activa"] = (
-                        request.path == url
-                    )
-
-                    # Si una opción está activa,
-                    # el grupo también debe estar activo.
-                    if nueva_opcion["activa"]:
-
-                        nuevo_grupo["activo"] = True
-
-                    nuevo_grupo["opciones"].append(
-                        nueva_opcion
-                    )
-
+            if nuevo_grupo["opciones"]:
                 menu.append(nuevo_grupo)
-        return menu          
+
+        return menu        

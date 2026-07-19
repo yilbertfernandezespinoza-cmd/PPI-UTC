@@ -1,18 +1,24 @@
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.shortcuts import redirect, render
+from django.http import JsonResponse
 from django.db.models import Q
+from django.utils import timezone
 
-from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm
+from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm, RecuperarPasswordForm, RestablecerPasswordForm
 from .models import Rol, Permiso, Usuario, RolPermiso
 from .mixins import SessionRequiredMixin
-from .services import registrar_log, RolPermisoService, RolService, BitacoraService
+from .services import (
+    registrar_log, RolPermisoService, 
+    RolService, BitacoraService, 
+    RecuperacionPasswordService, UsuarioService)
 from .audit import AuditMixin
 from .permissions import PermissionRequiredMixin
 from apps.configuracion.models import Modulo
-
+from datetime import datetime, timedelta
+from apps.empleados.models import Empleado
 
 class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, ListView):
     model = RolPermiso
@@ -430,6 +436,77 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
 
         return context
 
+class UsuarioEmpleadoDatosView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    """
+    Devuelve el correo del empleado y el nombre
+    de usuario disponible para crear su cuenta.
+    """
+
+    permission_module = "Seguridad"
+    permission_action = "CREAR"
+
+    def get(self, request, id_empleado):
+
+        try:
+
+            empleado = Empleado.objects.get(
+                id_empleado=id_empleado,
+                estado=True,
+            )
+
+        except Empleado.DoesNotExist:
+
+            return JsonResponse(
+                {
+                    "error": (
+                        "El empleado no existe "
+                        "o está inactivo."
+                    )
+                },
+                status=404,
+            )
+
+        if not empleado.correo:
+
+            return JsonResponse(
+                {
+                    "error": (
+                        "El empleado no tiene un "
+                        "correo registrado."
+                    )
+                },
+                status=400,
+            )
+
+        if Usuario.objects.filter(
+            id_empleado=empleado
+        ).exists():
+
+            return JsonResponse(
+                {
+                    "error": (
+                        "El empleado ya tiene una "
+                        "cuenta de usuario asignada."
+                    )
+                },
+                status=400,
+            )
+
+        username = UsuarioService.generar_username(
+            empleado
+        )
+
+        return JsonResponse(
+            {
+                "correo": empleado.correo,
+                "username": username,
+            }
+        )
+
 class UsuarioCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
     permission_module = "Seguridad"
     permission_action = "CREAR"
@@ -522,7 +599,131 @@ class UsuarioDisableView(
         return redirect(
             "security:usuario_list"
         )    
-    
+
+def recuperar_password_view(request):
+    """
+    Permite solicitar la recuperación de contraseña.
+    """
+
+    if request.method == "POST":
+
+        form = RecuperarPasswordForm(request.POST)
+
+        if form.is_valid():
+
+            identificador = form.cleaned_data[
+                "identificador"
+            ]
+
+            RecuperacionPasswordService.solicitar_recuperacion(
+                request=request,
+                identificador=identificador,
+            )
+
+            messages.success(
+                request,
+                (
+                    "Si la cuenta existe y tiene un correo "
+                    "registrado, recibirá las instrucciones "
+                    "para recuperar su contraseña."
+                ),
+            )
+
+            return redirect(
+                "security:login"
+            )
+
+    else:
+
+        form = RecuperarPasswordForm()
+
+    return render(
+        request,
+        "security/login/recuperar_password.html",
+        {
+            "form": form,
+        },
+    )
+
+
+def restablecer_password_view(request, token):
+    """
+    Permite establecer una nueva contraseña mediante
+    un token temporal válido.
+    """
+
+    usuario = (
+        RecuperacionPasswordService
+        .validar_token(token)
+    )
+
+    if not usuario:
+
+        messages.error(
+            request,
+            (
+                "El enlace de recuperación no es válido "
+                "o ha expirado."
+            ),
+        )
+
+        return redirect(
+            "security:login"
+        )
+
+    if request.method == "POST":
+
+        form = RestablecerPasswordForm(
+            request.POST
+        )
+
+        if form.is_valid():
+
+            usuario.password = make_password(
+                form.cleaned_data["password"]
+            )
+
+            usuario.save(
+                update_fields=[
+                    "password",
+                ]
+            )
+
+            registrar_log(
+                request=request,
+                usuario=usuario,
+                modulo="Seguridad",
+                tipo_accion="CAMBIAR_PASSWORD",
+                descripcion=(
+                    "El usuario restableció su contraseña "
+                    "correctamente."
+                ),
+            )
+
+            messages.success(
+                request,
+                (
+                    "La contraseña fue actualizada "
+                    "correctamente."
+                ),
+            )
+
+            return redirect(
+                "security:login"
+            )
+
+    else:
+
+        form = RestablecerPasswordForm()
+
+    return render(
+        request,
+        "security/login/restablecer_password.html",
+        {
+            "form": form,
+        },
+    )
+
 def login_view(request):
 
     if request.method == "POST":
@@ -539,6 +740,7 @@ def login_view(request):
                 usuario = Usuario.objects.get(
                     username=username,
                     estado=True,
+                    id_rol__estado=True,
                 )
 
                 if check_password(password, usuario.password):
@@ -635,7 +837,89 @@ class BitacoraIngresosListView(SessionRequiredMixin, PermissionRequiredMixin, Li
     permission_action = "CONSULTAR"
 
     def get_queryset(self):
-        return BitacoraService.listar_ingresos()
+
+        queryset = (
+            BitacoraService
+            .listar_ingresos()
+        )
+
+        usuario = self.request.GET.get(
+            "usuario",
+            "",
+        ).strip()
+
+        fecha_inicio = self.request.GET.get(
+            "fecha_inicio",
+            "",
+        )
+
+        fecha_fin = self.request.GET.get(
+            "fecha_fin",
+            "",
+        )
+
+        if usuario:
+
+            queryset = queryset.filter(
+                id_usuario__username__icontains=usuario
+            )
+
+        if fecha_inicio:
+
+            inicio = datetime.strptime(
+            fecha_inicio,
+            "%Y-%m-%d",
+            )
+
+            inicio = timezone.make_aware(
+            inicio,
+            timezone.get_current_timezone(),
+            )
+
+            queryset = queryset.filter(
+                fecha_hora__gte=inicio
+            )
+
+        if fecha_fin:
+
+            fin = datetime.strptime(
+            fecha_fin,
+            "%Y-%m-%d",
+            )
+
+            fin = fin + timedelta(days=1)
+
+            fin = timezone.make_aware(
+                fin,
+                timezone.get_current_timezone(),
+            )
+
+            queryset = queryset.filter(
+                fecha_hora__lt=fin
+        )
+
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        context["usuario"] = self.request.GET.get(
+            "usuario",
+            "",
+        )
+
+        context["fecha_inicio"] = self.request.GET.get(
+            "fecha_inicio",
+            "",
+        )
+
+        context["fecha_fin"] = self.request.GET.get(
+            "fecha_fin",
+            "",
+        )
+
+        return context
     
 class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     """

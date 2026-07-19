@@ -10,78 +10,75 @@
 
     <div class="card-body">
 
-        <div
-            class="table-responsive"
-            style="max-height: 500px; overflow-y: auto;"
-        >
+        <div class="row mb-3">
 
-            <table class="table table-bordered table-hover mb-0">
+            <div class="col-md-4">
 
-                <thead class="sticky-top bg-light">
+                <div class="input-group">
 
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Módulo</th>
-                        <th>Acción</th>
-                        <th>Descripción</th>
-                        <th>IP Origen</th>
-                        <th>Fecha y Hora</th>
-                    </tr>
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
 
-                </thead>
+                    <input
+                        type="text"
+                        id="buscarBitacora"
+                        class="form-control"
+                        placeholder="Escriba para buscar en la tabla..."
+                    >
 
-                <tbody>
+                </div>
 
-                    {% for registro in registros %}
-
-                    <tr>
-
-                        <td>
-                            {{ registro.id_usuario.username }}
-                        </td>
-
-                        <td>
-                            {{ registro.id_modulo.nombre }}
-                        </td>
-
-                        <td>
-                            {{ registro.tipo_accion }}
-                        </td>
-
-                        <td>
-                            {{ registro.descripcion }}
-                        </td>
-
-                        <td>
-                            {{ registro.ip_origen|default:"-" }}
-                        </td>
-
-                        <td>
-                            {{ registro.fecha_hora }}
-                        </td>
-
-                    </tr>
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td colspan="6" class="text-center">
-                            No existen registros de movimientos.
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
+            </div>
 
         </div>
+
+        <div id="tablaBitacora"></div>
 
     </div>
 
 </div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const registros = [
+    {% for registro in registros %}
+    {
+        usuario: "{{ registro.id_usuario.username|escapejs }}",
+        modulo: "{{ registro.id_modulo.nombre|escapejs }}",
+        accion: "{{ registro.tipo_accion|escapejs }}",
+        descripcion: "{{ registro.descripcion|escapejs }}",
+        ip: "{{ registro.ip_origen|default:'-'|escapejs }}",
+        fecha: "{{ registro.fecha_hora|date:'d/m/Y H:i:s' }}"
+    },
+    {% endfor %}
+];
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tabla = SIGEPAN.table.create({
+        selector: "#tablaBitacora",
+        search: "#buscarBitacora",
+
+        data: registros,
+
+        columns: [
+            { title: "Usuario", field: "usuario" },
+            { title: "Módulo", field: "modulo" },
+            { title: "Acción", field: "accion" },
+            { title: "Descripción", field: "descripcion" },
+            { title: "IP Origen", field: "ip" },
+            { title: "Fecha y Hora", field: "fecha" }
+        ]
+
+    });
+
+});
+
+</script>
 
 {% endblock %}

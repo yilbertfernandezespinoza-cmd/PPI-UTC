@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Gestión de Productos</h3>
+        <a href="{% url 'productos:nuevo_producto' %}" class="btn btn-primary float-right">Nuevo Producto</a>
+      </div>
+      <div class="card-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Precio Compra</th>
+              <th>Precio Venta</th>
+              <th>Utilidad (%)</th>
+              <th>Impuesto (%)</th>
+              <th>Unidad Medida</th>
+              <th>Categoría</th>
+              <th>Imagen</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr>
+              <td>{{ producto.codigo }}</td>
+              <td>{{ producto.nombre }}</td>
+              <td>{{ producto.descripcion }}</td>
+              <td>{{ producto.precio_compra }}</td>
+              <td>{{ producto.precio_venta }}</td>
+              <td>{{ producto.porcentaje_utilidad }}</td>
+              <td>{{ producto.porcentaje_impuesto }}</td>
+              <td>{{ producto.unidad_medida }}</td>
+              <td>{{ producto.id_categoria.nombre }}</td>
+              <td>{{ producto.imagen }}</td>
+              <td>{{ producto.estado|yesno:"Activo,Inactivo" }}</td>
+              <td>
+                <a href="{% url 'productos:editar_producto' producto.id_producto %}" class="btn btn-warning btn-sm">Editar</a>
+                <a href="{% url 'productos:eliminar_producto' producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

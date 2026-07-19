@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Cerrar caja
+</h2>
+
+
+
+<div class="alert alert-warning">
+
+Está cerrando la caja:
+
+<strong>
+{{ apertura.caja }}
+</strong>
+
+</div>
+
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+{{ form.as_p }}
+
+
+
+<button class="btn btn-danger">
+
+Confirmar cierre
+
+</button>
+
+
+
+<a href="{% url 'caja:detalle_caja' apertura.id_apertura %}"
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+
+</form>
+
+
+</div>
+
+
+{% endblock %}

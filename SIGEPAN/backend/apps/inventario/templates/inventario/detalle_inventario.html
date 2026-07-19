@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+
+
+<div class="container mt-4">
+
+
+<h2>
+
+Detalle de inventario
+
+</h2>
+
+
+
+<div class="card mt-3">
+
+
+<div class="card-body">
+
+
+
+<h4>
+
+{{ inventario.producto.nombre }}
+
+</h4>
+
+
+
+<hr>
+
+
+
+<p>
+
+<strong>Sucursal:</strong>
+
+{{ inventario.sucursal.nombre }}
+
+</p>
+
+
+
+<p>
+
+<strong>Stock actual:</strong>
+
+{{ inventario.stock_actual }}
+
+</p>
+
+
+
+<p>
+
+<strong>Stock mínimo:</strong>
+
+{{ inventario.stock_minimo }}
+
+</p>
+
+
+
+<p>
+
+<strong>Stock máximo:</strong>
+
+{{ inventario.stock_maximo }}
+
+</p>
+
+
+
+<p>
+
+<strong>Ubicación:</strong>
+
+{{ inventario.ubicacion|default:"Sin asignar" }}
+
+</p>
+
+
+
+<p>
+
+<strong>Estado:</strong>
+
+
+{% if inventario.estado %}
+
+Activo
+
+{% else %}
+
+Inactivo
+
+{% endif %}
+
+
+</p>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+<a href="{% url 'inventario:lista_inventario' %}"
+
+class="btn btn-secondary mt-3">
+
+
+Volver
+
+
+</a>
+
+
+
+</div>
+
+
+{% endblock %}

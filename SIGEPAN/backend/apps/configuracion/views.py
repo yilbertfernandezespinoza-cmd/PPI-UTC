@@ -2,11 +2,12 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView
 
-from .models import Modulo, Sucursal
-from .forms import ModuloForm, SucursalForm
+from .models import Modulo, Sucursal, ConfiguracionTributaria
+from .forms import ModuloForm, SucursalForm, ConfiguracionTributariaForm
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.audit import AuditMixin
 from apps.security.permissions import PermissionRequiredMixin
+from apps.security.models import RolPermiso
 
 class ModuloListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     permission_module = "Configuración"
@@ -122,3 +123,103 @@ class SucursalUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         )
         messages.success(self.request, "Sucursal actualizada correctamente.")
         return super().form_valid(form)    
+    
+class ConfiguracionTributariaListView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    ListView
+):
+    permission_module = "Configuración"
+    permission_action = "CONSULTAR"
+
+    model = ConfiguracionTributaria
+    template_name = "configuracion/tributaria/list.html"
+    context_object_name = "configuraciones_tributarias"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        usuario = self.request.usuario
+
+        context["puede_crear"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Configuración",
+            id_permiso__accion="CREAR",
+        ).exists()
+
+        context["puede_modificar"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Configuración",
+            id_permiso__accion="MODIFICAR",
+        ).exists()
+
+        return context
+
+
+class ConfiguracionTributariaCreateView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    AuditMixin,
+    CreateView
+):
+    permission_module = "Configuración"
+    permission_action = "CREAR"
+
+    audit_module = "Configuración"
+    model = ConfiguracionTributaria
+    form_class = ConfiguracionTributariaForm
+    template_name = "configuracion/tributaria/form.html"
+    success_url = reverse_lazy("configuracion:tributaria_list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        self.registrar_auditoria(
+            tipo_accion="CREAR",
+            descripcion=(
+                f"Se creó la configuración tributaria "
+                f"{self.object.nombre}"
+            ),
+        )
+
+        messages.success(
+            self.request,
+            "Configuración tributaria creada correctamente."
+        )
+
+        return response
+
+
+class ConfiguracionTributariaUpdateView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    AuditMixin,
+    UpdateView
+):
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+
+    audit_module = "Configuración"
+    model = ConfiguracionTributaria
+    form_class = ConfiguracionTributariaForm
+    pk_url_kwarg = "id_configuracion_tributaria"
+    template_name = "configuracion/tributaria/form.html"
+    success_url = reverse_lazy("configuracion:tributaria_list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        self.registrar_auditoria(
+            tipo_accion="MODIFICAR",
+            descripcion=(
+                f"Se actualizó la configuración tributaria "
+                f"{self.object.nombre}"
+            ),
+        )
+
+        messages.success(
+            self.request,
+            "Configuración tributaria actualizada correctamente."
+        )
+
+        return response    

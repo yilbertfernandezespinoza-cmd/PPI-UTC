@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="card">
+
+            <div class="card-header">
+                <h3 class="card-title">Editar Producto</h3>
+
+                <a href="{% url 'productos:lista_productos' %}"
+                   class="btn btn-secondary float-right">
+                    Volver
+                </a>
+            </div>
+
+            <div class="card-body">
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                        {% if field.name != 'estado' %}
+                            <div class="form-group">
+                                {{ field.label_tag }}
+                                {{ field }}
+
+                                {% if field.errors %}
+                                    <div class="text-danger">
+                                        {{ field.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Estado -->
+                    <div class="form-group">
+                        <label for="id_estado">
+                            <strong>Estado:</strong>
+                        </label>
+
+                        <div class="form-check">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                                id="id_estado"
+                                name="estado"
+                                {% if form.estado.value %}checked{% endif %}
+                            >
+
+                            <label class="form-check-label" for="id_estado">
+                                <span
+                                    id="estado_label"
+                                    class="{% if form.estado.value %}text-success{% else %}text-danger{% endif %}">
+                                    {% if form.estado.value %}
+                                        Activo
+                                    {% else %}
+                                        Inactivo
+                                    {% endif %}
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Actualizar
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const checkbox = document.getElementById("id_estado");
+    const label = document.getElementById("estado_label");
+
+    function actualizarEstado() {
+
+        if (checkbox.checked) {
+            label.textContent = "Activo";
+            label.classList.remove("text-danger");
+            label.classList.add("text-success");
+        } else {
+            label.textContent = "Inactivo";
+            label.classList.remove("text-success");
+            label.classList.add("text-danger");
+        }
+
+    }
+
+    actualizarEstado();
+
+    checkbox.addEventListener("change", actualizarEstado);
+
+});
+</script>
+
+{% endblock %}

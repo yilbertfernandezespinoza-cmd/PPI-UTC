@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+
+
+<div class="container mt-4">
+
+
+
+<h2>
+
+Editar parámetros de inventario
+
+</h2>
+
+
+
+<div class="alert alert-info">
+
+
+Producto:
+
+<strong>
+
+{{ inventario.producto.nombre }}
+
+</strong>
+
+
+<br>
+
+
+Sucursal:
+
+<strong>
+
+{{ inventario.sucursal.nombre }}
+
+</strong>
+
+
+<br>
+
+
+Stock actual:
+
+<strong>
+
+{{ inventario.stock_actual }}
+
+</strong>
+
+
+</div>
+
+
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+
+{{ form.as_p }}
+
+
+
+
+<button type="submit"
+
+class="btn btn-success">
+
+
+Guardar cambios
+
+
+</button>
+
+
+
+
+<a href="{% url 'inventario:lista_inventario' %}"
+
+class="btn btn-secondary">
+
+
+Cancelar
+
+
+</a>
+
+
+
+</form>
+
+
+
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Detalle compra #{{ compra.id_compra }}
+</h2>
+
+
+
+<div class="card mb-3">
+
+
+<div class="card-body">
+
+
+<p>
+<strong>Proveedor:</strong>
+
+{{ compra.proveedor.nombre }}
+
+</p>
+
+
+
+<p>
+<strong>Fecha:</strong>
+
+{{ compra.fecha }}
+
+</p>
+
+
+
+<p>
+<strong>Total:</strong>
+
+₡ {{ compra.total }}
+
+</p>
+
+
+
+<p>
+<strong>Estado:</strong>
+
+
+{% if compra.estado %}
+
+Activa
+
+{% else %}
+
+Anulada
+
+{% endif %}
+
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+
+<h4>
+Productos
+</h4>
+
+
+
+<table class="table table-bordered">
+
+
+<thead>
+
+<tr>
+
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Precio</th>
+<th>Subtotal</th>
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+
+
+{% for detalle in detalles %}
+
+
+<tr>
+
+
+<td>
+
+{{ detalle.producto.nombre }}
+
+</td>
+
+
+<td>
+
+{{ detalle.cantidad }}
+
+</td>
+
+
+<td>
+
+₡ {{ detalle.precio_unitario }}
+
+</td>
+
+
+<td>
+
+₡ {{ detalle.subtotal }}
+
+</td>
+
+
+</tr>
+
+
+{% endfor %}
+
+
+</tbody>
+
+
+</table>
+
+
+
+<a href="{% url 'compras:lista_compras' %}"
+class="btn btn-secondary">
+
+Volver
+
+</a>
+
+
+</div>
+
+
+{% endblock %}

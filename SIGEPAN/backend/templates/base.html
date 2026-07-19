@@ -11,6 +11,9 @@
     <!-- Bootstrap -->
     <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.css' %}">
 
+    <!-- Tabulator -->
+    <link rel="stylesheet" href="{% static 'css/tabulator_bootstrap5.min.css' %}">
+
     <!-- Bootstrap Icons -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -21,7 +24,7 @@
     {% block css %}{% endblock %}
 </head>
 
-<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
 
 <div class="app-wrapper">
 
@@ -46,7 +49,14 @@
 
 </div>
 
+<!-- AdminLTE -->
 <script src="{% static 'adminlte/js/adminlte.js' %}"></script>
+
+<!-- Tabulator -->
+<script src="{% static 'js/tabulator.min.js' %}"></script>
+
+<!-- Configuración global de tablas -->
+<script src="{% static 'js/table.js' %}"></script>
 
 {% block js %}{% endblock %}
 

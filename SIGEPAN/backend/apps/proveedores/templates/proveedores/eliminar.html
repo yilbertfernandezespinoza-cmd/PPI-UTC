@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Eliminar Proveedor</h3>
+        <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary float-right">Volver</a>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <p>¿Está seguro que desea desactivar al proveedor 
+            <strong>{{ proveedor.nombre }}</strong>?
+          </p>
+          <p>Estado actual: 
+            <span class="{% if proveedor.estado %}text-success{% else %}text-danger{% endif %}">
+              {{ proveedor.estado|yesno:"Activo,Inactivo" }}
+            </span>
+          </p>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+          <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

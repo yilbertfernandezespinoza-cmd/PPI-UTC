@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ titulo }}</title>
+
+</head>
+
+<body style="
+    margin:0;
+    padding:40px 0;
+    background-color:#F1F5F9;
+    font-family:Arial, Helvetica, sans-serif;
+">
+
+<table
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+
+<tr>
+
+<td align="center">
+
+<table
+    width="680"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="
+        background:#ffffff;
+        border-radius:14px;
+        overflow:hidden;
+        border:1px solid #E2E8F0;
+        box-shadow:0 10px 35px rgba(15,23,42,.08)
+    "
+>
+
+    <!-- ============================= -->
+    <!-- ENCABEZADO -->
+    <!-- ============================= -->
+
+    <tr>
+
+        <td
+            align="center"
+            style="
+                padding:45px 40px 30px;
+                background:#ffffff;
+            "
+        >
+
+            <img
+                src="cid:sigepan_logo"
+                alt="SIGEPAN"
+                width="320"
+                style="
+                    display:block;
+                    border:0;
+                "
+            >
+
+        </td>
+
+    </tr>
+
+    <!-- ============================= -->
+    <!-- CONTENIDO -->
+    <!-- ============================= -->
+
+    <tr>
+
+        <td
+            style="
+                padding:15px 55px 45px;
+                color:#333333;
+                font-size:17px;
+                line-height:1.8;
+            "
+        >
+
+            {% block contenido %}
+
+            {% endblock %}
+
+        </td>
+
+    </tr>
+
+    <!-- ============================= -->
+    <!-- PIE -->
+    <!-- ============================= -->
+
+    <tr>
+
+        <td
+            align="center"
+            style="
+                background:#f8f8f8;
+                padding:45px 35px;
+                border-top:1px solid #e5e5e5;
+            "
+        >
+
+            <img
+                src="cid:ycsystems_logo"
+                alt="Y&C SYSTEMS"
+                width="260"
+                style="
+                    display:block;
+                    margin-bottom:20px;
+                    border:0;
+                "
+            >
+
+            <div
+                style="
+                    color:#666666;
+                    font-size:14px;
+                    line-height:1.6;
+                "
+            >
+
+                <strong>
+
+                    Y&C SYSTEMS
+
+                </strong>
+
+                <br>
+
+                Soluciones Tecnológicas Inteligentes
+
+                <br><br>
+
+                soporte@ycsystemscr.com
+
+                <br>
+
+                © 2026 Y&C SYSTEMS.
+
+                Todos los derechos reservados.
+
+            </div>
+
+        </td>
+
+    </tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+</body>
+
+</html>

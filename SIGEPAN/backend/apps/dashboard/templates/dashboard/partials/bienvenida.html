@@ -1,0 +1,88 @@
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-8">
+
+                <h2 class="fw-bold mb-2">
+                    {{ saludo }}, {{ usuario_sesion.nombre_completo }} 👋
+                </h2>
+
+                <p class="text-muted mb-3">
+                    Bienvenido nuevamente a <strong>SIGEPAN</strong>.
+                </p>
+
+                <div class="row">
+
+                    <div class="col-md-4 mb-2">
+
+                        <strong>Rol</strong><br>
+
+                        {{ usuario_sesion.rol }}
+
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+
+                        <strong>Empresa</strong><br>
+
+                        {{ usuario_sesion.empresa }}
+
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+
+                        <strong>Sucursal</strong><br>
+
+                        {{ usuario_sesion.sucursal }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4 text-center">
+
+                <h1 class="display-5 fw-bold">
+
+                    {{ fecha|date:"d/m/Y" }}
+
+                </h1>
+
+                <span id="reloj-actual" 
+
+                class="text-muted fs-5">
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+    function actualizarReloj() {
+
+        const ahora = new Date();
+
+        const hora = ahora.toLocaleTimeString('es-CR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+
+        document.getElementById("reloj-actual").textContent = hora;
+    }
+
+    actualizarReloj();
+
+    setInterval(actualizarReloj, 1000);
+</script>

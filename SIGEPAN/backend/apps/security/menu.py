@@ -66,12 +66,18 @@ MENU = [
                 "titulo": "Productos",
                 "url": "productos:lista_productos",
                 "icono": "bi-box",
+
+                "dashboard":True,
+                "color":"warning",
             },
             {
                 "modulo_permiso": "Clientes",
                 "titulo": "Clientes",
                 "url": "clientes:lista_clientes",
                 "icono": "bi-people",
+
+                "dashboard":True,
+                "color":"primary",
             },
         ]
     },
@@ -86,6 +92,9 @@ MENU = [
                 "titulo": "Proveedores",
                 "url": "proveedores:lista_proveedores",
                 "icono": "bi-truck",
+
+                 "dashboard": True,
+                "color": "secondary",
             },
 
             {
@@ -93,6 +102,9 @@ MENU = [
                 "titulo": "Inventario",
                 "url": "inventario:lista_inventario",
                 "icono": "bi-box-seam",
+
+                "dashboard": True,
+                "color": "danger",
             },
 
             {
@@ -100,6 +112,9 @@ MENU = [
                 "titulo": "Compras",
                 "url": "compras:lista_compras",
                 "icono": "bi-cart-plus",
+
+                "dashboard": True,
+                "color": "info",
             },
 
             {
@@ -107,6 +122,9 @@ MENU = [
                 "titulo": "Ventas",
                 "url": "ventas:lista_ventas",
                 "icono": "bi-cash-stack",
+
+                "dashboard": True,
+                "color": "success",
             },
 
             {
@@ -114,6 +132,9 @@ MENU = [
                 "titulo": "Caja",
                 "url": "caja:lista_cajas",
                 "icono": "bi-safe2",
+
+                "dashboard": True,
+                "color": "dark",
             },
 
         ]

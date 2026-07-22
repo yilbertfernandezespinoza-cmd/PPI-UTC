@@ -9,11 +9,17 @@ def menu_usuario(request):
     if not request.session.get("usuario_id"):
 
         return {
-            "menu": []
+            "menu": [],
+            "usuario_sesion": None,
+            "system_info": SYSTEM_INFO,
         }
 
     return {
         "menu": MenuService.obtener_menu_usuario(request),
+
+        "usuario_sesion": (
+            MenuService.obtener_datos_sesion(request)
+        ),
 
         "system_info": SYSTEM_INFO
     }

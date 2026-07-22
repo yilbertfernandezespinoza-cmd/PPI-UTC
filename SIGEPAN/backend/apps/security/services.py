@@ -3,7 +3,7 @@ import hashlib
 import unicodedata
 from .repositories import (
     RolRepository, PermisoRepository, 
-    RolPermisoRepository, LogAccionesRepository)
+    RolPermisoRepository, LogAccionesRepository, UsuarioRepository)
 from .models import LogAcciones, RolPermiso, Permiso, Usuario
 from apps.configuracion.models import Modulo
 from .menu import MENU
@@ -16,6 +16,8 @@ from django.db.models import Q
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.hashers import (check_password, make_password)
 
 from email.mime.image import MIMEImage
 from pathlib import Path
@@ -80,7 +82,99 @@ class UsuarioService:
             consecutivo += 1
 
         return username
+    
+    @staticmethod
+    def cambiar_password(
+        request,
+        usuario_id,
+        password_actual,
+        password_nueva,
+        password_confirmacion,
+    ):
+        """
+        Cambia la contraseña del usuario
+        """
 
+        usuario = UsuarioRepository.obtener_por_id(
+            usuario_id
+        )
+
+        if not usuario:
+            return {
+                "success": False,
+                "message": "No fue posible encontrar el usuario.",
+            }
+
+        if (
+            not password_actual
+            or not password_nueva
+            or not password_confirmacion
+        ):
+            return {
+                "success": False,
+                "message": (
+                    "Debe completar todos los campos."
+                ),
+            }
+
+        if password_nueva != password_confirmacion:
+            return {
+                "success": False,
+                "message": (
+                    "La nueva contraseña y su confirmación no coinciden."
+                ),
+            }
+        if len(password_nueva) < 8:
+            return {
+                "success": False,
+                "message": (
+                    "La contraseña debe tener al menos 8 caracteres."
+                ),
+            }
+        
+        if not check_password(
+            password_actual,
+            usuario.password,
+        ):
+            return{
+                "success": False,
+                "message": "La contraseña actual es incorrecta."
+            }
+
+        if check_password(
+            password_nueva,
+            usuario.password,
+        ):
+            return {
+            "success": False,
+            "message": (
+                "La nueva contraseña debe ser diferente de la actual."
+            ),
+        }
+
+        usuario.password = make_password(
+            password_nueva
+        )
+
+        UsuarioRepository.actualizar(
+            usuario
+        )
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Seguridad",
+            tipo_accion="CAMBIAR_PASSWORD",
+            descripcion=(
+                "El usuario cambió su contraseña desde Mi Perfil."
+            ),
+        )
+
+        return {
+            "success": True,
+            "message": "La contraseña se actualizó correctamente.",
+        }
+    
 class RolService:
 
     @staticmethod
@@ -531,4 +625,69 @@ class MenuService:
             if nuevo_grupo["opciones"]:
                 menu.append(nuevo_grupo)
 
-        return menu        
+        return menu    
+
+    @staticmethod
+    def obtener_datos_sesion(request):
+        """
+        Devuelve la información del usuario autenticado para
+        ser utilizada en cualquier template del sistema.
+        """
+
+        usuario_id = request.session.get("usuario_id")
+
+        if not usuario_id:
+            return None
+
+        try:
+
+            usuario = (
+                Usuario.objects
+                .select_related(
+                    "id_empleado",
+                    "id_rol",
+                    "id_sucursal",
+                )
+                .get(
+                    id_usuario=usuario_id,
+                    estado=True,
+                )
+            )
+
+            return {
+
+                "id": usuario.id_usuario,
+
+                "username": usuario.username,
+
+                "nombre_completo": str(
+                    usuario.id_empleado
+                ),
+
+                "rol": usuario.id_rol.nombre,
+
+                "correo": (
+                    usuario.id_empleado.correo
+                    if usuario.id_empleado.correo
+                    else "No registrado"
+                ),
+
+                "telefono": (
+                    usuario.id_empleado.telefono
+                    if usuario.id_empleado.telefono
+                    else "No registrado"
+                ),
+
+                "empresa": "La Paná",
+
+                "sucursal": (
+                    usuario.id_sucursal.nombre
+                    if usuario.id_sucursal
+                    else "Sin sucursal"
+                ),
+
+            }
+
+        except ObjectDoesNotExist:
+
+            return None    

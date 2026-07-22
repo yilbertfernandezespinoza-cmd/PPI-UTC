@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.caja',
     'apps.reportes',
     'apps.configuracion',
+    'apps.dashboard',
 ]
 
 MIDDLEWARE = [

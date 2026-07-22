@@ -1,5 +1,6 @@
 from .models import Rol, Permiso, Usuario, RolPermiso, LogAcciones
 
+
 class RolRepository:
 
     @staticmethod
@@ -83,3 +84,32 @@ class LogAccionesRepository:
                 "CAMBIAR_PASSWORD",
             ]
         ).order_by("-fecha_hora")      
+    
+
+class UsuarioRepository:
+
+    @staticmethod
+    def obtener_por_id(usuario_id):
+        """
+        Obtiene un usuario activo por su identificador.
+        """
+
+        return (
+            Usuario.objects
+            .filter(
+                id_usuario=usuario_id,
+                estado=True,
+            )
+            .first()
+        )
+
+    @staticmethod
+    def actualizar(usuario):
+        """
+        Guarda los cambios realizados al usuario.
+        """
+
+        usuario.save()
+
+        return usuario   
+ 

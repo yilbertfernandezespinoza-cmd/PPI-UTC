@@ -44,4 +44,8 @@ urlpatterns = [
 
     # Empleados
     path("empleados/", include("apps.empleados.urls")),
+
+    #Dashboard
+    path("dashboard/", include("apps.dashboard.urls"))
+
 ]

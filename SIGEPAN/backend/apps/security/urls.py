@@ -17,6 +17,8 @@ from .views import (
 
     recuperar_password_view,
     restablecer_password_view,
+
+    PerfilView
 )
 
 app_name = "security"
@@ -91,6 +93,12 @@ urlpatterns = [
         "bitacoras/movimientos/",
         BitacoraMovimientosListView.as_view(),
         name="bitacora_movimientos",
+    ),
+
+    path(
+        "perfil/",
+        PerfilView.as_view(),
+        name="perfil",
     ),
 ]
 

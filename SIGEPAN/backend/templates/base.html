@@ -9,6 +9,9 @@
     <title>{% block title %}SIGEPAN{% endblock %}</title>
 
     <!-- Bootstrap -->
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+
+    <!-- AdminLTE -->
     <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.css' %}">
 
     <!-- Tabulator -->
@@ -48,6 +51,9 @@
     {% include 'includes/footer.html' %}
 
 </div>
+
+<!-- Bootstrap -->
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
 <!-- AdminLTE -->
 <script src="{% static 'adminlte/js/adminlte.js' %}"></script>

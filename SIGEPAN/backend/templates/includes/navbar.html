@@ -21,7 +21,7 @@
 
         </ul>
 
-        <a href="{% url 'home' %}" class="navbar-brand d-flex align-items-center">
+        <a href="{% url 'dashboard:inicio' %}" class="navbar-brand d-flex align-items-center">
 
             <img src="{% static 'img/logos/sigepan-icon.png' %}"
                  width="38"
@@ -33,30 +33,93 @@
 
         <ul class="navbar-nav ms-auto">
 
-            <li class="nav-item d-none d-md-block">
+                <li class="nav-item dropdown">
 
-                <span class="nav-link">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center"
+                       href="#"
+                       role="button"
+                       data-bs-toggle="dropdown"
+                       aria-expanded="false">
 
-                    Empresa:
-                    <strong>La Paná</strong>
+                        <i class="bi bi-person-circle me-2"></i>
 
-                </span>
+                        {{ usuario_sesion.username }}
 
-            </li>
-            
-            <li class="nav-item">
+                    </a>
 
-                <a href="{% url 'security:logout' %}"
-                    class="nav-link text-danger">
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
 
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span class="d-none d-md-inline">
-                    Cerrar sesión
-                    </span>
-                </a>
+                        <li class="px-3 py-2">
 
-            </li>
+                            <strong>
+                                {{ usuario_sesion.nombre_completo }}
+                            </strong>
 
+                            <br>
+
+                            <small class="text-muted">
+                                {{ usuario_sesion.rol }}
+                            </small>
+
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li class="px-3">
+
+                            <small class="text-muted">
+                                Empresa
+                            </small>
+
+                            <div>
+                                {{ usuario_sesion.empresa }}
+                            </div>
+
+                        </li>
+
+                        <li class="px-3 mt-2">
+
+                            <small class="text-muted">
+                                Sucursal
+                            </small>
+
+                            <div>
+                                {{ usuario_sesion.sucursal }}
+                            </div>
+
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li>
+
+                            <a class="dropdown-item"
+                                href="{% url 'security:perfil' %}">
+
+                                <i class="bi bi-person me-2"></i>
+
+                                Mi perfil
+
+                            </a>
+
+                        </li>
+
+                        <li>
+
+                            <a class="dropdown-item text-danger"
+                                href="{% url 'security:logout' %}">
+
+                                <i class="bi bi-box-arrow-right me-2"></i>
+
+                                Cerrar sesión
+
+                            </a>
+
+                        </li>
+
+                    </ul>
+
+                </li>   
 
         </ul>
 

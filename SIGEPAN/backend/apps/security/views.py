@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, View
+from django.views.generic import ListView, CreateView, UpdateView, View, TemplateView
 from django.contrib.auth.hashers import check_password, make_password
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
+
 
 from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm, RecuperarPasswordForm, RestablecerPasswordForm
 from .models import Rol, Permiso, Usuario, RolPermiso
@@ -726,6 +727,9 @@ def restablecer_password_view(request, token):
 
 def login_view(request):
 
+    if request.session.get("usuario_id"):
+    
+        return redirect("dashboard:inicio")
     if request.method == "POST":
 
         form = LoginForm(request.POST)
@@ -762,7 +766,7 @@ def login_view(request):
                         f"Bienvenido {usuario.id_empleado}"
                     )
 
-                    return redirect("/")
+                    return redirect("dashboard:inicio")
 
                 else:
 
@@ -933,4 +937,25 @@ class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin,
     permission_action = "CONSULTAR"
 
     def get_queryset(self):
-        return BitacoraService.listar_movimientos()    
+        return BitacoraService.listar_movimientos()   
+    
+
+class PerfilView(TemplateView):
+    template_name = "security/perfil/perfil.html"    
+
+    def post(self, request, *args, **kwargs):
+
+        resultado = UsuarioService.cambiar_password(
+            request=request,
+            usuario_id=request.session.get("usuario_id"),
+            password_actual=request.POST.get("password_actual"),
+            password_nueva=request.POST.get("password_nueva"),
+            password_confirmacion=request.POST.get("password_confirmacion"),
+        )
+        print(resultado)
+        if resultado["success"]:
+            messages.success(request, resultado["message"])
+        else:
+            messages.error(request, resultado["message"])
+
+        return redirect("security:perfil")

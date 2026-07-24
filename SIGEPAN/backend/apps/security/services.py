@@ -1,5 +1,4 @@
-import logging
-import hashlib
+import logging, hashlib, unicodedata, os
 import unicodedata
 from .repositories import (
     RolRepository, PermisoRepository, 
@@ -21,8 +20,10 @@ from django.contrib.auth.hashers import (check_password, make_password)
 
 from email.mime.image import MIMEImage
 from pathlib import Path
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 
-
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 logger = logging.getLogger(__name__)
 
 class UsuarioService:
@@ -691,3 +692,98 @@ class MenuService:
         except ObjectDoesNotExist:
 
             return None    
+        
+# ==========================================================
+# GOOGLE OAUTH
+# ==========================================================
+
+def generar_url_google():
+    """
+    Genera la URL de autorización para vincular
+    una cuenta de Google.
+    """
+
+    if not settings.GOOGLE_CLIENT_ID:
+        raise ValueError("GOOGLE_CLIENT_ID no está configurado.")
+
+    if not settings.GOOGLE_CLIENT_SECRET:
+        raise ValueError("GOOGLE_CLIENT_SECRET no está configurado.")
+
+    if not settings.GOOGLE_REDIRECT_URI:
+        raise ValueError("GOOGLE_REDIRECT_URI no está configurado.")
+
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
+        scopes=[
+            "openid",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            
+        ],
+    )
+
+    flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+
+    authorization_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+    )
+
+    return authorization_url, state, flow.code_verifier        
+
+def procesar_callback_google(request):
+    """
+    Procesa la respuesta de Google OAuth y devuelve
+    la información del usuario autenticado.
+    """
+
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
+        scopes=[
+            "openid",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+        ],
+        state=request.session.get("google_state"),
+    )
+
+    flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+
+    flow.code_verifier = request.session.get(
+        "google_code_verifier"
+    )
+
+    flow.fetch_token(
+        authorization_response=request.build_absolute_uri()
+    )
+
+    credentials = flow.credentials
+
+    servicio = build(
+        "oauth2",
+        "v2",
+        credentials=credentials,
+    )
+
+    informacion = servicio.userinfo().get().execute()
+
+    return {
+        "google_id": informacion["id"],
+        "google_email": informacion["email"],
+        "token": credentials.token,
+    }

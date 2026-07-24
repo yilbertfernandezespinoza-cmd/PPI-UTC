@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import sys, os
 from dotenv import load_dotenv
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -203,3 +204,22 @@ DEFAULT_FROM_EMAIL = os.getenv(
     "Y&C SYSTEMS <soporte@ycsystemscr.com>",
 )
 
+
+# ==========================================================
+# GOOGLE OAUTH
+# ==========================================================
+
+GOOGLE_CLIENT_ID = config(
+    "GOOGLE_CLIENT_ID",
+    default=""
+)
+
+GOOGLE_CLIENT_SECRET = config(
+    "GOOGLE_CLIENT_SECRET",
+    default=""
+)
+
+GOOGLE_REDIRECT_URI = config(
+    "GOOGLE_REDIRECT_URI",
+    default=""
+)

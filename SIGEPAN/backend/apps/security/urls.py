@@ -18,7 +18,9 @@ from .views import (
     recuperar_password_view,
     restablecer_password_view,
 
-    PerfilView
+    PerfilView,
+    google_vincular,
+    google_callback,
 )
 
 app_name = "security"
@@ -100,5 +102,18 @@ urlpatterns = [
         PerfilView.as_view(),
         name="perfil",
     ),
+
+    path(
+        "perfil/google/vincular/",
+        google_vincular,
+        name="google_vincular",
+    ),
+
+    path(
+        "perfil/google/callback/",
+        google_callback,
+        name="google_callback",
+    ),
+
 ]
 

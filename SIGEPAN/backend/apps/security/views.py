@@ -8,18 +8,20 @@ from django.db.models import Q
 from django.utils import timezone
 
 
+
 from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm, RecuperarPasswordForm, RestablecerPasswordForm
 from .models import Rol, Permiso, Usuario, RolPermiso
 from .mixins import SessionRequiredMixin
 from .services import (
     registrar_log, RolPermisoService, 
     RolService, BitacoraService, 
-    RecuperacionPasswordService, UsuarioService)
+    RecuperacionPasswordService, UsuarioService, procesar_callback_google)
 from .audit import AuditMixin
 from .permissions import PermissionRequiredMixin
 from apps.configuracion.models import Modulo
 from datetime import datetime, timedelta
 from apps.empleados.models import Empleado
+from apps.security.services import generar_url_google
 
 class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, ListView):
     model = RolPermiso
@@ -959,3 +961,90 @@ class PerfilView(TemplateView):
             messages.error(request, resultado["message"])
 
         return redirect("security:perfil")
+    
+
+def google_vincular(request):
+
+    if not request.session.get("usuario_id"):
+
+        messages.error(
+            request,
+            "Debe iniciar sesión."
+        )
+
+        return redirect("security:login")
+
+    """
+    Redirige al usuario hacia Google para iniciar
+    el proceso de vinculación.
+    """
+
+    try:
+        authorization_url, state, code_verifier = generar_url_google()
+
+        request.session["google_state"] = state
+        request.session["google_code_verifier"] = code_verifier
+
+        return redirect(authorization_url)
+
+    except Exception as e:
+
+        messages.error(
+            request,
+            f"No fue posible iniciar la vinculación con Google. {e}"
+        )
+
+        return redirect("security:perfil")    
+    
+def google_callback(request):
+
+    if not request.session.get("usuario_id"):
+
+        messages.error(
+            request,
+            "Debe iniciar sesión."
+        )
+
+        return redirect("security:login")
+
+    try:
+
+        datos_google = procesar_callback_google(request)
+
+        usuario = Usuario.objects.get(
+            id_usuario=request.session["usuario_id"]
+        )
+
+        usuario.google_id = datos_google["google_id"]
+        usuario.google_email = datos_google["google_email"]
+        usuario.google_token = datos_google["token"]
+
+        usuario.save(
+            update_fields=[
+                "google_id",
+                "google_email",
+                "google_token",
+            ]
+        )
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Seguridad",
+            tipo_accion="MODIFICAR",
+            descripcion="El usuario vinculó su cuenta de Google.",
+        )
+
+        messages.success(
+            request,
+            "Cuenta de Google vinculada correctamente."
+        )
+
+    except Exception as e:
+
+        messages.error(
+            request,
+            f"No fue posible vincular la cuenta de Google. {e}"
+        )
+
+    return redirect("security:perfil")

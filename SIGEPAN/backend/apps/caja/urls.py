@@ -39,19 +39,64 @@ urlpatterns = [
     # ==========================================
 
     path(
-        "abrir/",
+        "abrir/<int:id_caja>/",
         views.abrir_caja,
         name="abrir_caja"
     ),
 
+    # ==========================================
+    # EDITAR APERTURA DE CAJA
+    # ==========================================
 
+    path(
+        "apertura/<int:id_apertura>/editar/",
+        views.editar_apertura,
+        name="editar_apertura"
+    ),
+
+    # =====================================================
+    # ADMINISTRAR CAJA
+    # =====================================================
+
+    path(
+        "administrar/<int:id_caja>/",
+        views.administrar_caja,
+        name="administrar_caja"
+    ),
+
+    # ==========================================
+    # EDITAR CAJA
+    # ==========================================
+
+    path(
+        "editar/<int:id_caja>/",
+        views.editar_caja,
+        name="editar_caja"
+    ),
+
+    # ==========================================
+    # ACTIVAR / DESACTIVAR CAJA
+    # ==========================================
+
+    path(
+        "activar/<int:id_caja>/",
+        views.activar_caja,
+        name="activar_caja"
+    ),
+
+
+    path(
+        "desactivar/<int:id_caja>/",
+        views.desactivar_caja,
+        name="desactivar_caja"
+    ),
 
     # ==========================================
     # DETALLE DE CAJA ABIERTA
     # ==========================================
 
     path(
-        "<int:id_apertura>/",
+        "detalle/<int:id_apertura>/",
         views.detalle_caja,
         name="detalle_caja"
     ),
@@ -63,9 +108,21 @@ urlpatterns = [
     # ==========================================
 
     path(
-        "<int:id_apertura>/movimiento/",
+        "movimiento/<int:id_apertura>/",
         views.movimiento_caja,
         name="movimiento_caja"
+    ),
+
+
+
+    # ==========================================
+    # ARQUEO DE CAJA
+    # ==========================================
+
+    path(
+        "arqueo/<int:id_apertura>/",
+        views.crear_arqueo,
+        name="crear_arqueo"
     ),
 
 
@@ -75,7 +132,7 @@ urlpatterns = [
     # ==========================================
 
     path(
-        "<int:id_apertura>/cerrar/",
+        "cerrar/<int:id_apertura>/",
         views.cerrar_caja,
         name="cerrar_caja"
     ),

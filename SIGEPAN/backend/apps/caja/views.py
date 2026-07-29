@@ -1,23 +1,65 @@
+
+from urllib import request
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+from .utils import (calcular_saldo_sistema, calcular_saldo_movimientos)
 
 from .models import (
     Caja,
+    HistorialCaja,
     AperturaCaja,
     MovimientoCaja,
+    ArqueoCaja,
     CierreCaja
 )
+
+from apps.security.models import Usuario
 
 from .forms import (
     CajaForm,
     AperturaCajaForm,
     MovimientoCajaForm,
+    ArqueoCajaForm,
     CierreCajaForm
 )
 
+# =====================================================
+# UTILIDADES DE USUARIO
+# =====================================================
 
+def obtener_usuario(request):
+
+    usuario_id = request.session.get(
+        "usuario_id"
+    )
+
+    if not usuario_id:
+
+        return None
+
+
+    return get_object_or_404(
+        Usuario,
+        id_usuario=usuario_id
+    )
+
+
+
+def es_administrador(usuario):
+
+    if not usuario:
+
+        return False
+
+
+    return (
+        usuario.id_rol.nombre.upper()
+        ==
+        "ADMINISTRADOR"
+    )
 
 # =====================================================
 # LISTAR CAJAS
@@ -26,6 +68,12 @@ from .forms import (
 def lista_cajas(request):
 
     cajas = Caja.objects.all()
+
+    for caja in cajas:
+        caja.apertura_activa = AperturaCaja.objects.filter(
+            caja=caja,
+            estado=True
+        ).first()
 
     return render(
         request,
@@ -36,13 +84,58 @@ def lista_cajas(request):
     )
 
 
-
 # =====================================================
 # CREAR CAJA
 # =====================================================
 
+@transaction.atomic
 def crear_caja(request):
 
+
+    usuario = obtener_usuario(request)
+
+
+    # =========================================
+    # VALIDAR USUARIO
+    # =========================================
+
+    if not usuario:
+
+
+        messages.error(
+            request,
+            "Usuario no válido."
+        )
+
+
+        return redirect(
+            "security:login"
+        )
+
+
+
+    # =========================================
+    # VALIDAR PERMISOS
+    # =========================================
+
+    if not es_administrador(usuario):
+
+
+        messages.error(
+            request,
+            "No tiene permisos para crear cajas."
+        )
+
+
+        return redirect(
+            "caja:lista_cajas"
+        )
+
+
+
+    # =========================================
+    # PROCESAR FORMULARIO
+    # =========================================
 
     if request.method == "POST":
 
@@ -52,10 +145,70 @@ def crear_caja(request):
         )
 
 
+
         if form.is_valid():
 
 
-            form.save()
+            # =========================================
+            # GUARDAR CAMBIOS
+            # =========================================
+
+
+            caja = form.save(
+                commit=False
+            )
+
+
+            # =========================================
+            # NO MODIFICAR SALDO ACTUAL
+            # =========================================
+
+            caja.saldo_actual = caja.saldo_actual
+
+
+            caja.save()
+
+
+
+            # =========================================
+            # REGISTRAR CAMBIO DE SALDO INICIAL
+            # =========================================
+
+            if saldo_inicial_anterior != caja.saldo_inicial:
+
+
+                usuario_id = request.session.get(
+                    "usuario_id"
+                )
+
+
+                usuario = get_object_or_404(
+                    Usuario,
+                    id_usuario=usuario_id
+                )
+
+
+                HistorialCaja.objects.create(
+
+                    caja=caja,
+
+                    usuario=usuario,
+
+                    tipo_cambio="AJUSTE_SALDO_INICIAL",
+
+                    valor_anterior=str(
+                        saldo_inicial_anterior
+                    ),
+
+                    valor_nuevo=str(
+                        caja.saldo_inicial
+                    ),
+
+                    observacion=
+                    "Modificación administrativa del saldo inicial de caja."
+
+                )
+
 
 
             messages.success(
@@ -64,12 +217,15 @@ def crear_caja(request):
             )
 
 
+
             return redirect(
                 "caja:lista_cajas"
             )
 
 
+
     else:
+
 
         form = CajaForm()
 
@@ -83,15 +239,275 @@ def crear_caja(request):
         }
     )
 
+# =====================================================
+# EDITAR CAJA
+# =====================================================
 
+@transaction.atomic
+def editar_caja(request, id_caja):
+
+    # =========================================
+    # OBTENER CAJA
+    # =========================================
+
+    caja = get_object_or_404(
+        Caja,
+        id_caja=id_caja
+    )
+
+
+    if not caja.estado:
+
+        messages.error(
+            request,
+            "No se puede modificar una caja inactiva."
+        )
+
+        return redirect(
+             "caja:administrar_caja",
+                id_caja=caja.id_caja
+        )
+
+
+    # =========================================
+    # FORMULARIO
+    # =========================================
+
+    if request.method == "POST":
+
+        print(request.POST)
+
+
+        form = CajaForm(
+            request.POST,
+            instance=caja
+        )
+
+
+        if form.is_valid():
+
+
+            # =========================================
+            # GUARDAR VALOR ANTERIOR
+            # =========================================
+
+            saldo_inicial_anterior = caja.saldo_inicial
+
+
+
+            # =========================================
+            # ACTUALIZAR CAJA
+            # =========================================
+
+            caja = form.save(
+                commit=False
+            )
+
+
+            # =========================================
+            # MANTENER SALDO ACTUAL
+            # =========================================
+
+            caja.saldo_actual = caja.saldo_actual
+
+
+            caja.save()
+
+
+
+            # =========================================
+            # VALIDAR CAMBIO DE SALDO INICIAL
+            # =========================================
+
+            if saldo_inicial_anterior != caja.saldo_inicial:
+
+
+                usuario_id = request.session.get(
+                    "usuario_id"
+                )
+
+
+                usuario = get_object_or_404(
+                    Usuario,
+                    id_usuario=usuario_id
+                )
+
+
+                HistorialCaja.objects.create(
+
+                    caja=caja,
+
+                    tipo_cambio="AJUSTE_SALDO_INICIAL",
+
+                    valor_anterior=saldo_inicial_anterior,
+
+                    valor_nuevo=caja.saldo_inicial,
+
+                    observacion=
+                    "Modificación administrativa del saldo inicial de caja.",
+
+                    usuario=usuario
+
+                )
+
+
+
+            messages.success(
+                request,
+                "Caja actualizada correctamente."
+            )
+
+
+            return redirect(
+                "caja:administrar_caja",
+                id_caja=caja.id_caja
+            )
+
+
+        else:
+
+
+            messages.error(
+                request,
+                "Verifique la información ingresada."
+            )
+
+
+    else:
+
+
+        form = CajaForm(
+            instance=caja
+        )
+
+
+
+    # =========================================
+    # RETORNAR VISTA
+    # =========================================
+
+    return render(
+        request,
+        "caja/editar_caja.html",
+        {
+            "form": form,
+            "caja": caja
+        }
+    )
+
+# =====================================================
+# ACTIVAR CAJA
+# =====================================================
+
+@transaction.atomic
+def activar_caja(request, id_caja):
+
+
+    caja = get_object_or_404(
+
+        Caja,
+
+        id_caja=id_caja
+
+    )
+
+
+    caja.estado = True
+
+
+    caja.save()
+
+
+
+    messages.success(
+
+        request,
+
+        "Caja activada correctamente."
+
+    )
+
+
+    return redirect(
+
+        "caja:lista_cajas"
+
+    )
+
+
+
+# =====================================================
+# DESACTIVAR CAJA
+# =====================================================
+
+@transaction.atomic
+def desactivar_caja(request, id_caja):
+
+
+    caja = get_object_or_404(
+
+        Caja,
+
+        id_caja=id_caja
+
+    )
+
+
+    # =========================================
+    # VALIDAR APERTURA ACTIVA
+    # =========================================
+
+    if hasattr(caja, "apertura_activa") and caja.apertura_activa:
+
+        messages.error(
+
+            request,
+
+            "No se puede desactivar una caja con una apertura activa. Debe cerrar caja primero."
+
+        )
+
+        return redirect(
+
+            "caja:lista_cajas"
+
+        )
+
+
+    # =========================================
+    # DESACTIVAR CAJA
+    # =========================================
+
+    caja.estado = False
+
+    caja.save()
+
+
+    messages.success(
+
+        request,
+
+        "Caja desactivada correctamente."
+
+    )
+
+
+    return redirect(
+
+        "caja:lista_cajas"
+
+    )
 
 # =====================================================
 # APERTURA DE CAJA
 # =====================================================
 
 @transaction.atomic
-def abrir_caja(request):
-
+def abrir_caja(request, id_caja):
+    caja = get_object_or_404(
+        Caja,
+        id_caja=id_caja
+    )
 
     if request.method == "POST":
 
@@ -104,9 +520,9 @@ def abrir_caja(request):
         if form.is_valid():
 
 
-            apertura = form.save(
-                commit=False
-            )
+            apertura = form.save(commit=False)
+
+            apertura.caja = caja
 
 
             # =========================================
@@ -114,11 +530,8 @@ def abrir_caja(request):
             # =========================================
 
             existe = AperturaCaja.objects.filter(
-
-                caja=apertura.caja,
-
+                caja=caja,
                 estado=True
-
             ).exists()
 
 
@@ -133,7 +546,8 @@ def abrir_caja(request):
 
 
                 return redirect(
-                    "caja:abrir_caja"
+                    "caja:abrir_caja",
+                    id_caja=id_caja
                 )
 
 
@@ -148,9 +562,12 @@ def abrir_caja(request):
             apertura.estado = True
 
 
-            # Pendiente:
-            # apertura.usuario = usuario_actual
+            usuario_id = request.session.get("usuario_id")
 
+            apertura.usuario = get_object_or_404(
+                Usuario,
+                id_usuario=usuario_id
+            )
 
 
             apertura.save()
@@ -164,7 +581,8 @@ def abrir_caja(request):
 
 
             return redirect(
-                "caja:lista_cajas"
+                "caja:administrar_caja",
+                id_caja=caja.id_caja
             )
 
 
@@ -179,11 +597,120 @@ def abrir_caja(request):
         request,
         "caja/abrir_caja.html",
         {
-            "form": form
+            "form": form,
+            "caja": caja
         }
     )
 
+# =====================================================
+# EDITAR APERTURA DE CAJA
+# =====================================================
 
+@transaction.atomic
+def editar_apertura(request, id_apertura):
+
+    # =========================================
+    # OBTENER APERTURA
+    # =========================================
+
+    apertura = get_object_or_404(
+        AperturaCaja,
+        id_apertura=id_apertura
+    )
+
+    # =========================================
+    # VALIDAR APERTURA ACTIVA
+    # =========================================
+
+    if not apertura.estado:
+
+        messages.error(
+            request,
+            "Solo se puede editar una apertura activa."
+        )
+
+        return redirect(
+            "caja:administrar_caja",
+            id_caja=apertura.caja.id_caja
+        )
+
+    # =========================================
+    # FORMULARIO
+    # =========================================
+
+    if request.method == "POST":
+
+        form = AperturaCajaForm(
+            request.POST,
+            instance=apertura
+        )
+
+        if form.is_valid():
+
+            monto_anterior = apertura.monto_inicial
+
+            apertura = form.save(
+                commit=False
+            )
+
+            apertura.save()
+
+            # =========================================
+            # REGISTRAR HISTORIAL
+            # =========================================
+
+            if monto_anterior != apertura.monto_inicial:
+
+                usuario = obtener_usuario(request)
+
+                HistorialCaja.objects.create(
+
+                    caja=apertura.caja,
+
+                    usuario=usuario,
+
+                    tipo_cambio="AJUSTE_APERTURA",
+
+                    valor_anterior=str(monto_anterior),
+
+                    valor_nuevo=str(apertura.monto_inicial),
+
+                    observacion="Modificación del monto inicial de la apertura."
+
+                )
+
+            messages.success(
+                request,
+                "Apertura actualizada correctamente."
+            )
+
+            return redirect(
+                "caja:administrar_caja",
+                id_caja=apertura.caja.id_caja
+            )
+
+    else:
+
+        form = AperturaCajaForm(
+            instance=apertura
+        )
+
+    return render(
+
+        request,
+
+        "caja/editar_apertura.html",
+
+        {
+
+            "form": form,
+
+            "apertura": apertura
+
+        }
+
+    )
+    
 
 # =====================================================
 # MOVIMIENTO DE CAJA
@@ -201,6 +728,7 @@ def movimiento_caja(request, id_apertura):
 
     )
 
+    usuario_actual = obtener_usuario(request)   
 
 
     if not apertura.estado:
@@ -228,26 +756,15 @@ def movimiento_caja(request, id_apertura):
 
         if form.is_valid():
 
-
-            movimiento = form.save(
-                commit=False
-            )
-
+            movimiento = form.save(commit=False)
 
             movimiento.apertura = apertura
 
+            movimiento.usuario = usuario_actual
 
             movimiento.fecha_movimiento = timezone.now()
 
-
-
-            # Pendiente:
-            # movimiento.usuario = usuario_actual
-
-
-
             movimiento.save()
-
 
 
             messages.success(
@@ -255,19 +772,22 @@ def movimiento_caja(request, id_apertura):
                 "Movimiento registrado correctamente."
             )
 
-
             return redirect(
-                "caja:detalle_caja",
-                id_apertura
+                "caja:administrar_caja",
+                id_caja=apertura.caja.id_caja
             )
 
 
+        else:
+
+            messages.error(
+                request,
+                "Revise los datos ingresados."
+            )
+
     else:
 
-
         form = MovimientoCajaForm()
-
-
 
     return render(
         request,
@@ -278,7 +798,158 @@ def movimiento_caja(request, id_apertura):
         }
     )
 
+# =====================================================
+# ADMINISTRAR CAJA
+# =====================================================
 
+def administrar_caja(request, id_caja):
+
+    # =========================================
+    # OBTENER LA CAJA
+    # =========================================
+
+    # 1. Obtener la caja seleccionada
+    caja = get_object_or_404(
+        Caja,
+        id_caja=id_caja
+    )
+
+    # =========================================
+    # BUSCAR APERTURA ACTIVA
+    # =========================================
+
+    # 2. Buscar si tiene una apertura activa
+    apertura = AperturaCaja.objects.filter(
+        caja=caja,
+        estado=True
+    ).first()
+
+    # =========================================
+    # ESTADO DE LA CAJA
+    # =========================================
+
+    caja_abierta = apertura is not None
+
+    # =========================================
+    # MOVIMIENTOS
+    # =========================================
+
+    if caja_abierta:
+
+        consulta_movimientos = MovimientoCaja.objects.filter(
+            apertura=apertura
+        )
+
+        total_movimientos = consulta_movimientos.count()
+
+        movimientos = consulta_movimientos.order_by(
+            "-fecha_movimiento"
+        )[:10]
+
+
+        # =========================================
+        # SALDO ACUMULADO DE LA CAJA
+        # =========================================
+
+        saldo_caja = calcular_saldo_sistema(
+            apertura
+        )
+
+
+        # =========================================
+        # SALDO SOLO DE MOVIMIENTOS
+        # =========================================
+
+        saldo_movimientos = calcular_saldo_movimientos(
+            apertura
+        )
+
+
+    else:
+
+        movimientos = []
+
+        total_movimientos = 0
+
+        saldo_caja = caja.saldo_actual
+
+        saldo_movimientos = 0
+
+
+
+    # =========================================
+    # HISTORIAL DE ARQUEOS
+    # =========================================
+
+    if apertura:
+
+        arqueos = ArqueoCaja.objects.filter(
+            apertura=apertura
+        ).order_by(
+            "-fecha_arqueo"
+        )
+
+        ultimo_arqueo = arqueos.first()
+
+        total_arqueos = arqueos.count()
+
+    else:
+
+        arqueos = []
+
+        ultimo_arqueo = None
+
+        total_arqueos = 0
+
+
+    # =========================================
+    # HISTORIAL ADMINISTRATIVO
+    # =========================================
+
+    historial = HistorialCaja.objects.filter(
+        caja=caja
+    ).order_by("-fecha_creacion")
+
+
+    # =========================================
+    # CONTEXTO
+    # =========================================
+
+    contexto = {
+
+        "caja": caja,
+
+        "apertura": apertura,
+
+        "caja_abierta": caja_abierta,
+
+        "movimientos": movimientos,
+
+        "total_movimientos": total_movimientos,
+
+        "saldo_caja": saldo_caja,
+
+        "saldo_movimientos": saldo_movimientos,
+
+        "arqueos": arqueos,
+
+        "total_arqueos": total_arqueos,
+
+        "ultimo_arqueo": ultimo_arqueo,
+
+        "historial": historial,
+
+    }
+
+    # =========================================
+    # RETORNAR VISTA
+    # =========================================
+
+    return render(
+        request,
+        "caja/administrar_caja.html",
+        contexto
+    )
 
 # =====================================================
 # DETALLE CAJA ABIERTA
@@ -300,6 +971,17 @@ def detalle_caja(request, id_apertura):
 
         apertura=apertura
 
+    ).order_by(
+
+        "-fecha_movimiento"
+
+    )
+
+
+    saldo_sistema = calcular_saldo_sistema(
+
+        apertura
+
     )
 
 
@@ -313,13 +995,204 @@ def detalle_caja(request, id_apertura):
 
             "apertura": apertura,
 
-            "movimientos": movimientos
+            "movimientos": movimientos,
+
+            "saldo_sistema": saldo_sistema
 
         }
 
     )
 
+# =====================================================
+# ARQUEO DE CAJA
+# =====================================================
 
+@transaction.atomic
+def crear_arqueo(request, id_apertura):
+
+
+    apertura = get_object_or_404(
+
+        AperturaCaja,
+
+        id_apertura=id_apertura
+
+    )
+
+
+
+    if not apertura.estado:
+
+
+        messages.error(
+
+            request,
+
+            "No se puede realizar un arqueo de una caja cerrada."
+
+        )
+
+
+        return redirect(
+
+            "caja:lista_cajas"
+
+        )
+
+
+
+    # =====================================================
+    # CALCULAR SALDO DEL SISTEMA
+    # =====================================================
+
+
+    saldo_sistema = calcular_saldo_sistema(
+
+        apertura
+
+    )
+
+
+
+    # =========================================
+    # FORMULARIO
+    # =========================================
+
+    if request.method == "POST":
+
+
+        form = ArqueoCajaForm(
+
+            request.POST
+
+        )
+
+
+
+        if form.is_valid():
+
+
+            arqueo = form.save(
+
+                commit=False
+
+            )
+
+
+            arqueo.apertura = apertura
+
+
+
+            arqueo.saldo_sistema = saldo_sistema
+
+
+
+            arqueo.diferencia = (
+
+                arqueo.saldo_contado
+
+                -
+
+                saldo_sistema
+
+            )
+
+
+
+            arqueo.fecha_arqueo = timezone.now()
+
+
+
+            # =========================================
+            # USUARIO RESPONSABLE
+            # =========================================
+
+            usuario_id = request.session.get(
+
+                "usuario_id"
+
+            )
+
+
+
+            if not usuario_id:
+
+
+                messages.error(
+
+                    request,
+
+                    "No se pudo identificar el usuario actual."
+
+                )
+
+
+                return redirect(
+
+                    "security:login"
+
+                )
+
+
+
+            arqueo.usuario = get_object_or_404(
+
+                Usuario,
+
+                id_usuario=usuario_id
+
+            )
+
+
+
+            arqueo.save()
+
+
+
+            messages.success(
+
+                request,
+
+                "Arqueo registrado correctamente."
+
+            )
+
+
+
+            return redirect(
+
+                "caja:administrar_caja",
+
+                id_caja=apertura.caja.id_caja
+
+            )
+
+
+
+    else:
+
+
+        form = ArqueoCajaForm()
+
+
+
+    return render(
+
+        request,
+
+        "caja/crear_arqueo.html",
+
+        {
+
+            "form": form,
+
+            "apertura": apertura,
+
+            "saldo_sistema": saldo_sistema
+
+        }
+
+    )
 
 # =====================================================
 # CIERRE DE CAJA
@@ -338,33 +1211,116 @@ def cerrar_caja(request, id_apertura):
     )
 
 
+    # =========================================
+    # VALIDAR APERTURA ACTIVA
+    # =========================================
+
+    if not apertura.estado:
+
+        messages.error(
+
+            request,
+
+            "La caja ya se encuentra cerrada."
+
+        )
+
+        return redirect(
+
+            "caja:administrar_caja",
+
+            id_caja=apertura.caja.id_caja
+
+        )
+
+    # =========================================
+    # VALIDAR CIERRE EXISTENTE
+    # =========================================
+
+    if CierreCaja.objects.filter(apertura=apertura).exists():
+
+        messages.error(
+
+            request,
+
+            "La apertura ya posee un cierre registrado."
+
+        )
+
+        return redirect(
+
+            "caja:administrar_caja",
+
+            id_caja=apertura.caja.id_caja
+
+        )
+
+    # =========================================
+    # VALIDAR ARQUEO PREVIO
+    # =========================================
+
+    existe_arqueo = ArqueoCaja.objects.filter(
+        apertura=apertura
+    ).exists()
+
+
+    if not existe_arqueo:
+
+        messages.error(
+            request,
+            "Debe realizar al menos un arqueo antes de cerrar la caja."
+        )
+
+
+        return redirect(
+            "caja:administrar_caja",
+            id_caja=apertura.caja.id_caja
+        )
+
+    # =====================================
+    # CALCULAR SALDO DEL SISTEMA
+    # =====================================
+
+    saldo_sistema = calcular_saldo_sistema(
+        apertura
+    )
+
+
+    # =====================================
+    # OBTENER ÚLTIMO ARQUEO
+    # =====================================
+
+    ultimo_arqueo = ArqueoCaja.objects.filter(
+        apertura=apertura
+    ).order_by(
+        "-fecha_arqueo"
+    ).first()
+
+    # =========================================
+    # FORMULARIO
+    # =========================================
 
     if request.method == "POST":
-
 
         form = CierreCajaForm(
             request.POST
         )
 
-
         if form.is_valid():
-
 
             cierre = form.save(
                 commit=False
             )
 
+            # =====================================
+            # DATOS DEL CIERRE
+            # =====================================
 
             cierre.apertura = apertura
 
-
             cierre.fecha_cierre = timezone.now()
 
-
-
             cierre.monto_inicial = apertura.monto_inicial
-
-
 
             # =====================================
             # CALCULAR DIFERENCIA
@@ -376,22 +1332,60 @@ def cerrar_caja(request, id_apertura):
 
                 -
 
-                cierre.monto_inicial
+                saldo_sistema
+
+            )
+
+            # =========================================
+            # USUARIO RESPONSABLE
+            # =========================================
+
+            usuario_id = request.session.get(
+
+                "usuario_id"
 
             )
 
 
+            if not usuario_id:
 
-            # Pendiente:
-            # cierre.usuario = usuario_actual
+                messages.error(
 
+                    request,
+
+                    "No se pudo identificar el usuario actual."
+
+                )
+
+                return redirect(
+
+                    "security:login"
+
+                )
+
+
+            cierre.usuario = get_object_or_404(
+
+                Usuario,
+
+                id_usuario=usuario_id
+
+            )
 
 
             cierre.save()
 
+            # =========================================
+            # ACTUALIZAR SALDO DE LA CAJA
+            # =========================================
 
+            apertura.caja.saldo_actual = cierre.monto_final
 
-            # cerrar apertura
+            apertura.caja.save()
+
+            # =========================================
+            # CERRAR APERTURA
+            # =========================================
 
             apertura.estado = False
 
@@ -414,9 +1408,7 @@ def cerrar_caja(request, id_apertura):
 
     else:
 
-
         form = CierreCajaForm()
-
 
 
     return render(
@@ -429,7 +1421,11 @@ def cerrar_caja(request, id_apertura):
 
             "form": form,
 
-            "apertura": apertura
+            "apertura": apertura,
+
+            "saldo_sistema": saldo_sistema,
+
+            "ultimo_arqueo": ultimo_arqueo
 
         }
 

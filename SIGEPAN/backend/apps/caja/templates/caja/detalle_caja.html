@@ -1,160 +1,246 @@
 {% extends "base.html" %}
 
-
 {% block content %}
 
+<div class="container-fluid mt-4">
 
-<div class="container mt-4">
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-0">
+                Detalle de Caja
+            </h2>
+
+            <small class="text-muted">
+                Consulta de los movimientos registrados durante la apertura de caja.
+            </small>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- INFORMACIÓN GENERAL -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+                Información General
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <p>
+                        <strong>Caja:</strong>
+                        {{ apertura.caja.nombre }}
+                    </p>
+
+                    <p>
+                        <strong>Responsable:</strong>
+                        {{ apertura.usuario }}
+                    </p>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <p>
+                        <strong>Fecha de apertura:</strong>
+                        {{ apertura.fecha_apertura|date:"d/m/Y H:i" }}
+                    </p>
+
+                    <p>
+                        <strong>Monto inicial:</strong>
+                        ₡ {{ apertura.monto_inicial }}
+                    </p>
+
+                    <p>
+                        <strong>Saldo sistema:</strong>
+                        ₡ {{ saldo_sistema|floatformat:2 }}
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- MOVIMIENTOS -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header d-flex justify-content-between align-items-center">
+
+            <h5 class="mb-0">
+
+                Movimientos Registrados
+
+            </h5>
+
+            <span class="badge bg-primary">
+
+                {{ movimientos|length }} registros
+
+            </span>
+
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Monto</th>
+                            <th>Fecha</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for movimiento in movimientos %}
+
+                        <tr>
+
+                            <td>
+
+                                {% if movimiento.tipo_movimiento == "INGRESO" %}
+
+                                    <span class="badge bg-success">
+                                        Ingreso
+                                    </span>
+
+                                {% elif movimiento.tipo_movimiento == "VENTA" %}
+
+                                    <span class="badge bg-primary">
+                                        Venta
+                                    </span>
+
+                                {% elif movimiento.tipo_movimiento == "RETIRO" %}
+
+                                    <span class="badge bg-danger">
+                                        Retiro
+                                    </span>
+
+                                {% elif movimiento.tipo_movimiento == "GASTO" %}
+
+                                    <span class="badge bg-danger">
+                                        Gasto
+                                    </span>
+
+                                {% elif movimiento.tipo_movimiento == "AJUSTE" %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        Ajuste
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ movimiento.descripcion }}
+                            </td>
+
+                            <td class="text-end">
+                                ₡ {{ movimiento.monto|floatformat:2 }}
+                            </td>
+
+                            <td>
+                                {{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td colspan="4" class="text-center text-muted py-4">
+
+                                No existen movimientos registrados.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- ACCIONES -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+
+                Acciones
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-center gap-3">
 
 
-<h2>
-Caja abierta
-</h2>
+                <!-- VOLVER -->
 
+                <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
+                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                   style="width:70px;height:70px;"
+                   data-bs-toggle="tooltip"
+                   title="Volver">
 
+                    <i class="bi bi-arrow-left fs-3"></i>
 
-<div class="card mb-3">
+                </a>
 
+            </div>
 
-<div class="card-body">
+        </div>
 
-
-<p>
-Caja:
-{{ apertura.caja }}
-</p>
-
-
-<p>
-Fecha apertura:
-{{ apertura.fecha_apertura }}
-</p>
-
-
-<p>
-Monto inicial:
-₡ {{ apertura.monto_inicial }}
-</p>
-
+    </div>
 
 </div>
-
-</div>
-
-
-
-<div class="d-flex justify-content-between">
-
-
-<h4>
-Movimientos
-</h4>
-
-
-<a href="{% url 'caja:movimiento_caja' apertura.id_apertura %}"
-class="btn btn-primary">
-
-Nuevo movimiento
-
-</a>
-
-
-</div>
-
-
-
-
-<table class="table">
-
-
-<thead>
-
-<tr>
-
-<th>Tipo</th>
-<th>Monto</th>
-<th>Descripción</th>
-<th>Fecha</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-
-{% for movimiento in movimientos %}
-
-
-<tr>
-
-
-<td>
-
-{{ movimiento.tipo_movimiento }}
-
-</td>
-
-
-<td>
-
-₡ {{ movimiento.monto }}
-
-</td>
-
-
-<td>
-
-{{ movimiento.descripcion }}
-
-</td>
-
-
-<td>
-
-{{ movimiento.fecha_movimiento }}
-
-</td>
-
-
-</tr>
-
-
-{% empty %}
-
-
-<tr>
-
-<td colspan="4">
-
-Sin movimientos registrados.
-
-</td>
-
-</tr>
-
-
-{% endfor %}
-
-
-</tbody>
-
-
-</table>
-
-
-
-
-<a href="{% url 'caja:cerrar_caja' apertura.id_apertura %}"
-class="btn btn-danger">
-
-Cerrar caja
-
-</a>
-
-
-</div>
-
 
 {% endblock %}

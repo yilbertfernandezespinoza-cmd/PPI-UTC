@@ -196,6 +196,7 @@ class DetallePago(models.Model):
         Venta,
         on_delete=models.CASCADE,
         db_column="id_venta"
+        
     )
 
 

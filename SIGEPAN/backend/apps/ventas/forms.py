@@ -20,18 +20,17 @@ class VentaForm(forms.ModelForm):
         model = Venta
 
         fields = [
+
             "cliente",
+
             "tipo_comprobante",
+
             "metodo_pago",
-            "subtotal",
-            "impuesto",
-            "descuento",
-            "total",
+
         ]
 
 
         widgets = {
-
 
             "cliente": forms.Select(
                 attrs={
@@ -39,13 +38,11 @@ class VentaForm(forms.ModelForm):
                 }
             ),
 
-
             "tipo_comprobante": forms.Select(
                 attrs={
                     "class": "form-select"
                 }
             ),
-
 
             "metodo_pago": forms.Select(
                 attrs={
@@ -53,36 +50,7 @@ class VentaForm(forms.ModelForm):
                 }
             ),
 
-
-            "subtotal": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "impuesto": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "descuento": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "total": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
         }
-
 
 
 
@@ -103,8 +71,6 @@ class DetalleVentaForm(forms.ModelForm):
 
             "producto",
             "cantidad",
-            "precio_unitario",
-            "subtotal"
 
         ]
 

@@ -121,6 +121,27 @@
 
                 </div>
 
+                <!-- ESTADO -->
+
+                <div class="form-check mb-3">
+
+                    {{ form.estado }}
+
+                    <label class="form-check-label" id="estadoLabel">
+                        Activa
+                    </label>
+
+                    {% if form.estado.errors %}
+
+                        <div class="text-danger small">
+
+                            {{ form.estado.errors }}
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
                 
         <!-- ===================================== -->
         <!-- ACCIONES -->

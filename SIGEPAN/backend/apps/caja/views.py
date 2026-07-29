@@ -246,69 +246,16 @@ def editar_caja(request, id_caja):
         if form.is_valid():
 
 
-            # =========================================
-            # GUARDAR VALOR ANTERIOR
-            # =========================================
-
-            saldo_inicial_anterior = caja.saldo_inicial
-
-
 
             # =========================================
             # ACTUALIZAR CAJA
             # =========================================
 
-            caja = form.save(
-                commit=False
-            )
+            caja = form.save()
 
-
-            # =========================================
-            # MANTENER SALDO ACTUAL
-            # =========================================
-
-            caja.saldo_actual = caja.saldo_actual
 
 
             caja.save()
-
-
-
-            # =========================================
-            # VALIDAR CAMBIO DE SALDO INICIAL
-            # =========================================
-
-            if saldo_inicial_anterior != caja.saldo_inicial:
-
-
-                usuario_id = request.session.get(
-                    "usuario_id"
-                )
-
-
-                usuario = get_object_or_404(
-                    Usuario,
-                    id_usuario=usuario_id
-                )
-
-
-                HistorialCaja.objects.create(
-
-                    caja=caja,
-
-                    tipo_cambio="AJUSTE_SALDO_INICIAL",
-
-                    valor_anterior=saldo_inicial_anterior,
-
-                    valor_nuevo=caja.saldo_inicial,
-
-                    observacion=
-                    "Modificación administrativa del saldo inicial de caja.",
-
-                    usuario=usuario
-
-                )
-
 
 
             messages.success(

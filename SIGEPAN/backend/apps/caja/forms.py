@@ -56,14 +56,6 @@ class CajaForm(forms.ModelForm):
                 }
             ),
 
-
-            "saldo_inicial": forms.NumberInput(
-                attrs={
-                    "class": "form-control",
-                    "step": "0.01"
-                }
-            )
-
         }
 
         

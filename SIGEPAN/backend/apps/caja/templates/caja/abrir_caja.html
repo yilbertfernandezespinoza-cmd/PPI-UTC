@@ -4,20 +4,43 @@
 {% block content %}
 
 
-<div class="container mt-4">
+<div class="container-fluid mt-4">
 
 
-<h2>
-Apertura de caja
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+
+<div>
+
+<h2 class="fw-bold mb-0">
+
+Apertura de Caja
+
 </h2>
 
 
+<small class="text-muted">
 
-<div class="alert alert-info">
+Inicio de jornada operativa para registro de ventas y movimientos.
 
-Ingrese el monto inicial disponible en caja.
+</small>
+
 
 </div>
+
+
+<a href="{% url 'caja:lista_cajas' %}"
+class="btn btn-secondary">
+
+<i class="bi bi-arrow-left"></i>
+
+Volver
+
+</a>
+
+
+</div>
+
 
 
 
@@ -27,31 +50,166 @@ Ingrese el monto inicial disponible en caja.
 {% csrf_token %}
 
 
-{{ form.as_p }}
+
+<div class="card shadow-sm">
 
 
 
-<button class="btn btn-success">
+<div class="card-header">
 
-Abrir caja
+<h5 class="mb-0">
 
-</button>
+Datos de apertura
 
+</h5>
 
-
-<a href="{% url 'caja:lista_cajas' %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
+</div>
 
 
 
-</form>
+
+<div class="card-body">
+
+
+<!-- CAJA SELECCIONADA -->
+
+<div class="mb-3">
+
+    <label class="form-label">
+
+        Caja asignada
+
+    </label>
+
+    <input
+        type="text"
+        class="form-control"
+        value="{{ caja.nombre }}"
+        readonly>
+
+    <small class="text-muted">
+
+        La caja fue seleccionada previamente y no puede modificarse durante la apertura.
+
+    </small>
+
+</div>
+
+
+<!-- MONTO INICIAL -->
+
+<div class="mb-3">
+
+
+<label class="form-label">
+
+Monto inicial
+
+</label>
+
+
+{{ form.monto_inicial }}
+
+
+{% if form.monto_inicial.errors %}
+
+<div class="text-danger small">
+
+{{ form.monto_inicial.errors }}
+
+</div>
+
+{% endif %}
 
 
 </div>
 
+
+
+
+
+<!-- OBSERVACIONES -->
+
+
+<div class="mb-3">
+
+
+<label class="form-label">
+
+Observaciones
+
+</label>
+
+
+{{ form.observaciones }}
+
+
+{% if form.observaciones.errors %}
+
+<div class="text-danger small">
+
+{{ form.observaciones.errors }}
+
+</div>
+
+{% endif %}
+
+
+</div>
+
+
+
+</div>
+
+<!-- ===================================== -->
+<!-- ACCIONES -->
+<!-- ===================================== -->
+
+<div class="card shadow-sm">
+
+    <div class="card-header">
+
+        <h5 class="mb-0">
+
+            Acciones
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="d-flex justify-content-center gap-3">
+
+            <!-- ABRIR CAJA -->
+
+            <button
+                type="submit"
+                class="btn btn-outline-success d-flex align-items-center justify-content-center"
+                style="width:70px;height:70px;"
+                data-bs-toggle="tooltip"
+                title="Abrir caja">
+
+                <i class="bi bi-unlock fs-3"></i>
+
+            </button>
+
+            <!-- VOLVER -->
+
+            <a href="{% url 'caja:lista_cajas' %}"
+               class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+               style="width:70px;height:70px;"
+               data-bs-toggle="tooltip"
+               title="Volver">
+
+                <i class="bi bi-arrow-left fs-3"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
 
 {% endblock %}

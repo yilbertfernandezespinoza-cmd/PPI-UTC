@@ -13,11 +13,11 @@
         <div>
 
             <h2 class="fw-bold mb-0">
-                Registrar Movimiento
+                Arqueo de Caja
             </h2>
 
             <small class="text-muted">
-                Registro manual de ingresos, retiros, gastos y ajustes de caja.
+                Verificación del efectivo disponible contra el sistema.
             </small>
 
         </div>
@@ -29,7 +29,7 @@
         {% csrf_token %}
 
         <!-- ===================================== -->
-        <!-- INFORMACIÓN DE LA CAJA -->
+        <!-- INFORMACIÓN DE CAJA -->
         <!-- ===================================== -->
 
         <div class="card shadow-sm mb-4">
@@ -37,7 +37,7 @@
             <div class="card-header">
 
                 <h5 class="mb-0">
-                    Información de la Caja
+                    Información de Caja
                 </h5>
 
             </div>
@@ -48,37 +48,63 @@
 
                     <div class="col-md-6">
 
-                        <div class="mb-3">
+                        <p>
 
-                            <label class="form-label">
-                                Caja
-                            </label>
+                            <strong>Caja:</strong>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.caja.nombre }}"
-                                readonly>
+                            {{ apertura.caja.nombre }}
 
-                        </div>
+                        </p>
+
+                        <p>
+
+                            <strong>Sucursal:</strong>
+
+                            {{ apertura.caja.sucursal }}
+
+                        </p>
+
+                        <p>
+
+                            <strong>Fecha apertura:</strong>
+
+                            {{ apertura.fecha_apertura|date:"d/m/Y H:i" }}
+
+                        </p>
+
+                        <p>
+
+                            <strong>Responsable apertura:</strong>
+
+                            {{ apertura.usuario }}
+
+                        </p>
 
                     </div>
 
                     <div class="col-md-6">
 
-                        <div class="mb-3">
+                        <p>
 
-                            <label class="form-label">
-                                Responsable
-                            </label>
+                            <strong>Saldo según sistema:</strong>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.usuario }}"
-                                readonly>
+                            ₡ {{ saldo_sistema|floatformat:2 }}
 
-                        </div>
+                        </p>
+
+                        <span class="badge bg-info">
+
+                            Cálculo automático
+
+                        </span>
+
+                        <br><br>
+
+                        <small class="text-muted">
+
+                            La diferencia será calculada automáticamente al guardar el arqueo.
+
+                        </small>
 
                     </div>
 
@@ -89,7 +115,7 @@
         </div>
 
         <!-- ===================================== -->
-        <!-- DATOS DEL MOVIMIENTO -->
+        <!-- CONTEO FÍSICO -->
         <!-- ===================================== -->
 
         <div class="card shadow-sm mb-4">
@@ -97,7 +123,7 @@
             <div class="card-header">
 
                 <h5 class="mb-0">
-                    Datos del Movimiento
+                    Conteo Físico
                 </h5>
 
             </div>
@@ -107,18 +133,20 @@
                 <div class="mb-3">
 
                     <label class="form-label">
-                        Tipo de movimiento
+
+                        Efectivo contado
+
                     </label>
 
-                    {{ form.tipo_movimiento }}
+                    {{ form.saldo_contado }}
 
-                    {% if form.tipo_movimiento.errors %}
+                    {% if form.saldo_contado.errors %}
 
-                        <div class="text-danger small">
+                    <div class="text-danger small">
 
-                            {{ form.tipo_movimiento.errors }}
+                        {{ form.saldo_contado.errors }}
 
-                        </div>
+                    </div>
 
                     {% endif %}
 
@@ -127,38 +155,20 @@
                 <div class="mb-3">
 
                     <label class="form-label">
-                        Monto
+
+                        Observaciones
+
                     </label>
 
-                    {{ form.monto }}
+                    {{ form.observaciones }}
 
-                    {% if form.monto.errors %}
+                    {% if form.observaciones.errors %}
 
-                        <div class="text-danger small">
+                    <div class="text-danger small">
 
-                            {{ form.monto.errors }}
+                        {{ form.observaciones.errors }}
 
-                        </div>
-
-                    {% endif %}
-
-                </div>
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        Descripción
-                    </label>
-
-                    {{ form.descripcion }}
-
-                    {% if form.descripcion.errors %}
-
-                        <div class="text-danger small">
-
-                            {{ form.descripcion.errors }}
-
-                        </div>
+                    </div>
 
                     {% endif %}
 
@@ -186,30 +196,31 @@
 
                 <div class="d-flex justify-content-center gap-3">
 
-                    <!-- GUARDAR -->
+                    <!-- GUARDAR ARQUEO -->
 
                     <button
                         type="submit"
-                        class="btn btn-outline-success d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-info d-flex align-items-center justify-content-center"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
-                        title="Guardar movimiento">
+                        title="Guardar arqueo">
 
-                        <i class="bi bi-check-lg fs-3"></i>
+                        <i class="bi bi-clipboard-check fs-3"></i>
 
                     </button>
 
                     <!-- VOLVER -->
 
                     <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
-                    class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                    style="width:70px;height:70px;"
-                    data-bs-toggle="tooltip"
-                    title="Volver">
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       style="width:70px;height:70px;"
+                       data-bs-toggle="tooltip"
+                       title="Volver">
 
                         <i class="bi bi-arrow-left fs-3"></i>
 
                     </a>
+
                 </div>
 
             </div>

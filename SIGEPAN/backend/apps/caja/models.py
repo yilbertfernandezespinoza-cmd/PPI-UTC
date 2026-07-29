@@ -78,8 +78,73 @@ class Caja(models.Model):
         return self.nombre
 
 
+# =====================================================
+# HISTORIAL CAJA
+# =====================================================
+
+class HistorialCaja(models.Model):
 
 
+    id_historial = models.AutoField(
+        primary_key=True,
+        db_column="id_historial"
+    )
+
+
+    caja = models.ForeignKey(
+        Caja,
+        on_delete=models.PROTECT,
+        db_column="id_caja"
+    )
+
+
+    usuario = models.ForeignKey(
+        "security.Usuario",
+        on_delete=models.PROTECT,
+        db_column="id_usuario"
+    )
+
+
+    tipo_cambio = models.CharField(
+        max_length=50,
+        db_column="tipo_cambio"
+    )
+
+
+    valor_anterior = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_column="valor_anterior"
+    )
+
+
+    valor_nuevo = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_column="valor_nuevo"
+    )
+
+
+    observacion = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        db_column="observacion"
+    )
+
+
+    fecha_creacion = models.DateTimeField(
+        db_column="fecha_creacion"
+    )
+
+
+    class Meta:
+
+        managed = False
+
+        db_table = "historial_caja"
 
 # =====================================================
 # APERTURA CAJA
@@ -176,9 +241,23 @@ class MovimientoCaja(models.Model):
     )
 
 
+    TIPOS_MOVIMIENTO = [
+
+        ("VENTA", "Venta"),
+        ("INGRESO", "Ingreso"),
+        ("RETIRO", "Retiro"),
+        ("GASTO", "Gasto"),
+        ("AJUSTE", "Ajuste"),
+
+    ]
+
+
     tipo_movimiento = models.CharField(
+
         max_length=20,
-        db_column="tipo_movimiento"
+
+        choices=TIPOS_MOVIMIENTO
+
     )
 
 
@@ -214,8 +293,84 @@ class MovimientoCaja(models.Model):
         db_table = "movimiento_caja"
 
 
+# =====================================================
+# ARQUEO CAJA
+# =====================================================
 
 
+class ArqueoCaja(models.Model):
+
+
+    id_arqueo = models.AutoField(
+        primary_key=True,
+        db_column="id_arqueo"
+    )
+
+
+    apertura = models.ForeignKey(
+        AperturaCaja,
+        on_delete=models.PROTECT,
+        db_column="id_apertura"
+    )
+
+
+    usuario = models.ForeignKey(
+        "security.Usuario",
+        on_delete=models.PROTECT,
+        db_column="id_usuario"
+    )
+
+
+    fecha_arqueo = models.DateTimeField(
+        db_column="fecha_arqueo"
+    )
+
+
+    saldo_sistema = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        db_column="saldo_sistema"
+    )
+
+
+    saldo_contado = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        db_column="saldo_contado"
+    )
+
+
+    diferencia = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        db_column="diferencia"
+    )
+
+
+    observaciones = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="observaciones"
+    )
+
+
+    fecha_creacion = models.DateTimeField(
+        db_column="fecha_creacion"
+    )
+
+
+    class Meta:
+
+        managed = False
+
+        db_table = "arqueo_caja"
+
+
+
+    def __str__(self):
+
+        return f"Arqueo {self.id_arqueo}"
 
 # =====================================================
 # CIERRE CAJA

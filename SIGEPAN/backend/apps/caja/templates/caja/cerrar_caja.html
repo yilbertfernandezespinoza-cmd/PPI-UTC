@@ -1,60 +1,310 @@
 {% extends "base.html" %}
 
-
 {% block content %}
 
+<div class="container-fluid mt-4">
 
-<div class="container mt-4">
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
-<h2>
-Cerrar caja
-</h2>
+        <div>
 
+            <h2 class="fw-bold mb-0">
+                Cierre de Caja
+            </h2>
 
+            <small class="text-muted">
+                Finalización de la jornada operativa de la caja.
+            </small>
 
-<div class="alert alert-warning">
+        </div>
 
-Está cerrando la caja:
+    </div>
 
-<strong>
-{{ apertura.caja }}
-</strong>
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <!-- ===================================== -->
+        <!-- INFORMACIÓN DE LA CAJA -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+                    Información de la Caja
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6">
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Caja
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="{{ apertura.caja.nombre }}"
+                                readonly>
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Responsable
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="{{ apertura.usuario }}"
+                                readonly>
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Fecha de apertura
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="{{ apertura.fecha_apertura }}"
+                                readonly>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Monto inicial
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="₡ {{ apertura.monto_inicial }}"
+                                readonly>
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Saldo del sistema
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                value="₡ {{ saldo_sistema|floatformat:2 }}"
+                                readonly>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- DATOS DEL CIERRE -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+                    Datos del Cierre
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Monto contado físicamente
+                    </label>
+
+                    {{ form.monto_final }}
+
+                    {% if form.monto_final.errors %}
+                    <div class="text-danger small">
+                        {{ form.monto_final.errors }}
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Diferencia
+                    </label>
+
+                    <input
+                        type="text"
+                        id="diferencia"
+                        class="form-control"
+                        readonly>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Observaciones
+                    </label>
+
+                    {{ form.observaciones }}
+
+                    {% if form.observaciones.errors %}
+                    <div class="text-danger small">
+                        {{ form.observaciones.errors }}
+                    </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- ACCIONES -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+                    Acciones
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-center gap-3">
+
+                    <!-- CONFIRMAR CIERRE -->
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-danger d-flex align-items-center justify-content-center"
+                        style="width:70px;height:70px;"
+                        data-bs-toggle="tooltip"
+                        title="Confirmar cierre">
+
+                        <i class="bi bi-lock fs-3"></i>
+
+                    </button>
+
+                    <!-- VOLVER -->
+
+                    <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       style="width:70px;height:70px;"
+                       data-bs-toggle="tooltip"
+                       title="Volver">
+
+                        <i class="bi bi-arrow-left fs-3"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
 
 </div>
 
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        const montoFinal =
+            document.getElementById(
+                "id_monto_final"
+            );
 
 
-<form method="POST">
+        const saldoSistema =
+            parseFloat(
+                "{{ saldo_sistema|floatformat:'2' }}"
+            );
 
 
-{% csrf_token %}
+        const diferencia =
+            document.getElementById(
+                "diferencia"
+            );
 
 
-{{ form.as_p }}
+        montoFinal.addEventListener(
+            "input",
+            function(){
+
+                let contado =
+                    parseFloat(
+                        this.value
+                    );
 
 
+                if (isNaN(contado)) {
 
-<button class="btn btn-danger">
+                    diferencia.value = "";
 
-Confirmar cierre
+                    return;
 
-</button>
-
-
-
-<a href="{% url 'caja:detalle_caja' apertura.id_apertura %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
+                }
 
 
-</form>
+                let resultado =
+                    contado - saldoSistema;
 
 
-</div>
+                diferencia.value =
+                    "₡ " + resultado.toFixed(2);
 
+            }
+        );
+
+    }
+);
+
+</script>
 
 {% endblock %}

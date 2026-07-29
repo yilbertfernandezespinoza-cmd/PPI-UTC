@@ -13,23 +13,24 @@
         <div>
 
             <h2 class="fw-bold mb-0">
-                Registrar Movimiento
+                Editar Caja
             </h2>
 
             <small class="text-muted">
-                Registro manual de ingresos, retiros, gastos y ajustes de caja.
+                Modifique la configuración permanente de la caja.
             </small>
 
         </div>
 
     </div>
 
+
     <form method="POST">
 
         {% csrf_token %}
 
         <!-- ===================================== -->
-        <!-- INFORMACIÓN DE LA CAJA -->
+        <!-- DATOS DE LA CAJA -->
         <!-- ===================================== -->
 
         <div class="card shadow-sm mb-4">
@@ -37,86 +38,32 @@
             <div class="card-header">
 
                 <h5 class="mb-0">
-                    Información de la Caja
+
+                    Información General
+
                 </h5>
 
             </div>
 
             <div class="card-body">
 
-                <div class="row">
-
-                    <div class="col-md-6">
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Caja
-                            </label>
-
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.caja.nombre }}"
-                                readonly>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-md-6">
-
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Responsable
-                            </label>
-
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.usuario }}"
-                                readonly>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- ===================================== -->
-        <!-- DATOS DEL MOVIMIENTO -->
-        <!-- ===================================== -->
-
-        <div class="card shadow-sm mb-4">
-
-            <div class="card-header">
-
-                <h5 class="mb-0">
-                    Datos del Movimiento
-                </h5>
-
-            </div>
-
-            <div class="card-body">
+                <!-- SUCURSAL -->
 
                 <div class="mb-3">
 
                     <label class="form-label">
-                        Tipo de movimiento
+
+                        Sucursal
+
                     </label>
 
-                    {{ form.tipo_movimiento }}
+                    {{ form.sucursal }}
 
-                    {% if form.tipo_movimiento.errors %}
+                    {% if form.sucursal.errors %}
 
                         <div class="text-danger small">
 
-                            {{ form.tipo_movimiento.errors }}
+                            {{ form.sucursal.errors }}
 
                         </div>
 
@@ -124,19 +71,24 @@
 
                 </div>
 
+
+                <!-- NOMBRE -->
+
                 <div class="mb-3">
 
                     <label class="form-label">
-                        Monto
+
+                        Nombre
+
                     </label>
 
-                    {{ form.monto }}
+                    {{ form.nombre }}
 
-                    {% if form.monto.errors %}
+                    {% if form.nombre.errors %}
 
                         <div class="text-danger small">
 
-                            {{ form.monto.errors }}
+                            {{ form.nombre.errors }}
 
                         </div>
 
@@ -144,10 +96,15 @@
 
                 </div>
 
+
+                <!-- DESCRIPCIÓN -->
+
                 <div class="mb-3">
 
                     <label class="form-label">
+
                         Descripción
+
                     </label>
 
                     {{ form.descripcion }}
@@ -164,10 +121,7 @@
 
                 </div>
 
-            </div>
-
-        </div>
-
+                
         <!-- ===================================== -->
         <!-- ACCIONES -->
         <!-- ===================================== -->
@@ -177,7 +131,9 @@
             <div class="card-header">
 
                 <h5 class="mb-0">
+
                     Acciones
+
                 </h5>
 
             </div>
@@ -193,15 +149,16 @@
                         class="btn btn-outline-success d-flex align-items-center justify-content-center"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
-                        title="Guardar movimiento">
-
-                        <i class="bi bi-check-lg fs-3"></i>
+                        title="Guardar cambios">
+                    
+                        <i class="bi bi-check-circle fs-3"></i>
 
                     </button>
 
+
                     <!-- VOLVER -->
 
-                    <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
+                    <a href="{% url 'caja:administrar_caja' caja.id_caja %}"
                     class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
                     style="width:70px;height:70px;"
                     data-bs-toggle="tooltip"
@@ -210,6 +167,7 @@
                         <i class="bi bi-arrow-left fs-3"></i>
 
                     </a>
+
                 </div>
 
             </div>

@@ -27,6 +27,21 @@
     {% block css %}{% endblock %}
 </head>
 
+ <!-- Toolstip cualquier botón del sistema que tenga data-bs-toggle="tooltip" funcionará automáticamente -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+
+    [...tooltipTriggerList].forEach(function (element) {
+
+        new bootstrap.Tooltip(element);
+
+    });
+
+});
+</script>
+
 <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
 
 <div class="app-wrapper">

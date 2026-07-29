@@ -3,6 +3,10 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 
+from apps.security.models import Usuario
+from apps.inventario.models import Inventario
+
+
 from .models import (
     Venta,
     DetalleVenta,
@@ -49,27 +53,21 @@ def lista_ventas(request):
 @transaction.atomic
 def crear_venta(request):
 
-
     if request.method == "POST":
-
 
         venta_form = VentaForm(
             request.POST
         )
-
 
         detalle_formset = DetalleVentaFormSet(
             request.POST,
             prefix="detalle"
         )
 
-
         pago_formset = DetallePagoFormSet(
             request.POST,
             prefix="pago"
         )
-
-
 
         if (
             venta_form.is_valid()
@@ -77,46 +75,71 @@ def crear_venta(request):
             and pago_formset.is_valid()
         ):
 
-
             venta = venta_form.save(
                 commit=False
             )
-
-
 
             # ==========================================
             # DATOS DEL SISTEMA
             # ==========================================
 
+            usuario_id = request.session.get(
+                "usuario_id"
+            )
+
+            if not usuario_id:
+
+                messages.error(
+                    request,
+                    "No se pudo identificar el usuario actual."
+                )
+
+                return redirect(
+                    "security:login"
+                )
+
+            usuario = get_object_or_404(
+                Usuario,
+                id_usuario=usuario_id
+            )
+
+            # ==========================================
+            # VALIDAR CAJA ABIERTA
+            # ==========================================
+
+            apertura = AperturaCaja.objects.filter(
+                usuario=usuario,
+                estado=True
+            ).select_related(
+                "caja"
+            ).first()
+
+            if not apertura:
+
+                messages.error(
+                    request,
+                    "Debe tener una caja abierta para registrar ventas."
+                )
+
+                return redirect(
+                    "caja:lista_cajas"
+                )
+
+            # ==========================================
+            # ASIGNAR DATOS AUTOMÁTICOS
+            # ==========================================
+
+            venta.usuario = usuario
+
+            venta.caja = apertura.caja
+
             venta.fecha = timezone.now()
 
             venta.estado = True
 
-
-
-            # =====================================================
-            # PENDIENTE INTEGRACIÓN SECURITY
-            # =====================================================
-            #
-            # Aquí se asignará automáticamente:
-            #
-            # venta.usuario = usuario_actual
-            #
-            # =====================================================
-
-
-
-            # =====================================================
-            # PENDIENTE INTEGRACIÓN CAJA
-            # =====================================================
-            #
-            # Aquí se asignará:
-            #
-            # venta.caja = caja_activa
-            #
-            # =====================================================
-
-
+            # ==========================================
+            # GUARDAR VENTA
+            # ==========================================
 
             venta.save()
 
@@ -127,40 +150,21 @@ def crear_venta(request):
             # REGISTRO AUTOMÁTICO MOVIMIENTO
             # =====================================================
 
+            MovimientoCaja.objects.create(
 
-            apertura = AperturaCaja.objects.filter(
+                apertura=apertura,
 
-                caja=venta.caja,
+                usuario=usuario,
 
-                estado=True
+                tipo_movimiento="VENTA",
 
-            ).first()
+                monto=venta.total,
 
+                descripcion=f"Venta {venta.numero_venta}",
 
+                fecha_movimiento=timezone.now()
 
-            if apertura:
-
-
-                MovimientoCaja.objects.create(
-
-                    apertura=apertura,
-
-                    usuario=venta.usuario,
-
-                    tipo_movimiento="VENTA",
-
-                    monto=venta.total,
-
-                    descripcion=f"Venta {venta.numero_venta}"
-
-                )
-
-
-
-                venta.caja.saldo_actual += venta.total
-
-                venta.caja.save()
-
+            )
 
 
             # =====================================================
@@ -181,6 +185,37 @@ def crear_venta(request):
 
                 detalle.save()
 
+
+
+                inventario = get_object_or_404(
+
+                    Inventario,
+
+                    producto=detalle.producto,
+
+                    sucursal=venta.caja.sucursal
+
+                )
+
+
+                if inventario.stock_actual < detalle.cantidad:
+
+                    messages.error(
+
+                        request,
+
+                        f"No hay existencias suficientes de {detalle.producto.nombre}."
+
+                    )
+
+                    return redirect(
+                        "ventas:crear_venta"
+                    )
+
+
+                inventario.stock_actual -= detalle.cantidad
+
+                inventario.save()
 
 
             # =====================================================

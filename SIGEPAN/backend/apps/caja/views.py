@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 from .utils import (calcular_saldo_sistema, calcular_saldo_movimientos)
+from decimal import Decimal
 
 from .models import (
     Caja,
@@ -160,57 +161,15 @@ def crear_caja(request):
 
 
             # =========================================
-            # NO MODIFICAR SALDO ACTUAL
+            # INICIALIZAR CAMPOS LEGACY
             # =========================================
 
-            caja.saldo_actual = caja.saldo_actual
-
+            caja.saldo_inicial = Decimal("0.00")
+            caja.saldo_actual = Decimal("0.00")
 
             caja.save()
 
-
-
-            # =========================================
-            # REGISTRAR CAMBIO DE SALDO INICIAL
-            # =========================================
-
-            if saldo_inicial_anterior != caja.saldo_inicial:
-
-
-                usuario_id = request.session.get(
-                    "usuario_id"
-                )
-
-
-                usuario = get_object_or_404(
-                    Usuario,
-                    id_usuario=usuario_id
-                )
-
-
-                HistorialCaja.objects.create(
-
-                    caja=caja,
-
-                    usuario=usuario,
-
-                    tipo_cambio="AJUSTE_SALDO_INICIAL",
-
-                    valor_anterior=str(
-                        saldo_inicial_anterior
-                    ),
-
-                    valor_nuevo=str(
-                        caja.saldo_inicial
-                    ),
-
-                    observacion=
-                    "Modificación administrativa del saldo inicial de caja."
-
-                )
-
-
-
+ 
             messages.success(
                 request,
                 "Caja creada correctamente."

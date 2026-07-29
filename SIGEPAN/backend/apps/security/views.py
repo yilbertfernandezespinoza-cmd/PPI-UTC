@@ -1048,3 +1048,54 @@ def google_callback(request):
         )
 
     return redirect("security:perfil")
+
+def google_desvincular(request):
+
+    if not request.session.get("usuario_id"):
+
+        messages.error(
+            request,
+            "Debe iniciar sesión."
+        )
+
+        return redirect("security:login")
+
+    try:
+
+        usuario = Usuario.objects.get(
+            id_usuario=request.session["usuario_id"]
+        )
+
+        usuario.google_email = None
+        usuario.google_id = None
+        usuario.google_token = None
+
+        usuario.save(
+            update_fields=[
+                "google_email",
+                "google_id",
+                "google_token",
+            ]
+        )
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Seguridad",
+            tipo_accion="MODIFICAR",
+            descripcion="El usuario desvinculó su cuenta de Google.",
+        )
+
+        messages.success(
+            request,
+            "Cuenta de Google desvinculada correctamente."
+        )
+
+    except Exception as e:
+
+        messages.error(
+            request,
+            f"No fue posible desvincular la cuenta de Google. {e}"
+        )
+
+    return redirect("security:perfil")

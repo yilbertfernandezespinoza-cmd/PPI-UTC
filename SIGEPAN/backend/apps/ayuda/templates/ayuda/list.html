@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Ayudas</h2>
+
+<a href="{% url 'ayuda:create' %}" class="btn btn-primary mb-3">
+    Nueva Ayuda
+</a>
+
+<div id="tablaAyudas"></div>
+
+<form
+    id="formDeshabilitarAyuda"
+    method="post"
+    style="display:none;"
+>
+
+    {% csrf_token %}
+
+</form>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const ayudas = [
+
+{% for ayuda in ayudas %}
+
+{
+    id: {{ ayuda.id_ayuda }},
+    modulo: "{{ ayuda.modulo.nombre|escapejs }}",
+    pantalla: "{{ ayuda.pantalla|escapejs }}",
+    titulo: "{{ ayuda.titulo|escapejs }}",
+    orden: {{ ayuda.orden }},
+    estado: {{ ayuda.estado|yesno:"true,false" }},
+    editar: "{% url 'ayuda:update' ayuda.id_ayuda %}"
+}{% if not forloop.last %},{% endif %}
+
+{% endfor %}
+
+];
+
+const columns = [
+
+    {
+        title: "ID",
+        field: "id",
+        width: 80,
+        hozAlign: "center"
+    },
+
+    {
+        title: "Módulo",
+        field: "modulo"
+    },
+
+    {
+        title: "Pantalla",
+        field: "pantalla"
+    },
+
+    {
+        title: "Título",
+        field: "titulo"
+    },
+
+    {
+        title: "Orden",
+        field: "orden",
+        hozAlign: "center",
+        width: 90
+    },
+
+    {
+        title: "Estado",
+        field: "estado",
+        hozAlign: "center",
+
+        formatter(cell){
+
+            return cell.getValue()
+                ? '<span class="badge bg-success">Activo</span>'
+                : '<span class="badge bg-danger">Inactivo</span>';
+
+        }
+
+    },
+
+    {
+        title: "Acciones",
+        hozAlign: "center",
+
+        formatter(cell){
+
+            const data = cell.getRow().getData();
+
+            let botonEstado = "";
+
+            if (data.estado){
+
+                botonEstado = `
+                    <button
+                        class="btn btn-danger btn-sm"
+                        onclick="deshabilitarAyuda(${data.id}, '${data.titulo}')"
+                    >
+                        Deshabilitar
+                    </button>
+                `;
+
+            }else{
+
+                botonEstado = `
+                    <button
+                        class="btn btn-success btn-sm"
+                        onclick="deshabilitarAyuda(${data.id}, '${data.titulo}')"
+                    >
+                        Activar
+                    </button>
+                `;
+
+            }
+
+            return `
+                <div class="d-flex justify-content-center gap-2">
+
+                    <a
+                        href="${data.editar}"
+                        class="btn btn-warning btn-sm"
+                    >
+                        Editar
+                    </a>
+
+                    ${botonEstado}
+
+                </div>
+            `;
+
+        }
+
+    }
+
+];
+
+SIGEPAN.table.create({
+
+    selector: "#tablaAyudas",
+
+    data: ayudas,
+
+    columns
+
+});
+
+function deshabilitarAyuda(id, titulo){
+
+    const confirmar = confirm(
+        `¿Está seguro de deshabilitar la ayuda "${titulo}"?`
+    );
+
+    if (!confirmar){
+        return;
+    }
+
+    const formulario =
+        document.getElementById("formDeshabilitarAyuda");
+
+    formulario.action = `/ayuda/deshabilitar/${id}/`;
+
+    formulario.submit();
+
+}
+
+</script>
+
+{% endblock %}

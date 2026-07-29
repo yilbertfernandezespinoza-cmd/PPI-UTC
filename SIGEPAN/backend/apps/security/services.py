@@ -687,6 +687,12 @@ class MenuService:
                     else "Sin sucursal"
                 ),
 
+                "google_email": usuario.google_email,
+
+                "google_id": usuario.google_id,
+
+                "google_token": usuario.google_token,
+
             }
 
         except ObjectDoesNotExist:

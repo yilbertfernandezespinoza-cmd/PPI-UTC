@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h4>
+
+                {% if object %}
+                    Editar Ayuda
+                {% else %}
+                    Nueva Ayuda
+                {% endif %}
+
+            </h4>
+
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+
+                    <div class="alert alert-danger">
+
+                        {% for error in form.non_field_errors %}
+
+                            <div>{{ error }}</div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Módulo
+                    </label>
+
+                    {{ form.modulo }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Pantalla
+                    </label>
+
+                    {{ form.pantalla }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Título
+                    </label>
+
+                    {{ form.titulo }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Contenido
+                    </label>
+
+                    {{ form.contenido }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Icono
+                    </label>
+
+                    {{ form.icono }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Orden
+                    </label>
+
+                    {{ form.orden }}
+
+                </div>
+
+                <div class="mt-4">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Guardar
+                    </button>
+
+                    <a
+                        href="{% url 'ayuda:list' %}"
+                        class="btn btn-secondary"
+                    >
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

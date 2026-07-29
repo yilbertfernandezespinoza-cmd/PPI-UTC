@@ -47,6 +47,11 @@ MENU = [
                 "url": "empleados:empleado_list",
                 "icono": "bi-person-badge",
             },
+            {
+                "titulo": "Ayudas",
+                "url": "ayuda:list",
+                "icono": "bi-question-circle",
+            },
         ]
     },
 

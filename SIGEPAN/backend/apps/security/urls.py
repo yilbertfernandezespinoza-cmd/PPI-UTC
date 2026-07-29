@@ -21,6 +21,8 @@ from .views import (
     PerfilView,
     google_vincular,
     google_callback,
+    google_desvincular,
+    
 )
 
 app_name = "security"
@@ -113,6 +115,12 @@ urlpatterns = [
         "perfil/google/callback/",
         google_callback,
         name="google_callback",
+    ),
+
+    path(
+        "perfil/google/desvincular/",
+        google_desvincular,
+        name="google_desvincular",
     ),
 
 ]

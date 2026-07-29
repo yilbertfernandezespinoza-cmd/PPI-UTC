@@ -212,27 +212,54 @@
 
         {% if usuario_sesion.google_email %}
 
-            <div class="alert alert-success mb-3">
-                <strong>Cuenta vinculada:</strong><br>
-                {{ usuario_sesion.google_email }}
+            <div class="alert alert-success">
+
+                <p class="mb-2">
+                    <strong>Estado:</strong>
+                    Vinculada
+                </p>
+
+                <p class="mb-0">
+                    <strong>Correo de Google:</strong><br>
+                    {{ usuario_sesion.google_email }}
+                </p>
+
             </div>
+
+            <a href="{% url 'security:google_desvincular' %}"
+               class="btn btn-outline-danger">
+
+                <i class="bi bi-google me-2"></i>
+
+                Desvincular cuenta
+
+            </a>
 
         {% else %}
 
-            <div class="alert alert-warning mb-3">
-                No tiene una cuenta de Google vinculada.
+            <div class="alert alert-warning">
+
+                <p class="mb-2">
+                    <strong>Estado:</strong>
+                    No vinculada
+                </p>
+
+                <p class="mb-0">
+                    No existe una cuenta de Google asociada a este usuario.
+                </p>
+
             </div>
 
+            <a href="{% url 'security:google_vincular' %}"
+               class="btn btn-danger">
+
+                <i class="bi bi-google me-2"></i>
+
+                Vincular cuenta
+
+            </a>
+
         {% endif %}
-
-        <a href="{% url 'security:google_vincular' %}"
-           class="btn btn-danger">
-
-            <i class="bi bi-google me-2"></i>
-
-            Vincular cuenta
-
-        </a>
 
     </div>
 

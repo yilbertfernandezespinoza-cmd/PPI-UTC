@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-0">
+
+                {% if object %}
+
+                    Editar Cliente
+
+                {% else %}
+
+                    Nuevo Cliente
+
+                {% endif %}
+
+            </h2>
+
+            <small class="text-muted">
+
+                Registro y actualización de clientes del sistema.
+
+            </small>
+
+        </div>
+
+    </div>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+
+        <div class="alert alert-danger">
+
+            {{ form.non_field_errors }}
+
+        </div>
+
+        {% endif %}
+
+        <!-- ===================================== -->
+        <!-- INFORMACIÓN GENERAL -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    Información General
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Tipo de Cliente
+
+                        </label>
+
+                        {{ form.tipo_cliente }}
+
+                        {% for error in form.tipo_cliente.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Tipo de Identificación
+
+                        </label>
+
+                        {{ form.tipo_identificacion }}
+
+                        {% for error in form.tipo_identificacion.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Identificación
+
+                        </label>
+
+                        {{ form.identificacion }}
+
+                        <small
+                            id="ayudaIdentificacion"
+                            class="text-muted">
+                        </small>
+
+                        {% for error in form.identificacion.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="col-md-6 mb-3 d-flex align-items-end">
+
+                        <div class="form-check">
+
+                            {{ form.estado }}
+
+                            <label class="form-check-label">
+
+                                Cliente activo
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- INFORMACIÓN DEL CLIENTE -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    Información del Cliente
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+
+                        <label
+                            class="form-label"
+                            id="labelNombre">
+
+                            Nombre
+
+                        </label>
+
+                        {{ form.nombre }}
+
+                        {% for error in form.nombre.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Correo
+
+                        </label>
+
+                        {{ form.correo }}
+
+                        {% for error in form.correo.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div
+                        class="col-md-6 mb-3"
+                        id="grupoApellido1">
+
+                        <label class="form-label">
+
+                            Primer Apellido
+
+                        </label>
+
+                        {{ form.apellido1 }}
+
+                        {% for error in form.apellido1.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Teléfono
+
+                        </label>
+
+                        {{ form.telefono }}
+                        
+                        <small
+                            id="ayudaTelefono"
+                            class="text-muted">
+                        </small>
+
+                        {% for error in form.telefono.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div
+                        class="col-md-6 mb-3"
+                        id="grupoApellido2">
+
+                        <label class="form-label">
+
+                            Segundo Apellido
+
+                        </label>
+
+                        {{ form.apellido2 }}
+
+                        {% for error in form.apellido2.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+
+                            Dirección
+
+                        </label>
+
+                        {{ form.direccion }}
+
+                        {% for error in form.direccion.errors %}
+
+                            <div class="text-danger small">
+
+                                {{ error }}
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- ACCIONES -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+
+                    Acciones
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-center gap-3">
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-success d-flex align-items-center justify-content-center"
+                        style="width:70px;height:70px;"
+                        data-bs-toggle="tooltip"
+                        title="Guardar">
+
+                        <i class="bi bi-check-circle fs-3"></i>
+
+                    </button>
+
+                    <a
+                        href="{% url 'clientes:listar' %}"
+                        class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                        style="width:70px;height:70px;"
+                        data-bs-toggle="tooltip"
+                        title="Volver">
+
+                        <i class="bi bi-arrow-left fs-3"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tipoCliente = document.getElementById("id_tipo_cliente");
+    const tipoIdentificacion = document.getElementById("id_tipo_identificacion");
+    const ayudaIdentificacion = document.getElementById("ayudaIdentificacion");
+    const identificacion = document.getElementById("id_identificacion");
+
+    const telefono = document.getElementById("id_telefono");
+    const ayudaTelefono = document.getElementById("ayudaTelefono");
+
+    let primeraCarga = true;
+    const opcionesIdentificacion = {
+        FISICA: [
+            { value: "CF", text: "Cédula Física" },
+            { value: "DIMEX", text: "DIMEX" },
+            { value: "PASS", text: "Pasaporte" }
+        ],
+        JURIDICA: [
+            { value: "CJ", text: "Cédula Jurídica" }
+        ]
+    };
+
+    const nombreLabel = document.getElementById("labelNombre");
+    const grupoApellido1 = document.getElementById("grupoApellido1");
+    const grupoApellido2 = document.getElementById("grupoApellido2");
+
+
+    function cargarTiposIdentificacion(tipo) {
+
+        tipoIdentificacion.innerHTML = "";
+
+        opcionesIdentificacion[tipo].forEach(opcion => {
+
+            tipoIdentificacion.add(
+                new Option(opcion.text, opcion.value)
+            );
+
+            });
+
+    }
+
+    function actualizarAyudaIdentificacion() {
+
+        
+
+        switch (tipoIdentificacion.value) {
+
+            case "CF":
+
+                ayudaIdentificacion.textContent =
+                    "Debe contener exactamente 9 dígitos.";
+
+                identificacion.maxLength = 9;
+
+                break;
+
+            case "CJ":
+
+                ayudaIdentificacion.textContent =
+                    "Debe contener exactamente 10 dígitos.";
+
+                identificacion.maxLength = 10;    
+
+                break;
+
+            case "DIMEX":
+
+                ayudaIdentificacion.textContent =
+                    "Debe contener entre 11 y 12 dígitos.";
+
+                identificacion.maxLength = 12;
+
+                break;
+
+            case "PASS":
+
+                ayudaIdentificacion.textContent =
+                    "Debe contener entre 6 y 20 caracteres alfanuméricos.";
+
+                identificacion.maxLength = 20;
+
+                break;
+
+            default:
+
+                ayudaIdentificacion.textContent = "";
+
+        }
+
+    }
+
+    function actualizarFormulario() {
+
+        if (tipoCliente.value === "JURIDICA") {
+
+            nombreLabel.textContent = "Razón Social";
+
+            grupoApellido1.style.display = "none";
+            grupoApellido2.style.display = "none";
+
+
+            cargarTiposIdentificacion("JURIDICA");
+            // Seleccionar automáticamente Cédula Jurídica
+            tipoIdentificacion.value = "CJ";
+
+            // Bloquear el campo
+            tipoIdentificacion.disabled = true;
+
+            if (!primeraCarga){
+                identificacion.value="";
+            }
+
+            actualizarAyudaIdentificacion();
+
+        } else {
+
+            nombreLabel.textContent = "Nombre";
+
+            grupoApellido1.style.display = "";
+            grupoApellido2.style.display = "";
+
+            cargarTiposIdentificacion("FISICA");
+
+            tipoIdentificacion.disabled = false;
+
+            tipoIdentificacion.value = "CF";    
+
+            if (!primeraCarga) {
+                identificacion.value = "";
+            }
+
+            actualizarAyudaIdentificacion();
+
+        }
+
+        actualizarAyudaIdentificacion();
+
+    }
+
+    function actualizarTelefono() {
+
+        ayudaTelefono.textContent =
+            "Debe contener exactamente 8 dígitos.";
+
+        telefono.maxLength = 8;
+
+    }
+
+    actualizarFormulario();
+    actualizarTelefono();
+    
+    primeraCarga = false;
+
+    tipoCliente.addEventListener(
+        "change",
+        actualizarFormulario
+    );
+
+    tipoIdentificacion.addEventListener(
+        "change",
+        function (){
+            identificacion.value = "";
+            actualizarAyudaIdentificacion();
+        }
+        
+    );
+
+    telefono.addEventListener("input", function () {
+
+        this.value = this.value.replace(/\D/g, "");
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

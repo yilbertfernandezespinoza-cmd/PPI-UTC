@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-0">
+                Clientes
+            </h2>
+
+            <small class="text-muted">
+                Gestión de clientes registrados en SIGEPAN.
+            </small>
+
+        </div>
+
+        {% if puede_crear %}
+
+        <a
+            href="{% url 'clientes:crear' %}"
+            class="btn btn-outline-success"
+        >
+
+            <i class="bi bi-plus-circle me-2"></i>
+
+            Nuevo Cliente
+
+        </a>
+
+        {% endif %}
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- BÚSQUEDA -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <input
+                type="text"
+                id="buscarClientes"
+                class="form-control"
+                placeholder="Buscar por identificación, nombre, teléfono o correo..."
+            >
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- TABLA -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+
+                Clientes Registrados
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div id="tablaClientes"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const clientes = [
+
+{% for cliente in clientes %}
+
+{
+
+    id: "{{ cliente.id_cliente }}",
+
+    identificacion: "{{ cliente.identificacion|escapejs }}",
+
+    tipo: "{{ cliente.get_tipo_cliente_display|default:cliente.tipo_cliente }}",
+
+    nombre: "{{ cliente.nombre_completo|escapejs }}",
+
+    telefono: "{{ cliente.telefono|escapejs }}",
+
+    correo: "{{ cliente.correo|escapejs }}",
+
+    estado: {{ cliente.estado|yesno:"true,false" }},
+
+    editar: "{% url 'clientes:editar' cliente.id_cliente %}",
+
+    estado_url: "{% url 'clientes:estado' cliente.id_cliente %}",
+
+    csrfToken: "{{ csrf_token }}"
+
+}
+
+{% if not forloop.last %},{% endif %}
+
+{% endfor %}
+
+];
+
+SIGEPAN.table.create({
+
+    selector: "#tablaClientes",
+
+    search: "#buscarClientes",
+
+    data: clientes,
+
+    columns: [
+
+        {
+            title: "Identificación",
+            field: "identificacion"
+        },
+
+        {
+            title: "Tipo",
+            field: "tipo"
+        },
+
+        {
+            title: "Cliente",
+            field: "nombre"
+        },
+
+        {
+            title: "Teléfono",
+            field: "telefono"
+        },
+
+        {
+            title: "Correo",
+            field: "correo"
+        },
+
+        {
+
+            title: "Estado",
+
+            field: "estado",
+
+            formatter(cell){
+
+                return cell.getValue()
+
+                    ? '<span class="badge bg-success">Activo</span>'
+
+                    : '<span class="badge bg-danger">Inactivo</span>';
+
+            }
+
+        },
+
+        {
+
+            title: "Acciones",
+
+            hozAlign: "center",
+
+            formatter(cell){
+
+                const data = cell.getRow().getData();
+
+                let botones = '<div class="d-flex justify-content-center gap-2">';
+
+                {% if puede_modificar %}
+
+                botones += `
+                <a
+                    href="${data.editar}"
+                    class="btn btn-outline-primary btn-sm"
+                    data-bs-toggle="tooltip"
+                    title="Editar">
+
+                    <i class="bi bi-pencil-square"></i>
+
+                </a>
+                `;
+
+                {% endif %}
+
+                {% if puede_eliminar %}
+
+                botones += `
+                <button
+                    class="btn btn-outline-danger btn-sm btn-estado"
+                    data-bs-toggle="tooltip"
+                    title="${data.estado ? 'Deshabilitar' : 'Activar'}">
+
+                    <i class="bi ${data.estado ? 'bi-x-circle' : 'bi-check-circle'}"></i>
+
+                </button>
+                `;
+
+                {% endif %}
+
+                botones += "</div>";
+
+                return botones;
+
+            },
+
+            cellClick(e, cell){
+
+                if(!e.target.closest(".btn-estado")){
+
+                    return;
+
+                }
+
+                const data = cell.getRow().getData();
+
+                SIGEPAN.table.postAction({
+
+                    url: data.estado_url,
+
+                    csrfToken: data.csrfToken,
+
+                    message: data.estado
+                        ? "¿Desea deshabilitar este cliente?"
+                        : "¿Desea activar este cliente?"
+
+                });
+
+            }
+
+        }
+
+    ]
+
+});
+
+</script>
+
+{% endblock %}

@@ -1,15 +1,90 @@
 {% extends "base.html" %}
 
+{% load static %}
+
+
+{% block css %}
+
+<link rel="stylesheet"
+      href="{% static 'ventas/css/venta_pos.css' %}">
+
+{% endblock %}
 
 {% block content %}
 
 
-<div class="container mt-4">
+<div class="container-fluid mt-4 pos-container">
 
 
-<h2>
-Registrar venta
-</h2>
+<!-- =====================================================
+     ENCABEZADO POS
+===================================================== -->
+
+<div class="card pos-card mb-4">
+
+
+    <div class="card-body">
+
+
+        <div class="d-flex justify-content-between align-items-center">
+
+
+            <div>
+
+
+                <h2 class="pos-header-title mb-1">
+
+                    <i class="bi bi-cart-plus pos-header-icon"></i>
+
+                    Nueva Venta
+
+                </h2>
+
+
+                <small class="text-muted">
+
+                    Registro de ventas - Punto de Venta SIGEPAN
+
+                </small>
+
+
+            </div>
+
+
+
+            <div class="text-end">
+
+
+                <span class="badge bg-success fs-6">
+
+                    Caja Activa
+
+                </span>
+
+
+                <br>
+
+
+                <small class="text-muted">
+
+                    Usuario: Sistema
+
+                </small>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
 
 
 <form method="POST">
@@ -19,82 +94,703 @@ Registrar venta
 
 
 
-<h4>
-Datos generales
-</h4>
 
 
-{{ venta_form.as_p }}
+<!-- =====================================================
+     CLIENTE
+===================================================== -->
 
 
-
-<hr>
-
-
-<h4>
-Productos
-</h4>
+<div class="card pos-card mb-4">
 
 
-{{ detalle_formset.management_form }}
+<div class="card-header bg-primary text-white pos-card-header">
+
+<h5 class="mb-0">
 
 
-{% for form in detalle_formset %}
+<i class="bi bi-person"></i>
 
-    <div class="card p-3 mb-2">
-
-        {{ form.as_p }}
-
-    </div>
+Cliente
 
 
-{% endfor %}
-
-
-
-<hr>
-
-
-
-<h4>
-Pagos
-</h4>
-
-
-{{ pago_formset.management_form }}
-
-
-
-{% for form in pago_formset %}
-
-
-<div class="card p-3 mb-2">
-
-    {{ form.as_p }}
+</h5>
 
 
 </div>
 
 
-{% endfor %}
+
+<div class="card-body">
 
 
+<div class="row align-items-end">
 
-<button type="submit"
-        class="btn btn-success">
 
-Guardar venta
+<div class="col-md-8">
+
+
+<label class="form-label fw-bold">
+
+Buscar cliente
+
+</label>
+
+
+<div class="input-group">
+
+
+<input type="text"
+class="form-control pos-search"
+placeholder="Nombre o identificación">
+
+
+<button type="button"
+class="btn btn-primary pos-search-button">
+
+
+<i class="bi bi-search"></i>
+
+Buscar
+
 
 </button>
 
 
+</div>
 
-<a href="{% url 'ventas:lista_ventas' %}"
-   class="btn btn-secondary">
+
+</div>
+
+
+
+
+<div class="col-md-4 mt-3 mt-md-0">
+
+
+<button type="button"
+class="btn btn-success w-100 pos-btn">
+
+
+<i class="bi bi-person-plus"></i>
+
+Registrar Cliente
+
+
+</button>
+
+
+</div>
+
+
+
+</div>
+
+
+
+<hr>
+
+
+
+<div class="alert alert-light mb-0">
+
+
+<strong>
+
+Cliente seleccionado:
+
+</strong>
+
+
+Público General
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<!-- =====================================================
+     PRODUCTOS
+===================================================== -->
+
+
+<div class="card pos-card mb-4">
+
+
+<div class="card-header bg-primary text-white pos-card-header">
+
+
+<h5 class="mb-0">
+
+
+<i class="bi bi-box-seam"></i>
+
+Productos
+
+
+</h5>
+
+
+</div>
+
+
+
+<div class="card-body">
+
+
+
+<div class="input-group">
+
+
+<input type="text"
+       class="form-control"
+       placeholder="Buscar producto">
+
+
+<button type="button"
+        class="btn btn-success">
+
+
+<i class="bi bi-plus-circle"></i>
+
+Agregar
+
+
+</button>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<!-- =====================================================
+     CARRITO
+===================================================== -->
+
+
+<div class="card pos-card mb-4">
+
+
+<div class="card-header bg-dark text-white">
+
+
+<h5 class="mb-0">
+
+
+<i class="bi bi-cart"></i>
+
+Detalle de venta
+
+
+</h5>
+
+
+</div>
+
+
+
+<div class="card-body p-0">
+
+
+
+<div class="table-responsive">
+
+
+<table class="table table-hover pos-cart-table">
+
+
+<thead class="table-light">
+
+
+<tr>
+
+
+<th>
+
+Producto
+
+</th>
+
+
+<th class="text-center">
+
+Cantidad
+
+</th>
+
+
+<th class="text-end">
+
+Precio
+
+</th>
+
+
+<th class="text-end">
+
+Subtotal
+
+</th>
+
+
+<th class="text-center">
+
+Acción
+
+</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+<tbody>
+
+
+<tr>
+
+
+<td colspan="5"
+    class="text-center text-muted">
+
+
+<td colspan="5"
+class="pos-cart-empty">
+
+No hay productos agregados
+
+</td>
+
+
+</td>
+
+
+</tr>
+
+
+</tbody>
+
+
+
+</table>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div class="row">
+
+
+
+<!-- =====================================================
+     RESUMEN
+===================================================== -->
+
+
+<div class="col-md-6">
+
+
+
+<div class="card shadow-sm">
+
+
+<div class="card-header bg-secondary text-white">
+
+
+<h5 class="mb-0">
+
+
+<i class="bi bi-calculator"></i>
+
+Resumen
+
+
+</h5>
+
+
+</div>
+
+
+
+<div class="card-body">
+
+
+
+<div class="pos-summary-line">
+
+
+<span>
+
+Subtotal
+
+</span>
+
+
+<strong>
+
+₡0.00
+
+</strong>
+
+
+</div>
+
+
+
+<div class="d-flex justify-content-between">
+
+
+<span>
+
+IVA
+
+</span>
+
+
+<strong>
+
+₡0.00
+
+</strong>
+
+
+</div>
+
+
+
+<div class="d-flex justify-content-between">
+
+
+<span>
+
+Descuento
+
+</span>
+
+
+<strong>
+
+₡0.00
+
+</strong>
+
+
+</div>
+
+
+
+<hr>
+
+
+
+<div class="d-flex justify-content-between">
+
+
+<h4>
+
+TOTAL
+
+</h4>
+
+
+<h4 class="text-success pos-summary-total">
+
+
+₡0.00
+
+
+</h4>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- =====================================================
+     PAGOS
+===================================================== -->
+
+
+<div class="col-md-6">
+
+
+
+<div class="card shadow-sm">
+
+
+<div class="card-header bg-secondary text-white">
+
+
+<h5 class="mb-0">
+
+
+<i class="bi bi-credit-card"></i>
+
+Métodos de Pago
+
+
+</h5>
+
+
+</div>
+
+
+
+<div class="card-body">
+
+
+
+<div class="pos-payment-option">
+
+
+<input class="form-check-input"
+       type="checkbox">
+
+
+<label class="form-check-label">
+
+
+Efectivo
+
+
+</label>
+
+
+</div>
+
+
+
+
+<div class="pos-payment-option">
+
+
+<input class="form-check-input"
+       type="checkbox">
+
+
+<label class="form-check-label">
+
+
+Tarjeta
+
+
+</label>
+
+
+</div>
+
+
+
+
+
+<div class="pos-payment-option">
+
+
+<input class="form-check-input"
+       type="checkbox">
+
+
+<label class="form-check-label">
+
+
+SINPE
+
+
+</label>
+
+
+</div>
+
+
+
+
+<div class="form-check">
+
+
+<input class="form-check-input"
+       type="checkbox">
+
+
+<label class="form-check-label">
+
+
+Transferencia
+
+
+</label>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- =====================================================
+     BOTONES
+===================================================== -->
+
+
+<div class="card shadow-sm mt-4">
+
+
+<div class="card-body">
+
+
+<div class="row g-3">
+
+
+
+<div class="col-md-4">
+
+
+<button type="submit"
+class="btn btn-success w-100 pos-btn pos-btn-cobrar">
+
+
+<i class="bi bi-cash-stack"></i>
+
+
+Cobrar
+
+
+</button>
+
+
+</div>
+
+
+
+
+
+<div class="col-md-4">
+
+
+<button type="button"
+class="btn btn-warning w-100 pos-btn">
+
+
+<i class="bi bi-x-circle"></i>
+
 
 Cancelar
 
+
+</button>
+
+
+</div>
+
+
+
+
+
+<div class="col-md-4">
+
+
+<a href="{% url 'ventas:lista_ventas' %}"
+   class="btn btn-secondary w-100 pos-btn d-flex align-items-center justify-content-center gap-2">
+
+<i class="bi bi-arrow-left"></i>
+
+
+    <span>
+        Volver
+    </span>
+
+
 </a>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
 
 
 </form>

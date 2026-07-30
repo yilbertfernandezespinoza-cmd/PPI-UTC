@@ -1,0 +1,471 @@
+/* =====================================================
+   SIGEPAN
+   Módulo Ventas POS
+   Estilos exclusivos Punto de Venta
+===================================================== */
+
+
+
+/* =====================================================
+   CONTENEDOR PRINCIPAL POS
+===================================================== */
+
+
+.pos-container{
+
+
+    padding-bottom:30px;
+
+
+}
+
+
+
+
+
+/* =====================================================
+   TITULO POS
+===================================================== */
+
+
+.pos-header-title{
+
+
+    font-size:2rem;
+
+
+    font-weight:700;
+
+
+}
+
+
+
+
+
+.pos-header-icon{
+
+
+    font-size:2.2rem;
+
+
+    margin-right:10px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   TARJETAS DEL POS
+===================================================== */
+
+
+.pos-card{
+
+
+    border-radius:
+    12px;
+
+
+    border:none;
+
+
+    box-shadow:
+    0 3px 10px rgba(0,0,0,.10);
+
+
+}
+
+
+
+.pos-card-header{
+
+
+    font-weight:600;
+
+
+    font-size:1.05rem;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   BUSCADORES POS
+===================================================== */
+
+
+.pos-search{
+
+
+    height:55px;
+
+
+    font-size:1.05rem;
+
+
+}
+
+
+
+.pos-search-button{
+
+
+    min-width:120px;
+
+
+    font-weight:600;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   BOTONES POS
+===================================================== */
+
+
+.pos-btn{
+
+
+    min-height:65px;
+
+
+    font-size:1.15rem;
+
+
+    font-weight:700;
+
+
+    border-radius:12px;
+
+
+}
+
+
+
+.pos-btn i{
+
+
+    font-size:1.4rem;
+
+
+    margin-right:8px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   BOTÓN PRINCIPAL COBRAR
+===================================================== */
+
+
+.pos-btn-cobrar{
+
+
+    min-height:85px;
+
+
+    font-size:1.5rem;
+
+
+    font-weight:800;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   TABLA CARRITO
+===================================================== */
+
+
+.pos-cart-table{
+
+
+    margin-bottom:0;
+
+
+}
+
+
+
+.pos-cart-table th{
+
+
+    font-size:.95rem;
+
+
+    text-transform:uppercase;
+
+
+}
+
+
+
+.pos-cart-table td{
+
+
+    vertical-align:middle;
+
+
+}
+
+
+
+
+
+.pos-cart-empty{
+
+
+    padding:40px;
+
+
+    text-align:center;
+
+
+    color:#6c757d;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   RESUMEN DE VENTA
+===================================================== */
+
+
+.pos-summary-line{
+
+
+    display:flex;
+
+
+    justify-content:space-between;
+
+
+    align-items:center;
+
+
+    margin-bottom:12px;
+
+
+    font-size:1.05rem;
+
+
+}
+
+
+
+.pos-summary-total{
+
+
+    font-size:2.3rem;
+
+
+    font-weight:800;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   METODOS DE PAGO
+===================================================== */
+
+
+.pos-payment-option{
+
+
+    padding:15px;
+
+
+    border-radius:10px;
+
+
+    border:1px solid #dee2e6;
+
+
+    margin-bottom:12px;
+
+
+    cursor:pointer;
+
+
+}
+
+
+
+.pos-payment-option:hover{
+
+
+    background:#f8f9fa;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   CLIENTE SELECCIONADO
+===================================================== */
+
+
+.pos-client-box{
+
+
+    padding:15px;
+
+
+    border-radius:10px;
+
+
+    background:#f8f9fa;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   RESPONSIVE TABLET
+===================================================== */
+
+
+@media(max-width:992px){
+
+
+    .pos-btn{
+
+
+        min-height:60px;
+
+
+        font-size:1rem;
+
+
+    }
+
+
+
+    .pos-summary-total{
+
+
+        font-size:2rem;
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   PANTALLAS TÁCTILES GRANDES
+===================================================== */
+
+
+@media(min-width:1400px){
+
+
+
+    .pos-search{
+
+
+        height:65px;
+
+
+    }
+
+
+
+    .pos-btn{
+
+
+        min-height:75px;
+
+
+    }
+
+
+
+    .pos-btn-cobrar{
+
+
+        min-height:100px;
+
+
+    }
+
+
+
+}

@@ -78,7 +78,7 @@ MENU = [
             {
                 "modulo_permiso": "Clientes",
                 "titulo": "Clientes",
-                "url": "clientes:lista_clientes",
+                "url": "clientes:listar",
                 "icono": "bi-people",
 
                 "dashboard":True,

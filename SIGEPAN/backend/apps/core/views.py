@@ -4,18 +4,11 @@ from .system_info import SYSTEM_INFO
 
 @never_cache
 def home(request):
-    """
-    Vista principal de SIGEPAN.
+    if request.user.is_authenticated:
 
-    Requiere una sesión activa del sistema.
-    y evita mostrar contenido almacenado en caché.
-    """
-    usuario_id = request.session.get("usuario_id")
+        return redirect("dashboard:inicio")
 
-    if not usuario_id:
-        return redirect("security:login")
-    
-    return render(request, "core/home.html")
+    return redirect("security:login")
 
 @never_cache
 def acerca_de(request):

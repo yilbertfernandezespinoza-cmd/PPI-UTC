@@ -1,10 +1,33 @@
 from django.urls import path
-from . import views
+
+from .views import (
+    ClienteListView,
+    ClienteCreateView,
+    ClienteUpdateView,
+    ClienteDisableView,
+)
+
 app_name = "clientes"
 
 urlpatterns = [
-    path('', views.lista_clientes, name='lista_clientes'),
-    path('nuevo/', views.nuevo_cliente, name='nuevo_cliente'),
-    path('editar/<int:pk>/', views.editar_cliente, name='editar_cliente'),
-    path('eliminar/<int:pk>/', views.eliminar_cliente, name='eliminar_cliente'),
+    path(
+        "",
+        ClienteListView.as_view(),
+        name="listar",
+    ),
+    path(
+        "crear/",
+        ClienteCreateView.as_view(),
+        name="crear",
+    ),
+    path(
+        "editar/<int:id_cliente>/",
+        ClienteUpdateView.as_view(),
+        name="editar",
+    ),
+    path(
+        "estado/<int:id_cliente>/",
+        ClienteDisableView.as_view(),
+        name="estado",
+    ),
 ]

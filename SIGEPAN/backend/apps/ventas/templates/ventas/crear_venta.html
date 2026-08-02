@@ -81,9 +81,14 @@
                                 <div id="lista_clientes_pos" class="list-group position-absolute w-100 shadow-sm mt-1" style="z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
                             </div>
                             <div class="col-md-4">
-                                <button type="button" id="btn_registrar_cliente" class="btn btn-outline-success w-100 d-inline-flex align-items-center justify-content-center gap-1">
+                                <!-- Botón Azul para Ver / Modificar Clientes -->
+                                <a href="{% url 'clientes:listar' %}" class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-1 text-white">
+                                    <i class="bi bi-people-fill"></i> Consultar Clientes
+                                </a>
+                            <!-- Botón Amarillo con letras negras para Registrar Cliente -->
+                                <a href="{% url 'clientes:crear' %}" id="btn_registrar_cliente" class="btn btn-warning text-dark w-100 d-inline-flex align-items-center justify-content-center gap-1 fw-bold">
                                     <i class="bi bi-person-plus"></i> Registrar Cliente
-                                </button>
+                                </a>
                             </div>
                         </div>
                         <hr class="my-3 text-secondary opacity-25">

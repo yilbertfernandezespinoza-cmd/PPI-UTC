@@ -22,15 +22,14 @@
         <!-- Grupo de Botones de Acción -->
             <div class="d-flex gap-2">
                 <!-- Botón para volver a la venta -->
-                <a href="{% url 'ventas:crear_venta' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i> Volver a Venta
+                <a href="{% url 'ventas:crear_venta' %}" class="btn btn-secondary d-inline-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-arrow-left"></i> Volver a Venta
                 </a>
 
-                <!-- Botón para registrar nuevo cliente (Debe llevar 'clientes:') -->
+                <!-- Botón para registrar nuevo cliente -->
                 {% if puede_crear %}
-                <!-- Debe tener obligatoriamente 'clientes:crear' -->
-                <a href="{% url 'clientes:crear' %}" class="btn btn-outline-success">
-                    <i class="bi bi-plus-circle me-2"></i> Registrar Cliente
+                <a href="{% url 'clientes:crear' %}" class="btn btn-warning text-dark d-inline-flex align-items-center justify-content-center gap-1 fw-bold">
+                    <i class="bi bi-person-plus"></i> Registrar Cliente
                 </a>
                 {% endif %}
             </div>

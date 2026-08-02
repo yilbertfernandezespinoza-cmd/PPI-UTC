@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-0">
+                Registrar Cliente
+            </h2>
+
+            <small class="text-muted">
+                Complete la información requerida para dar de alta un nuevo cliente.
+            </small>
+
+        </div>
+
+        <a
+            href="{% url 'clientes:listar' %}"
+            class="btn btn-outline-secondary"
+        >
+
+            <i class="bi bi-arrow-left me-2"></i>
+
+            Volver
+
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- FORMULARIO -->
+    <!-- ===================================== -->
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-white py-3">
+
+                    <h5 class="mb-0 text-primary">
+
+                        <i class="bi bi-person-plus me-2"></i>
+
+                        Datos del Cliente
+
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <form method="post" novalidate>
+
+                        {% csrf_token %}
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+
+                        <div class="alert alert-danger" role="alert">
+
+                            {% for error in form.non_field_errors %}
+
+                            <div>{{ error }}</div>
+
+                            {% endfor %}
+
+                        </div>
+
+                        {% endif %}
+
+                        <!-- Campos del formulario -->
+                        <div class="row">
+
+                            {% for field in form %}
+
+                            <div class="col-md-6 mb-3">
+
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+
+                                    {{ field.label }}
+
+                                </label>
+
+                                {{ field }}
+
+                                {% if field.help_text %}
+
+                                <div class="form-text">
+                                    {{ field.help_text }}
+                                </div>
+
+                                {% endif %}
+
+                                {% for error in field.errors %}
+
+                                <div class="invalid-feedback d-block">
+                                    {{ error }}
+                                </div>
+
+                                {% endfor %}
+
+                            </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+
+                            <a
+                                href="{% url 'clientes:listar' %}"
+                                class="btn btn-secondary"
+                            >
+
+                                <i class="bi bi-x-circle me-1"></i>
+
+                                Cancelar
+
+                            </a>
+
+                            <button
+                                type="submit"
+                                class="btn btn-success"
+                            >
+
+                                <i class="bi bi-check-circle me-1"></i>
+
+                                Guardar Cliente
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Asegura que los campos de Django obtengan las clases de Bootstrap automáticamente
+    const inputs = document.querySelectorAll("input, select, textarea");
+    inputs.forEach(input => {
+        if (!input.classList.contains("form-control") && !input.classList.contains("form-select") && input.type !== "checkbox" && input.type !== "radio") {
+            if (input.tagName === "SELECT") {
+                input.classList.add("form-select");
+            } else {
+                input.classList.add("form-control");
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Producto
 from .forms import ProductoForm
+from django.http import JsonResponse
+from django.db.models import Q
+
 
 # Listar productos
 def lista_productos(request):
@@ -38,3 +41,77 @@ def eliminar_producto(request, pk):
         producto.save()
         return redirect('productos:lista_productos')
     return render(request, 'productos/eliminar.html', {'producto': producto})
+
+# =====================================================
+# BUSCAR PRODUCTOS POS
+# =====================================================
+
+def buscar_producto_pos(request):
+
+    texto = request.GET.get(
+        "q",
+        ""
+    ).strip()
+
+
+    if len(texto) < 2:
+
+        return JsonResponse(
+            [],
+            safe=False
+        )
+
+
+    productos = (
+        Producto.objects
+        .filter(
+            estado=True
+        )
+        .filter(
+            Q(nombre__icontains=texto)
+            |
+            Q(codigo__icontains=texto)
+        )
+        .order_by(
+            "nombre"
+        )[:10]
+    )
+
+
+    datos = []
+
+
+    for producto in productos:
+
+        datos.append({
+
+            "id":
+                producto.id_producto,
+
+            "codigo":
+                producto.codigo,
+
+            "nombre":
+                producto.nombre,
+
+            "precio":
+                str(
+                    producto.precio_venta
+                ),
+
+            "unidad":
+                producto.unidad_medida,
+
+            "impuesto":
+                str(
+                    producto.porcentaje_impuesto
+                ),
+
+        })
+
+
+    return JsonResponse(
+        datos,
+        safe=False
+    )
+

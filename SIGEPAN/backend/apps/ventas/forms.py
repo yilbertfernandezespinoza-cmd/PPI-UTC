@@ -20,15 +20,10 @@ class VentaForm(forms.ModelForm):
         model = Venta
 
         fields = [
-
             "cliente",
-
             "tipo_comprobante",
-
             "metodo_pago",
-
         ]
-
 
         widgets = {
 
@@ -60,23 +55,20 @@ class VentaForm(forms.ModelForm):
 
 class DetalleVentaForm(forms.ModelForm):
 
-
     class Meta:
 
-
         model = DetalleVenta
-
 
         fields = [
 
             "producto",
             "cantidad",
+            "precio_unitario",
+            "subtotal",
 
         ]
 
-
         widgets = {
-
 
             "producto": forms.Select(
                 attrs={
@@ -84,20 +76,17 @@ class DetalleVentaForm(forms.ModelForm):
                 }
             ),
 
-
             "cantidad": forms.NumberInput(
                 attrs={
                     "class": "form-control"
                 }
             ),
 
-
             "precio_unitario": forms.NumberInput(
                 attrs={
                     "class": "form-control"
                 }
             ),
-
 
             "subtotal": forms.NumberInput(
                 attrs={
@@ -157,7 +146,7 @@ class DetallePagoForm(forms.ModelForm):
 
         }
 
-
+    
 
 # =====================================================
 # FORMSETS

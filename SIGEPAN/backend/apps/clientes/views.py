@@ -1,17 +1,23 @@
-from django.views.generic import ListView, CreateView, UpdateView
-from django.urls import reverse_lazy
 from django.contrib import messages
+from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import (
+    CreateView,
+    ListView,
+    UpdateView,
+    View,
+)
+
+from apps.security.audit import AuditMixin
+from apps.security.mixins import SessionRequiredMixin
+from apps.security.models import RolPermiso
+from apps.security.permissions import PermissionRequiredMixin
 
 from .forms import ClienteForm
 from .models import Cliente
 from .services import ClienteService
-
-from apps.security.permissions import PermissionRequiredMixin
-from apps.security.mixins import SessionRequiredMixin
-from apps.security.audit import AuditMixin
-
-from apps.security.models import RolPermiso
 
 class ClienteListView(
     SessionRequiredMixin,
@@ -181,3 +187,64 @@ class ClienteDisableView(
         return redirect(
             "clientes:listar"
         ) 
+
+# =====================================================
+# BUSCAR CLIENTES POS
+# =====================================================
+
+def buscar_cliente_pos(request):
+    """
+    Búsqueda rápida de clientes para el POS.
+    Permite buscar por nombre, apellidos o identificación.
+    """
+
+    texto = request.GET.get(
+        "q",
+        ""
+    ).strip()
+
+    if len(texto) < 2:
+
+        return JsonResponse(
+            [],
+            safe=False
+        )
+
+    clientes = (
+        Cliente.objects
+        .filter(
+            estado=True
+        )
+        .filter(
+            Q(nombre__icontains=texto)
+            |
+            Q(apellido1__icontains=texto)
+            |
+            Q(apellido2__icontains=texto)
+            |
+            Q(identificacion__icontains=texto)
+        )
+        .order_by(
+            "nombre",
+            "apellido1"
+        )[:10]
+    )
+
+    datos = []
+
+    for cliente in clientes:
+
+        datos.append({
+
+            "id": cliente.id_cliente,
+
+            "nombre": cliente.nombre_completo,
+
+            "identificacion": cliente.identificacion,
+
+        })
+
+    return JsonResponse(
+        datos,
+        safe=False
+    )

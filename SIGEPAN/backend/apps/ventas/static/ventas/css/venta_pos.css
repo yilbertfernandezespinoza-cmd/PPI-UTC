@@ -148,18 +148,32 @@
 
 .pos-btn{
 
-
     min-height:65px;
-
 
     font-size:1.15rem;
 
-
     font-weight:700;
-
 
     border-radius:12px;
 
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    line-height:1;
+
+}
+
+
+/* Ajuste específico para enlaces usados como botones */
+
+a.pos-btn{
+
+    text-decoration:none;
 
 }
 
@@ -467,5 +481,37 @@
     }
 
 
+
+}
+
+/* =====================================================
+   RESULTADOS BÚSQUEDA CLIENTES
+===================================================== */
+
+#resultado_clientes{
+
+    max-height:250px;
+
+    overflow-y:auto;
+
+    border-radius:10px;
+
+    box-shadow:0 .25rem .75rem rgba(0,0,0,.12);
+
+    z-index:1050;
+
+}
+
+#resultado_clientes .list-group-item{
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+#resultado_clientes .list-group-item:hover{
+
+    background:#e9f3ff;
 
 }

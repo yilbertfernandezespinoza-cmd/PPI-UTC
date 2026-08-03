@@ -2,260 +2,145 @@
 
 {% block content %}
 
+<!-- Contenedor con la configuración y permisos limpios para el linter -->
+<div id="cliente-config" 
+     data-puede-modificar="{{ puede_modificar|yesno:'true,false' }}" 
+     data-puede-eliminar="{{ puede_eliminar|yesno:'true,false' }}" 
+     data-csrf="{{ csrf_token }}" 
+     class="d-none">
+</div>
+
 <div class="container-fluid mt-4">
 
-    <!-- ===================================== -->
     <!-- ENCABEZADO -->
-    <!-- ===================================== -->
-
     <div class="d-flex justify-content-between align-items-center mb-4">
-
         <div>
-
-            <h2 class="fw-bold mb-0">
-                Clientes
-            </h2>
-
-            <small class="text-muted">
-                Gestión de clientes registrados en SIGEPAN.
-            </small>
-
+            <h2 class="fw-bold mb-0">Clientes</h2>
+            <small class="text-muted">Gestión de clientes registrados en SIGEPAN.</small>
         </div>
 
-        {% if puede_crear %}
+        <!-- Grupo de Botones de Acción -->
+            <div class="d-flex gap-2">
+                <!-- Botón para volver a la venta -->
+                <a href="{% url 'ventas:crear_venta' %}" class="btn btn-secondary d-inline-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-arrow-left"></i> Volver a Venta
+                </a>
 
-        <a
-            href="{% url 'clientes:crear' %}"
-            class="btn btn-outline-success"
-        >
-
-            <i class="bi bi-plus-circle me-2"></i>
-
-            Nuevo Cliente
-
-        </a>
-
-        {% endif %}
-
+                <!-- Botón para registrar nuevo cliente -->
+                {% if puede_crear %}
+                <a href="{% url 'clientes:crear' %}" class="btn btn-warning text-dark d-inline-flex align-items-center justify-content-center gap-1 fw-bold">
+                    <i class="bi bi-person-plus"></i> Registrar Cliente
+                </a>
+                {% endif %}
+            </div>
     </div>
 
-    <!-- ===================================== -->
     <!-- BÚSQUEDA -->
-    <!-- ===================================== -->
-
     <div class="card shadow-sm mb-4">
-
         <div class="card-body">
-
-            <input
-                type="text"
-                id="buscarClientes"
-                class="form-control"
-                placeholder="Buscar por identificación, nombre, teléfono o correo..."
-            >
-
+            <input type="text" id="buscarClientes" class="form-control" placeholder="Buscar por identificación, nombre, teléfono o correo...">
         </div>
-
     </div>
 
-    <!-- ===================================== -->
     <!-- TABLA -->
-    <!-- ===================================== -->
-
     <div class="card shadow-sm">
-
         <div class="card-header">
-
-            <h5 class="mb-0">
-
-                Clientes Registrados
-
-            </h5>
-
+            <h5 class="mb-0">Clientes Registrados</h5>
         </div>
-
         <div class="card-body">
-
             <div id="tablaClientes"></div>
-
         </div>
-
     </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ clientes_json|json_script:"clientes-data" }}
+
 {% endblock %}
 
 {% block js %}
-
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Leemos la configuración y permisos de forma limpia desde los atributos HTML
+    const configEl = document.getElementById("cliente-config");
+    const puedeModificar = configEl ? configEl.dataset.puedeModificar === "true" : false;
+    const puedeEliminar = configEl ? configEl.dataset.puedeEliminar === "true" : false;
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
 
-const clientes = [
+    // Leemos los datos inyectados por json_script
+    const clientesElement = document.getElementById("clientes-data");
+    const clientesRaw = clientesElement ? JSON.parse(clientesElement.textContent) : [];
 
-{% for cliente in clientes %}
+    // Mapeamos las URLs y el token a cada objeto de cliente
+    const clientes = clientesRaw.map(c => ({
+        id: c.id_cliente,
+        identificacion: c.identificacion,
+        tipo: c.tipo_cliente_display || c.tipo_cliente,
+        nombre: c.nombre_completo,
+        telefono: c.telefono,
+        correo: c.correo,
+        estado: c.estado,
+        editar: `/clientes/editar/${c.id_cliente}/`,
+        estado_url: `/clientes/estado/${c.id_cliente}/`,
+        csrfToken: csrfTokenGlobal
+    }));
 
-{
-
-    id: "{{ cliente.id_cliente }}",
-
-    identificacion: "{{ cliente.identificacion|escapejs }}",
-
-    tipo: "{{ cliente.get_tipo_cliente_display|default:cliente.tipo_cliente }}",
-
-    nombre: "{{ cliente.nombre_completo|escapejs }}",
-
-    telefono: "{{ cliente.telefono|escapejs }}",
-
-    correo: "{{ cliente.correo|escapejs }}",
-
-    estado: {{ cliente.estado|yesno:"true,false" }},
-
-    editar: "{% url 'clientes:editar' cliente.id_cliente %}",
-
-    estado_url: "{% url 'clientes:estado' cliente.id_cliente %}",
-
-    csrfToken: "{{ csrf_token }}"
-
-}
-
-{% if not forloop.last %},{% endif %}
-
-{% endfor %}
-
-];
-
-SIGEPAN.table.create({
-
-    selector: "#tablaClientes",
-
-    search: "#buscarClientes",
-
-    data: clientes,
-
-    columns: [
-
-        {
-            title: "Identificación",
-            field: "identificacion"
-        },
-
-        {
-            title: "Tipo",
-            field: "tipo"
-        },
-
-        {
-            title: "Cliente",
-            field: "nombre"
-        },
-
-        {
-            title: "Teléfono",
-            field: "telefono"
-        },
-
-        {
-            title: "Correo",
-            field: "correo"
-        },
-
-        {
-
-            title: "Estado",
-
-            field: "estado",
-
-            formatter(cell){
-
-                return cell.getValue()
-
-                    ? '<span class="badge bg-success">Activo</span>'
-
-                    : '<span class="badge bg-danger">Inactivo</span>';
-
-            }
-
-        },
-
-        {
-
-            title: "Acciones",
-
-            hozAlign: "center",
-
-            formatter(cell){
-
-                const data = cell.getRow().getData();
-
-                let botones = '<div class="d-flex justify-content-center gap-2">';
-
-                {% if puede_modificar %}
-
-                botones += `
-                <a
-                    href="${data.editar}"
-                    class="btn btn-outline-primary btn-sm"
-                    data-bs-toggle="tooltip"
-                    title="Editar">
-
-                    <i class="bi bi-pencil-square"></i>
-
-                </a>
-                `;
-
-                {% endif %}
-
-                {% if puede_eliminar %}
-
-                botones += `
-                <button
-                    class="btn btn-outline-danger btn-sm btn-estado"
-                    data-bs-toggle="tooltip"
-                    title="${data.estado ? 'Deshabilitar' : 'Activar'}">
-
-                    <i class="bi ${data.estado ? 'bi-x-circle' : 'bi-check-circle'}"></i>
-
-                </button>
-                `;
-
-                {% endif %}
-
-                botones += "</div>";
-
-                return botones;
-
-            },
-
-            cellClick(e, cell){
-
-                if(!e.target.closest(".btn-estado")){
-
-                    return;
-
+    SIGEPAN.table.create({
+        selector: "#tablaClientes",
+        search: "#buscarClientes",
+        data: clientes,
+        columns: [
+            { title: "Identificación", field: "identificacion" },
+            { title: "Tipo", field: "tipo" },
+            { title: "Cliente", field: "nombre" },
+            { title: "Teléfono", field: "telefono" },
+            { title: "Correo", field: "correo" },
+            {
+                title: "Estado",
+                field: "estado",
+                formatter(cell){
+                    return cell.getValue()
+                        ? '<span class="badge bg-success">Activo</span>'
+                        : '<span class="badge bg-danger">Inactivo</span>';
                 }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell){
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="d-flex justify-content-center gap-2">';
 
-                const data = cell.getRow().getData();
+                    if (puedeModificar) {
+                        botones += `<a href="${data.editar}" class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil-square"></i></a>`;
+                    }
 
-                SIGEPAN.table.postAction({
+                    if (puedeEliminar) {
+                        const iconoEstado = data.estado ? 'bi-x-circle' : 'bi-check-circle';
+                        const tituloEstado = data.estado ? 'Deshabilitar' : 'Activar';
+                        botones += `<button class="btn btn-outline-danger btn-sm btn-estado" data-bs-toggle="tooltip" title="${tituloEstado}"><i class="bi ${iconoEstado}"></i></button>`;
+                    }
 
-                    url: data.estado_url,
-
-                    csrfToken: data.csrfToken,
-
-                    message: data.estado
-                        ? "¿Desea deshabilitar este cliente?"
-                        : "¿Desea activar este cliente?"
-
-                });
-
+                    botones += "</div>";
+                    return botones;
+                },
+                cellClick(e, cell){
+                    if(!e.target.closest(".btn-estado")){
+                        return;
+                    }
+                    const data = cell.getRow().getData();
+                    SIGEPAN.table.postAction({
+                        url: data.estado_url,
+                        csrfToken: data.csrfToken,
+                        message: data.estado
+                            ? "¿Desea deshabilitar este cliente?"
+                            : "¿Desea activar este cliente?"
+                    });
+                }
             }
-
-        }
-
-    ]
-
+        ]
+    });
 });
-
 </script>
-
 {% endblock %}

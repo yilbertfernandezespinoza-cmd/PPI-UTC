@@ -1,163 +1,150 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<!-- DataTables CSS Bootstrap 5 -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/dataTables.bootstrap5.min.css">
+{% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
+<div class="container py-4">
 
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-
-        <h2>
-            Ventas
-        </h2>
-
-
-        <a href="{% url 'ventas:crear_venta' %}"
-           class="btn btn-primary">
-
-            Nueva venta
-
-        </a>
-
+    <!-- ENCABEZADO Y FILTRO SIMÉTRICO -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-12 col-md-4">
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-file-earmark-text me-2"></i>Reporte de Ventas Diarias
+            </h2>
+            <p class="text-muted mb-0">Control y auditoría de transacciones del día</p>
+        </div>
+        <div class="col-12 col-md-8">
+            <form method="GET" class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+                <div class="input-group input-group-sm w-auto">
+                    <span class="input-group-text bg-light border-secondary-subtle"><i class="bi bi-calendar"></i></span>
+                    <input type="date" name="fecha" value="{{ fecha_filtro|date:'Y-m-d' }}" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 px-3">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'ventas:crear_venta' %}" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1 px-3">
+                    <i class="bi bi-plus-lg"></i> Nueva venta
+                </a>
+                {% if apertura %}
+                    <a href="{% url 'caja:administrar_caja' apertura.id_apertura %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3">
+                        <i class="bi bi-arrow-left"></i> Volver a Caja
+                    </a>
+                {% else %}
+                    <a href="javascript:history.back()" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3">
+                        <i class="bi bi-arrow-left"></i> Volver a Caja
+                    </a>
+                {% endif %}
+            </form>
+        </div>
     </div>
 
-
-
-    <table class="table table-striped">
-
-
-        <thead>
-
-            <tr>
-
-                <th>Número</th>
-                <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-
-            </tr>
-
-        </thead>
-
-
-
-        <tbody>
-
-
-        {% for venta in ventas %}
-
-
-            <tr>
-
-
-                <td>
-                    {{ venta.numero_venta }}
-                </td>
-
-
-                <td>
-
-                    {% if venta.cliente %}
-
-                        {{ venta.cliente }}
-
-                    {% else %}
-
-                        Cliente general
-
-                    {% endif %}
-
-                </td>
-
-
-                <td>
-                    {{ venta.fecha|date:"d/m/Y H:i" }}
-                </td>
-
-
-                <td>
-                    ₡ {{ venta.total }}
-                </td>
-
-
-                <td>
-
-                    {% if venta.estado %}
-
-                        <span class="badge bg-success">
-                            Activa
-                        </span>
-
-                    {% else %}
-
-                        <span class="badge bg-danger">
-                            Anulada
-                        </span>
-
-                    {% endif %}
-
-
-                </td>
-
-
-
-                <td>
-
-
-                    <a href="{% url 'ventas:detalle_venta' venta.id_venta %}"
-                       class="btn btn-info btn-sm">
-
-                        Ver
-
-                    </a>
-
-
-
-                    {% if venta.estado %}
-
-                    <a href="{% url 'ventas:anular_venta' venta.id_venta %}"
-                       class="btn btn-danger btn-sm">
-
-                        Anular
-
-                    </a>
-
-                    {% endif %}
-
-
-
-                </td>
-
-
-            </tr>
-
-
-        {% empty %}
-
-
-            <tr>
-
-                <td colspan="6">
-
-                    No existen ventas registradas.
-
-                </td>
-
-            </tr>
-
-
-        {% endfor %}
-
-
-        </tbody>
-
-
-    </table>
-
+    <!-- TARJETAS DE MÉTRICAS SIMÉTRICAS (ALTURA IGUAL H-100) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+                <div class="card-body d-flex flex-column justify-content-center py-3">
+                    <span class="text-muted text-uppercase fw-bold fs-7">Total Recaudado</span>
+                    <h3 class="fw-bold text-primary mb-0 mt-1">₡{{ total_recaudado|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                <div class="card-body d-flex flex-column justify-content-center py-3">
+                    <span class="text-muted text-uppercase fw-bold fs-7">Ventas Activas Registradas</span>
+                    <h3 class="fw-bold text-success mb-0 mt-1">{{ cantidad_ventas }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA DE VENTAS CON DATATABLES -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tablaVentas" class="table table-striped table-hover align-middle w-100 mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="py-3">Número</th>
+                            <th class="py-3">Cliente</th>
+                            <th class="py-3">Hora</th>
+                            <th class="py-3 text-end">Total</th>
+                            <th class="py-3 text-center">Estado</th>
+                            <th class="py-3 text-center" style="width: 120px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                            <tr>
+                                <td class="py-3">
+                                    <strong>{{ venta.numero_venta }}</strong>
+                                </td>
+                                <td class="py-3">
+                                    {% if venta.cliente %}
+                                        {{ venta.cliente }}
+                                    {% else %}
+                                        <span class="text-muted">Cliente general</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3">
+                                    {{ venta.fecha|date:"H:i" }}
+                                </td>
+                                <td class="py-3 text-end fw-bold">
+                                    ₡{{ venta.total|floatformat:2 }}
+                                </td>
+                                <td class="py-3 text-center">
+                                    {% if venta.estado %}
+                                        <span class="badge bg-success px-2 py-1">Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-danger px-2 py-1">Anulada</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 text-center">
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                                        <a href="{% url 'ventas:detalle_venta' venta.id_venta %}" class="btn btn-info btn-sm text-white d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Ver Detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if venta.estado %}
+                                        <a href="{% url 'ventas:anular_venta' venta.id_venta %}" class="btn btn-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Anular Venta">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
 </div>
 
+{% endblock %}
 
+{% block extra_js %}
+<!-- jQuery y DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#tablaVentas').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            },
+            order: [[0, "desc"]],
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50, 100],
+            responsive: true
+        });
+    });
+</script>
 {% endblock %}

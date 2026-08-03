@@ -1,24 +1,30 @@
-from django.views.generic import ListView, CreateView, UpdateView
-from django.urls import reverse_lazy
 from django.contrib import messages
+from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import (
+    CreateView,
+    ListView,
+    UpdateView,
+    View,
+)
+
+from apps.security.audit import AuditMixin
+from apps.security.mixins import SessionRequiredMixin
+from apps.security.models import RolPermiso
+from apps.security.permissions import PermissionRequiredMixin
 
 from .forms import ClienteForm
 from .models import Cliente
 from .services import ClienteService
-
-from apps.security.permissions import PermissionRequiredMixin
-from apps.security.mixins import SessionRequiredMixin
-from apps.security.audit import AuditMixin
-
-from apps.security.models import RolPermiso
 
 class ClienteListView(
     SessionRequiredMixin,
     PermissionRequiredMixin,
     ListView,
 ):
-    permission_module = "Clientes"
+    permission_module = "clientes"
     permission_action = "CONSULTAR"
 
     model = Cliente
@@ -26,30 +32,45 @@ class ClienteListView(
     context_object_name = "clientes"
 
     def get_queryset(self):
-
         return ClienteService.listar()
 
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
+
+        # Serialización de los registros para el componente Tabulator en el template
+        clientes_qs = self.get_queryset()
+        clientes_data = []
+
+        for cliente in clientes_qs:
+            clientes_data.append({
+                "id_cliente": cliente.id_cliente,
+                "identificacion": cliente.identificacion,
+                "tipo_cliente": getattr(cliente, 'tipo_cliente', ''),
+                "nombre_completo": getattr(cliente, 'nombre_completo', ''),
+                "telefono": getattr(cliente, 'telefono', ''),
+                "correo": getattr(cliente, 'correo', ''),
+                "estado": getattr(cliente, 'estado', True),
+            })
+
+        context["clientes_json"] = clientes_data
 
         usuario = self.request.usuario
 
         context["puede_crear"] = RolPermiso.objects.filter(
             id_rol=usuario.id_rol,
-            id_permiso__id_modulo__nombre="Clientes",
+            id_permiso__id_modulo__nombre="clientes",
             id_permiso__accion="CREAR",
         ).exists()
 
         context["puede_modificar"] = RolPermiso.objects.filter(
             id_rol=usuario.id_rol,
-            id_permiso__id_modulo__nombre="Clientes",
+            id_permiso__id_modulo__nombre="clientes",
             id_permiso__accion="MODIFICAR",
         ).exists()
 
         context["puede_eliminar"] = RolPermiso.objects.filter(
             id_rol=usuario.id_rol,
-            id_permiso__id_modulo__nombre="Clientes",
+            id_permiso__id_modulo__nombre="clientes",
             id_permiso__accion="ELIMINAR",
         ).exists()
 
@@ -61,10 +82,10 @@ class ClienteCreateView(
     AuditMixin,
     CreateView,
 ):
-    permission_module = "Clientes"
+    permission_module = "clientes"
     permission_action = "CREAR"
 
-    audit_module = "Clientes"
+    audit_module = "clientes"
 
     model = Cliente
     form_class = ClienteForm
@@ -72,7 +93,6 @@ class ClienteCreateView(
     success_url = reverse_lazy("clientes:listar")
 
     def form_valid(self, form):
-
         cliente = ClienteService.crear(form.cleaned_data)
 
         self.object = cliente
@@ -98,10 +118,10 @@ class ClienteUpdateView(
     AuditMixin,
     UpdateView,
 ):
-    permission_module = "Clientes"
+    permission_module = "clientes"
     permission_action = "MODIFICAR"
 
-    audit_module = "Clientes"
+    audit_module = "clientes"
 
     model = Cliente
     form_class = ClienteForm
@@ -110,7 +130,6 @@ class ClienteUpdateView(
     success_url = reverse_lazy("clientes:listar")
 
     def form_valid(self, form):
-
         cliente = ClienteService.actualizar(
             self.kwargs["id_cliente"],
             form.cleaned_data,
@@ -133,22 +152,18 @@ class ClienteUpdateView(
 
         return redirect(self.success_url)   
 
-from django.views.generic import View
-
-
 class ClienteDisableView(
     SessionRequiredMixin,
     PermissionRequiredMixin,
     AuditMixin,
     View,
 ):
-    permission_module = "Clientes"
+    permission_module = "clientes"
     permission_action = "ELIMINAR"
 
-    audit_module = "Clientes"
+    audit_module = "clientes"
 
     def post(self, request, id_cliente):
-
         cliente = ClienteService.cambiar_estado(
             id_cliente
         )
@@ -181,3 +196,57 @@ class ClienteDisableView(
         return redirect(
             "clientes:listar"
         ) 
+
+# =====================================================
+# BUSCAR CLIENTES POS
+# =====================================================
+
+def buscar_cliente_pos(request):
+    """
+    Búsqueda rápida de clientes para el POS.
+    Permite buscar por nombre, apellidos o identificación.
+    """
+    texto = request.GET.get(
+        "q",
+        ""
+    ).strip()
+
+    if len(texto) < 2:
+        return JsonResponse(
+            [],
+            safe=False
+        )
+
+    clientes = (
+        Cliente.objects
+        .filter(
+            estado=True
+        )
+        .filter(
+            Q(nombre__icontains=texto)
+            |
+            Q(apellido1__icontains=texto)
+            |
+            Q(apellido2__icontains=texto)
+            |
+            Q(identificacion__icontains=texto)
+        )
+        .order_by(
+            "nombre",
+            "apellido1"
+        )[:10]
+    )
+
+    datos = []
+
+    for cliente in clientes:
+        datos.append({
+            "id": cliente.id_cliente,
+            "nombre": cliente.nombre_completo,
+            "identificacion": cliente.identificacion,
+        })
+
+    return JsonResponse(
+        datos,
+        safe=False
+    )

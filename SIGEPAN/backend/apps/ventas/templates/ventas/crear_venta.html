@@ -1,802 +1,260 @@
 {% extends "base.html" %}
-
 {% load static %}
 
-
 {% block css %}
-
-<link rel="stylesheet"
-      href="{% static 'ventas/css/venta_pos.css' %}">
-
+<link rel="stylesheet" href="{% static 'ventas/css/venta_pos.css' %}">
 {% endblock %}
 
 {% block content %}
+<div class="container py-4 pos-container">
 
-
-<div class="container-fluid mt-4 pos-container">
-
-
-<!-- =====================================================
-     ENCABEZADO POS
-===================================================== -->
-
-<div class="card pos-card mb-4">
-
-
-    <div class="card-body">
-
-
-        <div class="d-flex justify-content-between align-items-center">
-
-
-            <div>
-
-
-                <h2 class="pos-header-title mb-1">
-
-                    <i class="bi bi-cart-plus pos-header-icon"></i>
-
-                    Nueva Venta
-
-                </h2>
-
-
-                <small class="text-muted">
-
-                    Registro de ventas - Punto de Venta SIGEPAN
-
-                </small>
-
-
-            </div>
-
-
-
-            <div class="text-end">
-
-
-                <span class="badge bg-success fs-6">
-
-                    Caja Activa
-
-                </span>
-
-
-                <br>
-
-
-                <small class="text-muted">
-
-                    Usuario: Sistema
-
-                </small>
-
-
-            </div>
-
-
+    <!-- =====================================================
+         ENCABEZADO POS
+    ===================================================== -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-12 col-md-6">
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-cart-plus text-primary me-2"></i>Nueva Venta
+            </h2>
+            <p class="text-muted mb-0">Registro de ventas - Punto de Venta SIGEPAN</p>
         </div>
-
-
+        <div class="col-12 col-md-6 text-md-end">
+            <div class="d-inline-flex flex-column align-items-md-end">
+                <span class="badge bg-success fs-6 px-3 py-2 mb-1 shadow-sm">
+                    <i class="bi bi-check-circle me-1"></i> Caja Activa
+                </span>
+                <small class="text-muted fw-semibold">
+                    <i class="bi bi-person-circle me-1"></i> Usuario: 
+                    {% if usuario_activo %}
+                        {{ usuario_activo.nombre|default:usuario_activo.username }}
+                    {% else %}
+                        Sistema
+                    {% endif %}
+                </small>
+            </div>
+        </div>
     </div>
 
+    <!-- =====================================================
+         FORMULARIO PRINCIPAL
+    ===================================================== -->
+    <form method="POST" action="{% url 'ventas:crear_venta' %}" id="form-pos-venta" autocomplete="off">
+        {% csrf_token %}
+        
+        <!-- MANAGEMENT FORMS (CRÍTICOS PARA EL POST) -->
+        {{ detalle_formset.management_form }}
+        {{ pago_formset.management_form }}
 
+        <!-- CONTENEDOR OCULTO PARA LOS PAGOS GENERADOS POR JS -->
+        <div id="contenedor_pagos_dinamicos" style="display: none;"></div>
+        <!-- URL Oculta para AJAX -->
+        <div id="config-pos" data-url-buscar-cliente="{% url 'ventas:buscar_clientes_pos' %}" style="display: none;"></div>
+
+        <!-- CLIENTE SELECCIONADO -->
+        <input type="hidden" id="cliente_id" name="cliente">
+
+        <div class="row g-4">
+            
+            <!-- =====================================================
+                 COLUMNA IZQUIERDA: CLIENTE, BÚSQUEDA Y CARRITO
+            ==================================================== -->
+            <div class="col-lg-8">
+                
+                <!-- CLIENTE -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light py-3">
+                        <h5 class="card-title mb-0 fw-bold text-secondary">
+                            <i class="bi bi-person me-2"></i>Cliente
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-8 position-relative">
+                                <label for="buscar_cliente" class="form-label fw-bold small text-uppercase text-secondary">Buscar cliente</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-secondary-subtle"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="buscar_cliente" class="form-control pos-search" placeholder="Nombre o identificación" autocomplete="off">
+                                    <button type="button" id="btn_buscar_cliente" class="btn btn-outline-secondary pos-search-button">
+                                        Buscar
+                                    </button>
+                                </div>
+                                <div id="lista_clientes_pos" class="list-group position-absolute w-100 shadow-sm mt-1" style="z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <!-- Botón Azul para Ver / Modificar Clientes -->
+                                <a href="{% url 'clientes:listar' %}" class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-1 text-white">
+                                    <i class="bi bi-people-fill"></i> Consultar Clientes
+                                </a>
+                            <!-- Botón Amarillo con letras negras para Registrar Cliente -->
+                                <a href="{% url 'clientes:crear' %}" id="btn_registrar_cliente" class="btn btn-warning text-dark w-100 d-inline-flex align-items-center justify-content-center gap-1 fw-bold">
+                                    <i class="bi bi-person-plus"></i> Registrar Cliente
+                                </a>
+                            </div>
+                        </div>
+                        <hr class="my-3 text-secondary opacity-25">
+                        <div class="alert alert-light mb-0 border-0 bg-light d-flex align-items-center">
+                            <strong class="me-2">Cliente seleccionado:</strong>
+                            <span id="cliente_seleccionado" class="text-primary fw-bold">Público General</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCTOS -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light py-3">
+                        <h5 class="card-title mb-0 fw-bold text-secondary">
+                            <i class="bi bi-box-seam me-2"></i>Buscar y Agregar Productos
+                        </h5>
+                    </div>
+                    <div class="card-body position-relative">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-secondary-subtle"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscar_producto" class="form-control pos-search" placeholder="Buscar producto por nombre o código..." autocomplete="off">
+                            <button type="button" id="btn_agregar_producto" class="btn btn-primary d-inline-flex align-items-center gap-1 px-3">
+                                <i class="bi bi-plus-lg"></i> Agregar
+                            </button>
+                        </div>
+                        <!-- Lista autocompletado -->
+                        <div id="lista_productos_pos" class="list-group position-absolute w-100 shadow-sm mt-1" style="z-index: 1000; max-height: 250px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <!-- CARRITO (DETALLE DE VENTA) -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light py-3">
+                        <h5 class="card-title mb-0 fw-bold text-secondary">
+                            <i class="bi bi-cart me-2"></i>Detalle de la Venta
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="tabla-detalle-venta">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3 ps-3">Producto</th>
+                                        <th class="py-3 text-center" style="width: 15%;">Cantidad</th>
+                                        <th class="py-3 text-end" style="width: 15%;">Precio</th>
+                                        <th class="py-3 text-end" style="width: 15%;">Subtotal</th>
+                                        <th class="py-3 text-center pe-3" style="width: 10%;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="carrito_productos">
+                                    <tr id="fila_vacia">
+                                        <td colspan="5" class="text-center text-muted py-5 pos-cart-empty">
+                                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                            No hay productos agregados a la venta
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- =====================================================
+                 COLUMNA DERECHA: RESUMEN, PAGOS Y BOTONES
+            ==================================================== -->
+            <div class="col-lg-4">
+
+                <!-- RESUMEN -->
+                <div class="card shadow-sm border-0 mb-4 bg-light">
+                    <div class="card-body py-4">
+                        <h5 class="fw-bold mb-3 text-secondary">
+                            <i class="bi bi-calculator me-2"></i>Resumen Financiero
+                        </h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal:</span>
+                            <strong id="resumen_subtotal">₡0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">IVA:</span>
+                            <strong id="resumen_iva">₡0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-muted">Descuento:</span>
+                            <strong id="resumen_descuento">₡0.00</strong>
+                        </div>
+                        <hr class="text-secondary opacity-25">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fs-5 fw-bold text-dark">TOTAL:</span>
+                            <span class="fs-4 fw-bold text-success" id="resumen_total">₡0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGOS -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light py-3">
+                        <h5 class="card-title mb-0 fw-bold text-secondary">
+                            <i class="bi bi-credit-card me-2"></i>Métodos de Pago
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">Seleccione los métodos de pago aplicables:</p>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input metodo-pago-checkbox" type="checkbox" id="pago_efectivo" data-metodo="EFECTIVO">
+                                <label class="form-check-label fw-medium" for="pago_efectivo">
+                                    <i class="bi bi-cash me-2 text-success"></i> Efectivo
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input metodo-pago-checkbox" type="checkbox" id="pago_tarjeta" data-metodo="TARJETA">
+                                <label class="form-check-label fw-medium" for="pago_tarjeta">
+                                    <i class="bi bi-credit-card-2-front me-2 text-primary"></i> Tarjeta
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input metodo-pago-checkbox" type="checkbox" id="pago_sinpe" data-metodo="SINPE">
+                                <label class="form-check-label fw-medium" for="pago_sinpe">
+                                    <i class="bi bi-phone me-2 text-info"></i> SINPE
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input metodo-pago-checkbox" type="checkbox" id="pago_transferencia" data-metodo="TRANSFERENCIA">
+                                <label class="form-check-label fw-medium" for="pago_transferencia">
+                                    <i class="bi bi-bank me-2 text-secondary"></i> Transferencia
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTONES DE ACCIÓN -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body d-flex flex-column gap-2">
+                        <button type="submit" id="btn_cobrar" class="btn btn-success py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-cash-stack fs-5"></i> Procesar Cobro
+                        </button>
+                        <button type="button" id="btn_cancelar" class="btn btn-outline-warning text-dark py-2 fw-semibold">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar Venta
+                        </button>
+                        {% if apertura %}
+                            <a href="{% url 'caja:administrar_caja' apertura.id_apertura %}" class="btn btn-outline-secondary py-2 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-arrow-left"></i> Volver a Caja
+                            </a>
+                        {% else %}
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary py-2 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-arrow-left"></i> Volver a Caja
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </form>
 </div>
-
-
-
-
-
-<form method="POST">
-
-
-{% csrf_token %}
-
-
-
-
-
-<!-- =====================================================
-     CLIENTE
-===================================================== -->
-
-
-<div class="card pos-card mb-4">
-
-
-<div class="card-header bg-primary text-white pos-card-header">
-
-<h5 class="mb-0">
-
-
-<i class="bi bi-person"></i>
-
-Cliente
-
-
-</h5>
-
-
-</div>
-
-
-
-<div class="card-body">
-
-
-<div class="row align-items-end">
-
-
-<div class="col-md-8">
-
-
-<label class="form-label fw-bold">
-
-Buscar cliente
-
-</label>
-
-
-<div class="input-group">
-
-
-<input type="text"
-class="form-control pos-search"
-placeholder="Nombre o identificación">
-
-
-<button type="button"
-class="btn btn-primary pos-search-button">
-
-
-<i class="bi bi-search"></i>
-
-Buscar
-
-
-</button>
-
-
-</div>
-
-
-</div>
-
-
-
-
-<div class="col-md-4 mt-3 mt-md-0">
-
-
-<button type="button"
-class="btn btn-success w-100 pos-btn">
-
-
-<i class="bi bi-person-plus"></i>
-
-Registrar Cliente
-
-
-</button>
-
-
-</div>
-
-
-
-</div>
-
-
-
-<hr>
-
-
-
-<div class="alert alert-light mb-0">
-
-
-<strong>
-
-Cliente seleccionado:
-
-</strong>
-
-
-Público General
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<!-- =====================================================
-     PRODUCTOS
-===================================================== -->
-
-
-<div class="card pos-card mb-4">
-
-
-<div class="card-header bg-primary text-white pos-card-header">
-
-
-<h5 class="mb-0">
-
-
-<i class="bi bi-box-seam"></i>
-
-Productos
-
-
-</h5>
-
-
-</div>
-
-
-
-<div class="card-body">
-
-
-
-<div class="input-group">
-
-
-<input type="text"
-       class="form-control"
-       placeholder="Buscar producto">
-
-
-<button type="button"
-        class="btn btn-success">
-
-
-<i class="bi bi-plus-circle"></i>
-
-Agregar
-
-
-</button>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<!-- =====================================================
-     CARRITO
-===================================================== -->
-
-
-<div class="card pos-card mb-4">
-
-
-<div class="card-header bg-dark text-white">
-
-
-<h5 class="mb-0">
-
-
-<i class="bi bi-cart"></i>
-
-Detalle de venta
-
-
-</h5>
-
-
-</div>
-
-
-
-<div class="card-body p-0">
-
-
-
-<div class="table-responsive">
-
-
-<table class="table table-hover pos-cart-table">
-
-
-<thead class="table-light">
-
-
-<tr>
-
-
-<th>
-
-Producto
-
-</th>
-
-
-<th class="text-center">
-
-Cantidad
-
-</th>
-
-
-<th class="text-end">
-
-Precio
-
-</th>
-
-
-<th class="text-end">
-
-Subtotal
-
-</th>
-
-
-<th class="text-center">
-
-Acción
-
-</th>
-
-
-</tr>
-
-
-</thead>
-
-
-
-<tbody>
-
-
-<tr>
-
-
-<td colspan="5"
-    class="text-center text-muted">
-
-
-<td colspan="5"
-class="pos-cart-empty">
-
-No hay productos agregados
-
-</td>
-
-
-</td>
-
-
-</tr>
-
-
-</tbody>
-
-
-
-</table>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div class="row">
-
-
-
-<!-- =====================================================
-     RESUMEN
-===================================================== -->
-
-
-<div class="col-md-6">
-
-
-
-<div class="card shadow-sm">
-
-
-<div class="card-header bg-secondary text-white">
-
-
-<h5 class="mb-0">
-
-
-<i class="bi bi-calculator"></i>
-
-Resumen
-
-
-</h5>
-
-
-</div>
-
-
-
-<div class="card-body">
-
-
-
-<div class="pos-summary-line">
-
-
-<span>
-
-Subtotal
-
-</span>
-
-
-<strong>
-
-₡0.00
-
-</strong>
-
-
-</div>
-
-
-
-<div class="d-flex justify-content-between">
-
-
-<span>
-
-IVA
-
-</span>
-
-
-<strong>
-
-₡0.00
-
-</strong>
-
-
-</div>
-
-
-
-<div class="d-flex justify-content-between">
-
-
-<span>
-
-Descuento
-
-</span>
-
-
-<strong>
-
-₡0.00
-
-</strong>
-
-
-</div>
-
-
-
-<hr>
-
-
-
-<div class="d-flex justify-content-between">
-
-
-<h4>
-
-TOTAL
-
-</h4>
-
-
-<h4 class="text-success pos-summary-total">
-
-
-₡0.00
-
-
-</h4>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- =====================================================
-     PAGOS
-===================================================== -->
-
-
-<div class="col-md-6">
-
-
-
-<div class="card shadow-sm">
-
-
-<div class="card-header bg-secondary text-white">
-
-
-<h5 class="mb-0">
-
-
-<i class="bi bi-credit-card"></i>
-
-Métodos de Pago
-
-
-</h5>
-
-
-</div>
-
-
-
-<div class="card-body">
-
-
-
-<div class="pos-payment-option">
-
-
-<input class="form-check-input"
-       type="checkbox">
-
-
-<label class="form-check-label">
-
-
-Efectivo
-
-
-</label>
-
-
-</div>
-
-
-
-
-<div class="pos-payment-option">
-
-
-<input class="form-check-input"
-       type="checkbox">
-
-
-<label class="form-check-label">
-
-
-Tarjeta
-
-
-</label>
-
-
-</div>
-
-
-
-
-
-<div class="pos-payment-option">
-
-
-<input class="form-check-input"
-       type="checkbox">
-
-
-<label class="form-check-label">
-
-
-SINPE
-
-
-</label>
-
-
-</div>
-
-
-
-
-<div class="form-check">
-
-
-<input class="form-check-input"
-       type="checkbox">
-
-
-<label class="form-check-label">
-
-
-Transferencia
-
-
-</label>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- =====================================================
-     BOTONES
-===================================================== -->
-
-
-<div class="card shadow-sm mt-4">
-
-
-<div class="card-body">
-
-
-<div class="row g-3">
-
-
-
-<div class="col-md-4">
-
-
-<button type="submit"
-class="btn btn-success w-100 pos-btn pos-btn-cobrar">
-
-
-<i class="bi bi-cash-stack"></i>
-
-
-Cobrar
-
-
-</button>
-
-
-</div>
-
-
-
-
-
-<div class="col-md-4">
-
-
-<button type="button"
-class="btn btn-warning w-100 pos-btn">
-
-
-<i class="bi bi-x-circle"></i>
-
-
-Cancelar
-
-
-</button>
-
-
-</div>
-
-
-
-
-
-<div class="col-md-4">
-
-
-<a href="{% url 'ventas:lista_ventas' %}"
-   class="btn btn-secondary w-100 pos-btn d-flex align-items-center justify-content-center gap-2">
-
-<i class="bi bi-arrow-left"></i>
-
-
-    <span>
-        Volver
-    </span>
-
-
-</a>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-</form>
-
-
-</div>
-
-
+{% endblock %}
+
+{% block js %}
+<!-- 1. Cargar jQuery primero -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+<!-- 2. Luego tus archivos estáticos -->
+<script src="{% static 'ventas/js/producto_pos.js' %}"></script>
+<script src="{% static 'ventas/js/venta_pos.js' %}"></script>
 {% endblock %}

@@ -1,56 +1,113 @@
 {% extends 'base.html' %}
+
 {% block content %}
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-12">
+        <h1>
+          <i class="fas fa-truck mr-2"></i>
+          {% if request.resolver_match.url_name == 'nuevo_proveedor' %}Registrar Nuevo Proveedor{% else %}Editar Proveedor{% endif %}
+        </h1>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="content">
   <div class="container-fluid">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">{% if request.resolver_match.url_name == 'nuevo_proveedor' %}Nuevo Proveedor{% else %}Editar Proveedor{% endif %}</h3>
-        <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary float-right">Volver</a>
-      </div>
-      <div class="card-body">
-        <form method="post">
-          {% csrf_token %}
-          {% for field in form %}
-            {% if field.name != 'estado' %}
-              <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {{ field.errors }}
-              </div>
-            {% endif %}
-          {% endfor %}
-
-          <!-- Estado unificado -->
-          <div class="form-group">
-            <label for="id_estado">Estado:</label><br>
-            <input type="checkbox" id="id_estado" name="estado" {% if form.instance.estado %}checked{% endif %}>
-            <span id="estado_label" class="{% if form.instance.estado %}text-success{% else %}text-danger{% endif %}">
-              {% if form.instance.estado %}Activo{% else %}Inactivo{% endif %}
-            </span>
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card card-primary card-outline">
+          <div class="card-header">
+            <h3 class="card-title">Formulario de Proveedor</h3>
           </div>
+          
+          <form method="post">
+            <div class="card-body">
+              {% csrf_token %}
 
-          <button type="submit" class="btn btn-primary">
-            {% if request.resolver_match.url_name == 'nuevo_proveedor' %}Guardar{% else %}Actualizar{% endif %}
-          </button>
-        </form>
+              <!-- Manejo general de errores del formulario si existen -->
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {{ form.non_field_errors }}
+                </div>
+              {% endif %}
+
+              <div class="row">
+                {% for field in form %}
+                  {% if field.name != 'estado' %}
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        {{ field.label_tag }}
+                        <!-- Agregamos la clase form-control de Bootstrap/AdminLTE para estilar los inputs de Django -->
+                        {{ field }}
+                        {% if field.errors %}
+                          <div class="text-danger small mt-1">
+                            {{ field.errors }}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              <!-- Estado con Bootstrap Switch / Estilo Moderno -->
+              <div class="row mt-3">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="d-block">Estado del Proveedor:</label>
+                    <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                      <input type="checkbox" class="custom-control-input" id="id_estado" name="estado" {% if form.instance.estado or request.resolver_match.url_name == 'nuevo_proveedor' and not form.is_bound %}checked{% endif %}>
+                      <label class="custom-control-label font-weight-bold" for="id_estado" id="estado_label">
+                        {% if form.instance.estado or request.resolver_match.url_name == 'nuevo_proveedor' and not form.is_bound %}Activo{% else %}Inactivo{% endif %}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- card-footer con los botones alineados a la izquierda, juntos (Guardar primero y Cancelar en gris después) -->
+            <div class="card-footer text-left">
+              <button type="submit" class="btn btn-primary font-weight-bold mr-2">
+                <i class="fas fa-save mr-1"></i> {% if request.resolver_match.url_name == 'nuevo_proveedor' %}Guardar Proveedor{% else %}Actualizar Proveedor{% endif %}
+              </button>
+              <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Cancelar y volver
+              </a>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <script>
-  const checkbox = document.getElementById('id_estado');
-  const label = document.getElementById('estado_label');
-  checkbox.addEventListener('change', function() {
-    if (this.checked) {
-      label.textContent = 'Activo';
-      label.classList.remove('text-danger');
-      label.classList.add('text-success');
-    } else {
-      label.textContent = 'Inactivo';
-      label.classList.remove('text-success');
-      label.classList.add('text-danger');
-    }
+  document.addEventListener("DOMContentLoaded", function() {
+    // Asegurar que los inputs de Django tengan la clase form-control automáticamente
+    const inputs = document.querySelectorAll("input:not([type=checkbox]), select, textarea");
+    inputs.forEach(input => {
+      input.classList.add("form-control");
+    });
+
+    const checkbox = document.getElementById('id_estado');
+    const label = document.getElementById('estado_label');
+
+    checkbox.addEventListener('change', function() {
+      if (this.checked) {
+        label.textContent = 'Activo';
+        label.classList.remove('text-danger');
+        label.classList.add('text-success');
+      } else {
+        label.textContent = 'Inactivo';
+        label.classList.remove('text-success');
+        label.classList.add('text-danger');
+      }
+    });
   });
 </script>
 {% endblock %}

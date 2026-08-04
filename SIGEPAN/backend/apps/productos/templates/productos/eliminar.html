@@ -2,17 +2,38 @@
 {% block content %}
 <section class="content">
   <div class="container-fluid">
-    <div class="card card-danger">
+    <div class="card card-outline card-danger">
       <div class="card-header">
-        <h3 class="card-title">Eliminar Producto</h3>
-        <a href="{% url 'productos:lista_productos' %}" class="btn btn-secondary float-right">Volver</a>
+        <h3 class="card-title font-weight-bold pt-1">
+          <i class="fas fa-trash-alt mr-2"></i> Eliminar Producto
+        </h3>
       </div>
       <div class="card-body">
-        <p>¿Estás seguro que deseas eliminar el producto <strong>{{ producto.nombre }}</strong>?</p>
+        <div class="alert alert-danger alert-dismissible">
+          <h5><i class="icon fas fa-ban"></i> ¡Atención!</h5>
+          Estás a punto de eliminar el siguiente registro del sistema. Esta acción no se puede deshacer.
+        </div>
+
+        <div class="card bg-light border mb-4">
+          <div class="card-body py-3">
+            <p class="mb-1"><strong>Código:</strong> <code>{{ producto.codigo }}</code></p>
+            <p class="mb-1"><strong>Nombre:</strong> <span class="text-danger font-weight-bold">{{ producto.nombre }}</span></p>
+            <p class="mb-0"><strong>Categoría:</strong> {{ producto.id_categoria.nombre }}</p>
+          </div>
+        </div>
+
+        <p class="font-weight-bold mb-4">¿Estás seguro que deseas eliminar este producto?</p>
+
         <form method="post">
           {% csrf_token %}
-          <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-          <a href="{% url 'productos:lista_productos' %}" class="btn btn-secondary">Cancelar</a>
+          <div class="form-group mb-0">
+            <button type="submit" class="btn btn-danger px-4">
+              <i class="fas fa-trash-alt mr-1"></i> Sí, eliminar
+            </button>
+            <a href="{% url 'productos:lista_productos' %}" class="btn btn-secondary ml-2 px-3">
+              <i class="fas fa-arrow-left mr-1"></i> Cancelar y Volver
+            </a>
+          </div>
         </form>
       </div>
     </div>

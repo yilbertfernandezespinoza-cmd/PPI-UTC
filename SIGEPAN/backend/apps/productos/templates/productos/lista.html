@@ -1,59 +1,123 @@
 {% extends 'base.html' %}
 
+{% load static %}
 {% load ayuda_tags %}
 
 {% block content %}
+<div class="container-fluid py-4">
 
-{% boton_ayuda "Productos" "productos" %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Gestión de Productos</h3>
-        <a href="{% url 'productos:nuevo_producto' %}" class="btn btn-primary float-right">Nuevo Producto</a>
-      </div>
-      <div class="card-body">
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Precio Compra</th>
-              <th>Precio Venta</th>
-              <th>Utilidad (%)</th>
-              <th>Impuesto (%)</th>
-              <th>Unidad Medida</th>
-              <th>Categoría</th>
-              <th>Imagen</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for producto in productos %}
-            <tr>
-              <td>{{ producto.codigo }}</td>
-              <td>{{ producto.nombre }}</td>
-              <td>{{ producto.descripcion }}</td>
-              <td>{{ producto.precio_compra }}</td>
-              <td>{{ producto.precio_venta }}</td>
-              <td>{{ producto.porcentaje_utilidad }}</td>
-              <td>{{ producto.porcentaje_impuesto }}</td>
-              <td>{{ producto.unidad_medida }}</td>
-              <td>{{ producto.id_categoria.nombre }}</td>
-              <td>{{ producto.imagen }}</td>
-              <td>{{ producto.estado|yesno:"Activo,Inactivo" }}</td>
-              <td>
-                <a href="{% url 'productos:editar_producto' producto.id_producto %}" class="btn btn-warning btn-sm">Editar</a>
-                <a href="{% url 'productos:eliminar_producto' producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    {% boton_ayuda "Productos" "productos" %}
+
+    <!-- Cabecera del Módulo -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 text-dark fw-bold">
+                <i class="fas fa-boxes me-2"></i> Gestión de Productos
+            </h2>
+            <p class="text-muted small mb-0">Catálogo de artículos, precios, inventario y control de estado en SIGEPAN.</p>
+        </div>
+        <div>
+            <a href="{% url 'productos:nuevo_producto' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> Nuevo Producto
+            </a>
+        </div>
     </div>
-  </div>
-</section>
+
+    <!-- Tabla con DataTable -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tabla-productos" class="table table-hover align-middle sigepan-table mb-0 w-100">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">Código</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Precio Compra</th>
+                            <th>Precio Venta</th>
+                            <th>Utilidad</th>
+                            <th>Impuesto</th>
+                            <th>Unidad</th>
+                            <th>Categoría</th>
+                            <th class="text-center">Imagen</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr>
+                            <td class="ps-3"><code>{{ producto.codigo }}</code></td>
+                            <td class="fw-semibold">{{ producto.nombre }}</td>
+                            <td class="text-muted">{{ producto.descripcion|default:"-"|truncatechars:30 }}</td>
+                            <td>₡ {{ producto.precio_compra|floatformat:2 }}</td>
+                            <td class="text-success fw-bold">₡ {{ producto.precio_venta|floatformat:2 }}</td>
+                            <td>{{ producto.porcentaje_utilidad|floatformat:2 }}%</td>
+                            <td>{{ producto.porcentaje_impuesto|floatformat:2 }}%</td>
+                            <td><span class="text-dark fw-bold">{{ producto.unidad_medida }}</span></td>
+                            <td>{{ producto.id_categoria.nombre }}</td>
+                            
+                            <!-- Imagen -->
+                            <td class="text-center align-middle">
+                                {% if producto.imagen and producto.imagen.name %}
+                                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="rounded-circle shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light border rounded-circle d-inline-flex align-items-center justify-content-center text-secondary shadow-sm" style="width: 40px; height: 40px;" title="Sin imagen">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Estado -->
+                            <td class="text-center align-middle">
+                                {% if producto.estado %}
+                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactivo</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Botones de Acción -->
+                            <td class="text-end pe-3 align-middle">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'productos:editar_producto' producto.id_producto %}" 
+                                       class="btn btn-outline-info btn-sm" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <a href="{% url 'productos:eliminar_producto' producto.id_producto %}" 
+                                       class="btn btn-outline-danger btn-sm" 
+                                       title="Eliminar">
+                                        <i class="fas fa-trash-alt"></i> Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <!-- Nota: DataTables maneja las filas vacías automáticamente -->
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        $('#tabla-productos').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            },
+            order: [[0, "asc"]],
+            pageLength: 10,
+            responsive: true,
+            dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rt<"row mt-3"<"col-md-6"i><"col-md-6"p>>',
+        });
+    });
+</script>
 {% endblock %}

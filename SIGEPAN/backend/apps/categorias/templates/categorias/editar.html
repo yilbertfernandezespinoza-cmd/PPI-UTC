@@ -1,25 +1,91 @@
 {% extends 'base.html' %}
+
 {% block content %}
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1>Gestión de Categorías</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'categorias:lista_categorias' %}">Categorías</a></li>
+          <li class="breadcrumb-item active">Editar</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="content">
   <div class="container-fluid">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Editar Categoría</h3>
-        <a href="{% url 'categorias:lista_categorias' %}" class="btn btn-secondary float-right">Volver</a>
-      </div>
-      <div class="card-body">
-        <form method="post">
-          {% csrf_token %}
-          <div class="form-group">
-            <label for="id_nombre">Nombre</label>
-            {{ form.nombre }}
+    <div class="row">
+      <div class="col-md-8 offset-md-2">
+        <div class="card card-warning card-outline">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-edit mr-1"></i> Editar Categoría: <strong>{{ categoria.nombre }}</strong>
+            </h3>
           </div>
-          <div class="form-group">
-            <label for="id_descripcion">Descripción</label>
-            {{ form.descripcion }}
-          </div>
-          <button type="submit" class="btn btn-primary">Actualizar</button>
-        </form>
+          
+          <form method="post">
+            {% csrf_token %}
+            <div class="card-body">
+              
+              <!-- Mensaje general de errores si el formulario no es válido -->
+              {% if form.errors %}
+              <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                <h5><i class="icon fas fa-ban"></i> ¡Atención!</h5>
+                Por favor, corrige los errores en el formulario.
+              </div>
+              {% endif %}
+
+              <!-- Campo Nombre -->
+              <div class="form-group">
+                <label for="{{ form.nombre.id_for_label }}">
+                  Nombre <span class="text-danger">*</span>
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                  <div class="invalid-feedback d-block">{{ form.nombre.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Campo Descripción -->
+              <div class="form-group">
+                <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                  <div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Campo Estado (si tu formulario de edición también lo incluye) -->
+              {% if form.estado %}
+              <div class="form-group">
+                <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                  {{ form.estado }}
+                  <label class="custom-control-label" for="{{ form.estado.id_for_label }}">Categoría Activa</label>
+                </div>
+                {% if form.estado.errors %}
+                  <div class="invalid-feedback d-block">{{ form.estado.errors.0 }}</div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+            </div>
+            
+            <div class="card-footer text-right">
+              <a href="{% url 'categorias:lista_categorias' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+              </a>
+              <button type="submit" class="btn btn-warning">
+                <i class="fas fa-save"></i> Actualizar Categoría
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>

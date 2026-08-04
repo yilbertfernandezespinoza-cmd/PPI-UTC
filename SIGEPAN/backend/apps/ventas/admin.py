@@ -7,21 +7,16 @@ from .models import (
 )
 
 
-
 # =====================================================
 # DETALLE VENTA INLINE
 # =====================================================
 
 class DetalleVentaInline(admin.TabularInline):
-
     model = DetalleVenta
-
     extra = 0
-
     readonly_fields = (
         "subtotal",
     )
-
 
 
 # =====================================================
@@ -29,11 +24,8 @@ class DetalleVentaInline(admin.TabularInline):
 # =====================================================
 
 class DetallePagoInline(admin.TabularInline):
-
     model = DetallePago
-
     extra = 0
-
 
 
 # =====================================================
@@ -42,10 +34,7 @@ class DetallePagoInline(admin.TabularInline):
 
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
-
-
     list_display = (
-
         "numero_venta",
         "cliente",
         "usuario",
@@ -53,42 +42,34 @@ class VentaAdmin(admin.ModelAdmin):
         "total",
         "estado",
         "fecha"
-
     )
-
 
     list_filter = (
-
         "estado",
         "tipo_comprobante",
-        "fecha"
-
+        "fecha",
+        "caja__sucursal"
     )
-
 
     search_fields = (
-
         "numero_venta",
-        "cliente__nombre"
-
+        "cliente__nombre",
+        "cliente__identificacion"
     )
-
 
     readonly_fields = (
-
         "fecha_creacion",
-        "fecha_actualizacion"
-
+        "fecha_actualizacion",
+        "subtotal",
+        "impuesto",
+        "descuento",
+        "total"
     )
 
-
     inlines = [
-
         DetalleVentaInline,
         DetallePagoInline
-
     ]
-
 
 
 # =====================================================
@@ -97,26 +78,18 @@ class VentaAdmin(admin.ModelAdmin):
 
 @admin.register(DetalleVenta)
 class DetalleVentaAdmin(admin.ModelAdmin):
-
-
     list_display = (
-
         "venta",
         "producto",
         "cantidad",
         "precio_unitario",
         "subtotal"
-
     )
-
 
     search_fields = (
-
         "venta__numero_venta",
         "producto__nombre"
-
     )
-
 
 
 # =====================================================
@@ -125,21 +98,15 @@ class DetalleVentaAdmin(admin.ModelAdmin):
 
 @admin.register(DetallePago)
 class DetallePagoAdmin(admin.ModelAdmin):
-
-
     list_display = (
-
         "venta",
         "metodo_pago",
         "monto",
         "referencia",
         "fecha_creacion"
-
     )
 
-
     search_fields = (
-
         "venta__numero_venta",
-
+        "referencia"
     )

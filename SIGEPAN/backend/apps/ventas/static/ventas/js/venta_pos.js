@@ -1,7 +1,7 @@
 // =====================================================
 // SIGEPAN - Módulo: Ventas
 // Archivo: venta_pos.js
-// Descripción: Control de totales, resumen, generación de formsets de pago y búsqueda de clientes
+// Descripción: Control de totales, resumen, generación de formsets de pago, búsqueda de clientes y gestión POS
 // =====================================================
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -10,7 +10,55 @@ document.addEventListener("DOMContentLoaded", function () {
     const contenedorPagos = document.getElementById("contenedor_pagos_dinamicos");
     const contadorPagoDjango = document.getElementById("id_pago-TOTAL_FORMS");
 
+    // Variable de control para saber si la acción actual es guardar como pendiente
+    let esAccionPendiente = false;
+    const btnGuardarPendiente = document.getElementById("btn_guardar_pendiente");
+    if (btnGuardarPendiente) {
+        btnGuardarPendiente.addEventListener("click", function() {
+            esAccionPendiente = true;
+        });
+    }
+
+    // ==========================================
+    // 0. FUNCIÓN GLOBAL DE LIMPIEZA DE PANTALLA
+    // ==========================================
+    window.limpiarPantallaPOS = function() {
+        if (formVenta) {
+            formVenta.reset();
+        }
+
+        // Restablecer cliente predeterminado
+        const clienteId = document.getElementById("cliente_id");
+        const clienteSeleccionado = document.getElementById("cliente_seleccionado");
+        if (clienteId) clienteId.value = "";
+        if (clienteSeleccionado) clienteSeleccionado.innerText = "Público General";
+
+        // Vaciar la tabla de productos / carrito
+        const carritoProductos = document.getElementById("carrito_productos");
+        if (carritoProductos) {
+            carritoProductos.innerHTML = `
+                <tr id="fila_vacia">
+                    <td colspan="5" class="text-center text-muted py-5 pos-cart-empty">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        No hay productos agregados a la venta
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Desmarcar checkboxes de pago y vaciar contenedor dinámico
+        document.querySelectorAll(".metodo-pago-checkbox").forEach(cb => cb.checked = false);
+        if (contenedorPagos) contenedorPagos.innerHTML = "";
+
+        // Recalcular totales a cero
+        if (typeof window.recalcularTotales === "function") {
+            window.recalcularTotales();
+        }
+    };
+
+    // ==========================================
     // 1. FUNCIÓN GLOBAL DE RECÁLCULO
+    // ==========================================
     window.recalcularTotales = function() {
         let subtotalGeneral = 0;
         const inputsSubtotal = document.querySelectorAll(".input-subtotal-oculto");
@@ -25,13 +73,20 @@ document.addEventListener("DOMContentLoaded", function () {
         let totalGeneral = subtotalGeneral + iva - descuento;
 
         // Actualizar interfaz visual
-        document.getElementById("resumen_subtotal").innerText = `₡${subtotalGeneral.toFixed(2)}`;
-        document.getElementById("resumen_iva").innerText = `₡${iva.toFixed(2)}`;
-        document.getElementById("resumen_descuento").innerText = `₡${descuento.toFixed(2)}`;
-        document.getElementById("resumen_total").innerText = `₡${totalGeneral.toFixed(2)}`;
+        const elSubtotal = document.getElementById("resumen_subtotal");
+        const elIva = document.getElementById("resumen_iva");
+        const elDescuento = document.getElementById("resumen_descuento");
+        const elTotal = document.getElementById("resumen_total");
+
+        if (elSubtotal) elSubtotal.innerText = `₡${subtotalGeneral.toFixed(2)}`;
+        if (elIva) elIva.innerText = `₡${iva.toFixed(2)}`;
+        if (elDescuento) elDescuento.innerText = `₡${descuento.toFixed(2)}`;
+        if (elTotal) elTotal.innerText = `₡${totalGeneral.toFixed(2)}`;
     };
 
-    // 2. SINCRONIZACIÓN DE PAGOS Y VALIDACIÓN PREVIA AL SUBMIT
+    // ==========================================
+    // 2. SINCRONIZACIÓN DE PAGOS Y VALIDACIÓN PREVIA AL SUBMIT (COBRO)
+    // ==========================================
     if (formVenta) {
         formVenta.addEventListener("submit", function(e) {
             const carrito = document.getElementById("carrito_productos");
@@ -40,14 +95,30 @@ document.addEventListener("DOMContentLoaded", function () {
             // Validar carrito con productos
             if (!carrito || filaVacia || carrito.children.length === 0) {
                 e.preventDefault();
-                alert("Debe agregar al menos un producto al carrito antes de cobrar.");
+                alert("Debe agregar al menos un producto al carrito antes de continuar.");
+                esAccionPendiente = false; // Resetear bandera
                 return;
             }
 
-            // Limpiar contenedor de pagos dinámicos previos
-            contenedorPagos.innerHTML = "";
+            // Detectar si el envío proviene del botón de guardar pendiente
+            const submitter = e.submitter;
+            const esPendientePorSubmitter = submitter && (
+                submitter.id === "btn_guardar_pendiente" || 
+                (submitter.getAttribute("formaction") && submitter.getAttribute("formaction").includes("pendiente"))
+            );
 
-            // Capturar checkboxes de pago seleccionados
+            if (esAccionPendiente || esPendientePorSubmitter) {
+                // Si es venta pendiente, no exigimos checkboxes de pago
+                if (contenedorPagos) contenedorPagos.innerHTML = "";
+                if (contadorPagoDjango) contadorPagoDjango.value = 0;
+                esAccionPendiente = false; // Resetear bandera
+                return; // Permitir el envío al backend
+            }
+
+            // Limpiar contenedor de pagos dinámicos previos
+            if (contenedorPagos) contenedorPagos.innerHTML = "";
+
+            // Capturar checkboxes de pago seleccionados para venta normal
             const checkboxesPago = document.querySelectorAll(".metodo-pago-checkbox:checked");
 
             if (checkboxesPago.length === 0) {
@@ -57,7 +128,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             // Obtener el total numérico actual de la venta
-            let totalTexto = document.getElementById("resumen_total").innerText;
+            const elTotalText = document.getElementById("resumen_total");
+            let totalTexto = elTotalText ? elTotalText.innerText : "0";
             let totalNumerico = parseFloat(totalTexto.replace("₡", "").replace(/,/g, "")) || 0;
 
             // Actualizar TOTAL_FORMS del Formset de Pago de Django
@@ -84,19 +156,38 @@ document.addEventListener("DOMContentLoaded", function () {
                     <input type="hidden" name="pago-${indice}-monto" value="${montoAsignado.toFixed(2)}">
                     <input type="hidden" name="pago-${indice}-referencia" value="POS-AUTOGENERADO">
                 `;
-                contenedorPagos.insertAdjacentHTML("beforeend", htmlInputs);
+                if (contenedorPagos) {
+                    contenedorPagos.insertAdjacentHTML("beforeend", htmlInputs);
+                }
             });
         });
     }
 
-    // 3. BÚSQUEDA Y SELECCIÓN DE CLIENTES (AJAX)
+    // ==========================================
+    // 3. BOTÓN: CANCELAR VENTA
+    // ==========================================
+    const btnCancelar = document.getElementById("btn_cancelar");
+    if (btnCancelar) {
+        btnCancelar.addEventListener("click", function(e) {
+            e.preventDefault();
+
+            if (confirm("¿Está seguro de que desea cancelar la venta actual? Se perderán los productos seleccionados.")) {
+                window.limpiarPantallaPOS();
+            }
+        });
+    }
+
+    // ==========================================
+    // 4. BÚSQUEDA Y SELECCIÓN DE CLIENTES (AJAX)
+    // ==========================================
     const $inputBuscarCliente = $('#buscar_cliente');
     const $listaClientes = $('#lista_clientes_pos');
     const $clienteId = $('#cliente_id');
     const $clienteSeleccionado = $('#cliente_seleccionado');
     
     // Obtener la URL segura inyectada desde Django
-    const urlBuscarCliente = $('#config-pos').data('url-buscar-cliente') || 'clientes/buscar/';
+    const configPos = document.getElementById('config-pos');
+    const urlBuscarCliente = configPos ? $(configPos).data('url-buscar-cliente') : 'clientes/buscar/';
 
     function realizarBusquedaCliente(query) {
         if (query.trim().length === 0) {
@@ -170,8 +261,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Ejecutar recálculo inicial
-    if (typeof recalcularTotales === "function") {
-        recalcularTotales();
+    // Ejecutar recálculo inicial (indispensable si se retomó una venta pendiente)
+    if (typeof window.recalcularTotales === "function") {
+        window.recalcularTotales();
     }
 });

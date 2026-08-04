@@ -1,66 +1,64 @@
 {% extends "base.html" %}
 
-
-
 {% block content %}
+<div class="container-fluid py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
 
+            <!-- Tarjeta de Confirmación de Anulación -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Confirmar Anulación de Compra
+                    </h5>
+                </div>
+                
+                <div class="card-body p-4">
+                    
+                    <!-- Alerta visual de advertencia -->
+                    <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-dark mb-4" role="alert">
+                        <i class="fas id-info-circle me-1 text-warning"></i>
+                        ¿Está completamente seguro de que desea anular la siguiente compra? Esta acción revertirá el impacto en el inventario o dejará registro de baja en el sistema.
+                    </div>
 
-<div class="container mt-4">
+                    <!-- Resumen rápido de la compra a anular -->
+                    <div class="bg-light p-3 rounded mb-4 small">
+                        <div class="row mb-2">
+                            <div class="col-6 text-muted">N° de Compra:</div>
+                            <div class="col-6 fw-bold text-dark">#{{ compra.id_compra }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 text-muted">Proveedor:</div>
+                            <div class="col-6 fw-bold text-dark">{{ compra.proveedor.nombre }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6 text-muted">Fecha:</div>
+                            <div class="col-6 text-dark">{{ compra.fecha|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 text-muted">Total:</div>
+                            <div class="col-6 fw-bold text-success">₡ {{ compra.total|floatformat:2 }}</div>
+                        </div>
+                    </div>
 
+                    <!-- Formulario de Confirmación -->
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'compras:detalle_compra' compra.id_compra %}" class="btn btn-light border px-3">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger px-4 shadow-sm">
+                                <i class="fas fa-trash-alt me-1"></i> Sí, anular compra
+                            </button>
+                        </div>
+                    </form>
 
-<h2>
-Anular compra
-</h2>
+                </div>
+            </div>
 
-
-
-<div class="alert alert-warning">
-
-
-¿Está seguro que desea anular la compra?
-
-
-<br>
-
-
-<strong>
-Compra #{{ compra.id_compra }}
-</strong>
-
-
+        </div>
+    </div>
 </div>
-
-
-
-
-<form method="POST">
-
-
-{% csrf_token %}
-
-
-
-<button class="btn btn-danger">
-
-Confirmar anulación
-
-</button>
-
-
-
-<a href="{% url 'compras:lista_compras' %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
-
-
-</form>
-
-
-
-</div>
-
-
 {% endblock %}

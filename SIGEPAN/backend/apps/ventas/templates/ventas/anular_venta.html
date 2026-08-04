@@ -1,65 +1,82 @@
 {% extends "base.html" %}
-
+{% load static %}
 
 {% block content %}
+<div class="container py-4" style="max-width: 600px;">
+    
+    <!-- ENCABEZADO -->
+    <div class="d-flex align-items-center mb-4">
+        <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle me-3">
+            <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+        </div>
+        <div>
+            <h2 class="fw-bold mb-1">Anular Venta</h2>
+            <p class="text-muted mb-0">Esta acción revertirá el inventario y registrará la anulación en el sistema.</p>
+        </div>
+    </div>
 
+    <!-- ALERTA DE DETALLE DE VENTA -->
+    <div class="card shadow-sm border-0 mb-4 border-start border-danger border-4">
+        <div class="card-body">
+            <h5 class="card-title text-secondary fw-bold mb-3">
+                <i class="bi bi-receipt me-2"></i>Información del Comprobante
+            </h5>
+            
+            <div class="row g-2 mb-2">
+                <div class="col-sm-4 text-muted">Número de Venta:</div>
+                <div class="col-sm-8 fw-bold text-dark">{{ venta.numero_venta }}</div>
+            </div>
+            
+            <div class="row g-2 mb-2">
+                <div class="col-sm-4 text-muted">Fecha y Hora:</div>
+                <div class="col-sm-8 fw-semibold text-dark">{{ venta.fecha|date:"d/m/Y H:i" }}</div>
+            </div>
 
-<div class="container mt-4">
+            <div class="row g-2 mb-2">
+                <div class="col-sm-4 text-muted">Cliente:</div>
+                <div class="col-sm-8 fw-semibold text-dark">
+                    {% if venta.cliente %}
+                        {{ venta.cliente.nombre }}
+                    {% else %}
+                        Público General
+                    {% endif %}
+                </div>
+            </div>
 
+            <hr class="text-secondary opacity-25 my-3">
 
-<h2>
-Anular venta
-</h2>
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4 text-muted fs-5">Total a Anular:</div>
+                <div class="col-sm-8 fw-bold text-danger fs-4">₡{{ venta.total }}</div>
+            </div>
+        </div>
+    </div>
 
+    <!-- FORMULARIO DE CONFIRMACIÓN -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="POST" autocomplete="off">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="motivo_anulacion" class="form-label fw-bold small text-uppercase text-secondary">
+                        Motivo de la anulación <span class="text-danger">*</span>
+                    </label>
+                    <textarea class="form-control" id="motivo_anulacion" name="motivo_anulacion" rows="3" placeholder="Indique brevemente el motivo de la anulación..." required></textarea>
+                </div>
 
-<div class="alert alert-warning">
-
-Está a punto de anular la venta:
-
-<strong>
-{{ venta.numero_venta }}
-</strong>
-
-
-<br>
-
-Total:
-
-₡ {{ venta.total }}
-
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'ventas:lista_ventas' %}" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                        <i class="bi bi-arrow-left me-1"></i> Cancelar
+                    </a>
+                    
+                    <button type="submit" class="btn btn-danger px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-x-octagon-fill"></i> Confirmar Anulación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </div>
-
-
-
-<form method="POST">
-
-
-{% csrf_token %}
-
-
-<button type="submit"
-class="btn btn-danger">
-
-Confirmar anulación
-
-</button>
-
-
-
-<a href="{% url 'ventas:lista_ventas' %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
-
-
-
-</form>
-
-
-</div>
-
-
 {% endblock %}

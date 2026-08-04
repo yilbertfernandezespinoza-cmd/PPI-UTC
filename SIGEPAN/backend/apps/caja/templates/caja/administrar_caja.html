@@ -14,110 +14,212 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold mb-0">
-                Administrar Caja
+                <i class="bi bi-speedometer2 text-success"></i> Administración de Caja
             </h2>
             <small class="text-muted">
-                Gestión operativa de la caja seleccionada.
+                Gestión operativa y control financiero de la caja seleccionada.
             </small>
+        </div>
+        <div>
+            <a href="{% url 'caja:lista_cajas' %}" class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-arrow-left"></i> Volver a Cajas
+            </a>
         </div>
     </div>
 
     <!-- ===================================== -->
-    <!-- DASHBOARD DE LA CAJA -->
+    <!-- TARJETAS SUPERIORES / DASHBOARD -->
     <!-- ===================================== -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                Resumen General
-            </h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-box-seam fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Caja</h6>
+                        <h5 class="fw-bold mb-0 text-dark text-truncate" style="max-width: 150px;" title="{{ caja.nombre }}">{{ caja.nombre }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-building fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Sucursal</h6>
+                        <h5 class="fw-bold mb-0 text-dark text-truncate" style="max-width: 150px;" title="{{ caja.sucursal }}">{{ caja.sucursal }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 {% if caja_abierta %}bg-success{% else %}bg-secondary{% endif %} text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-unlock fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Estado Operativo</h6>
+                        <h5 class="fw-bold mb-0">
+                            {% if caja_abierta %}
+                                <span class="text-success">Abierta</span>
+                            {% else %}
+                                <span class="text-secondary">Cerrada</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-dark text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-shield-check fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Estado Admin</h6>
+                        <h5 class="fw-bold mb-0">
+                            {% if caja.estado %}
+                                <span class="text-primary">Activa</span>
+                            {% else %}
+                                <span class="text-danger">Inactiva</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================== -->
+    <!-- DETALLES DE APERTURA Y MÉTRICAS -->
+    <!-- ===================================== -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle text-primary me-2"></i> Resumen de la Apertura Actual</h5>
         </div>
         <div class="card-body">
-            <div class="row">
+            <div class="row align-items-center">
                 <!-- INFORMACIÓN -->
-                <div class="col-lg-6">
-                    <table class="table table-borderless mb-0">
-                        <tbody>
-                            <tr>
-                                <th width="35%">Caja</th>
-                                <td>{{ caja.nombre }}</td>
-                            </tr>
-                            <tr>
-                                <th>Sucursal</th>
-                                <td>{{ caja.sucursal }}</td>
-                            </tr>
-                            <tr>
-                                <th>Estado Operativo</th>
-                                <td>
-                                    {% if caja_abierta %}
-                                        <span class="badge bg-success">Abierta</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Cerrada</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Estado Administrativo</th>
-                                <td>
-                                    {% if caja.estado %}
-                                        <span class="badge bg-primary">Activa</span>
-                                    {% else %}
-                                        <span class="badge bg-danger">Inactiva</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- DATOS OPERATIVOS -->
-                <div class="col-lg-6">
+                <div class="col-lg-6 border-end">
                     {% if caja_abierta %}
-                    <table class="table table-borderless mb-0">
+                    <table class="table table-borderless align-middle mb-0">
                         <tbody>
                             <tr>
-                                <th width="40%">Responsable</th>
-                                <td>{{ apertura.usuario }}</td>
+                                <th class="text-muted" width="40%"><i class="bi bi-person me-1"></i> Responsable:</th>
+                                <td class="fw-bold text-dark">{{ apertura.usuario }}</td>
                             </tr>
                             <tr>
-                                <th>Fecha apertura</th>
+                                <th class="text-muted"><i class="bi bi-calendar-event me-1"></i> Fecha apertura:</th>
                                 <td>{{ apertura.fecha_apertura|date:"d/m/Y H:i" }}</td>
                             </tr>
                             <tr>
-                                <th>Monto inicial</th>
-                                <td>₡ {{ apertura.monto_inicial }}</td>
+                                <th class="text-muted"><i class="bi bi-cash me-1"></i> Monto inicial:</th>
+                                <td class="fw-semibold">₡ {{ apertura.monto_inicial|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <th>Saldo Caja</th>
-                                <td>
-                                    <strong>₡ {{ saldo_caja|floatformat:2 }}</strong>
-                                </td>
+                                <th class="text-muted"><i class="bi bi-wallet2 me-1"></i> Saldo Actual Caja:</th>
+                                <td><span class="fs-5 fw-bold text-success">₡ {{ saldo_caja|floatformat:2 }}</span></td>
                             </tr>
                         </tbody>
                     </table>
                     {% else %}
-                    <div class="alert alert-info mb-0">
-                        Esta caja se encuentra cerrada.
+                    <div class="text-center py-4">
+                        <i class="bi bi-lock-fill fs-1 text-muted d-block mb-2"></i>
+                        <h5 class="text-muted mb-1">Esta caja se encuentra cerrada</h5>
+                        <p class="text-muted small mb-3">Debe realizar una apertura operativa para habilitar las transacciones y el registro de ventas.</p>
+                        <a href="{% url 'caja:abrir_caja' caja.id_caja %}" class="btn btn-success btn-sm px-4">
+                            <i class="bi bi-unlock me-1"></i> Abrir Caja Ahora
+                        </a>
                     </div>
                     {% endif %}
                 </div>
+
+                <!-- INDICADORES / CONTADORES -->
+                <div class="col-lg-6">
+                    <div class="row text-center g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="text-muted d-block small mb-1">Movimientos</span>
+                                <h3 class="fw-bold text-dark mb-0">{{ total_movimientos }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="text-muted d-block small mb-1">Total Movs.</span>
+                                <h3 class="fw-bold text-primary mb-0 fs-5">₡ {{ saldo_movimientos|floatformat:2 }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="text-muted d-block small mb-1">Arqueos</span>
+                                <h3 class="fw-bold text-dark mb-0">{{ total_arqueos }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+    </div>
 
-            <hr>
-
-            <!-- INDICADORES -->
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <h6 class="text-muted">Movimientos</h6>
-                    <h3 class="fw-bold">{{ total_movimientos }}</h3>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="text-muted">Total Movimientos</h6>
-                    <h3 class="fw-bold">₡ {{ saldo_movimientos|floatformat:2 }}</h3>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="text-muted">Arqueos</h6>
-                    <h3 class="fw-bold">{{ total_arqueos }}</h3>
-                </div>
+    <!-- ===================================== -->
+    <!-- BARRA DE ACCIONES RÁPIDAS -->
+    <!-- ===================================== -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-tools text-warning me-2"></i> Panel de Acciones</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-center flex-wrap gap-2">
+                {% if caja_abierta %}
+                    <a href="{% url 'ventas:crear_venta' %}" class="btn btn-success d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Registrar venta">
+                        <i class="bi bi-cart-plus fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Venta</span>
+                    </a>
+                    <a href="{% url 'ventas:lista_ventas' %}" class="btn btn-outline-primary d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Lista de ventas del día">
+                        <i class="bi bi-receipt fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Ver Ventas</span>
+                    </a>
+                    <a href="{% url 'caja:movimiento_caja' apertura.id_apertura %}" class="btn btn-outline-warning d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Registrar movimiento">
+                        <i class="bi bi-cash-stack fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Movimiento</span>
+                    </a>
+                    <a href="{% url 'caja:crear_arqueo' apertura.id_apertura %}" class="btn btn-outline-info d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Realizar arqueo">
+                        <i class="bi bi-clipboard-data fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Arqueo</span>
+                    </a>
+                    <a href="{% url 'caja:editar_apertura' apertura.id_apertura %}" class="btn btn-outline-secondary d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Editar apertura">
+                        <i class="bi bi-cash-coin fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Edit. Apertura</span>
+                    </a>
+                    <a href="{% url 'caja:detalle_caja' apertura.id_apertura %}" class="btn btn-outline-secondary d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Ver detalle">
+                        <i class="bi bi-eye fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Detalle</span>
+                    </a>
+                    <a href="{% url 'caja:editar_caja' caja.id_caja %}" class="btn btn-outline-dark d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Editar configuración">
+                        <i class="bi bi-pencil-square fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Configurar</span>
+                    </a>
+                    <a href="{% url 'caja:cerrar_caja' apertura.id_apertura %}" class="btn btn-danger d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:90px; height:80px;" data-bs-toggle="tooltip" title="Cerrar caja">
+                        <i class="bi bi-lock fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Cerrar Caja</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'caja:abrir_caja' caja.id_caja %}" class="btn btn-success d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:100px; height:80px;" data-bs-toggle="tooltip" title="Abrir caja">
+                        <i class="bi bi-unlock fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Abrir Caja</span>
+                    </a>
+                    <a href="{% url 'caja:editar_caja' caja.id_caja %}" class="btn btn-outline-dark d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" style="width:100px; height:80px;" data-bs-toggle="tooltip" title="Editar configuración">
+                        <i class="bi bi-pencil-square fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Configurar</span>
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -125,10 +227,10 @@
     <!-- ===================================== -->
     <!-- ÚLTIMOS MOVIMIENTOS -->
     <!-- ===================================== -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Últimos Movimientos</h5>
-            <span class="badge bg-primary">{{ total_movimientos }} registros</span>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-list-columns-reverse text-success me-2"></i> Últimos Movimientos</h5>
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">{{ total_movimientos }} registros</span>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -147,27 +249,28 @@
                         <tr>
                             <td>
                                 {% if movimiento.tipo_movimiento == "INGRESO" %}
-                                    <span class="badge bg-success">Ingreso</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Ingreso</span>
                                 {% elif movimiento.tipo_movimiento == "RETIRO" %}
-                                    <span class="badge bg-danger">Retiro</span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Retiro</span>
                                 {% elif movimiento.tipo_movimiento == "GASTO" %}
-                                    <span class="badge bg-danger">Gasto</span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Gasto</span>
                                 {% elif movimiento.tipo_movimiento == "VENTA" %}
-                                    <span class="badge bg-primary">Venta</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Venta</span>
                                 {% elif movimiento.tipo_movimiento == "AJUSTE" %}
-                                    <span class="badge bg-warning text-dark">Ajuste</span>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Ajuste</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">{{ movimiento.tipo_movimiento }}</span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">{{ movimiento.tipo_movimiento }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ movimiento.descripcion|default:"-" }}</td>
-                            <td>{{ movimiento.usuario }}</td>
-                            <td class="text-end">₡ {{ movimiento.monto }}</td>
-                            <td>{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
+                            <td class="text-dark">{{ movimiento.descripcion|default:"-" }}</td>
+                            <td class="text-muted">{{ movimiento.usuario }}</td>
+                            <td class="text-end fw-semibold text-success">₡ {{ movimiento.monto|floatformat:2 }}</td>
+                            <td class="text-muted small">{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
                             <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 No existen movimientos registrados para esta apertura.
                             </td>
                         </tr>
@@ -179,163 +282,104 @@
     </div>
 
     <!-- ===================================== -->
-    <!-- RESUMEN DE ARQUEOS -->
+    <!-- RESUMEN DE ARQUEOS Y HISTORIAL -->
     <!-- ===================================== -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Control de Arqueos</h5>
-            <span class="badge bg-info">{{ total_arqueos }} realizados</span>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clipboard-check text-info me-2"></i> Control y Historial de Arqueos</h5>
         </div>
         <div class="card-body">
-            <div class="row text-center">
+            <!-- KPIs DE ARQUEO -->
+            <div class="row text-center g-3 mb-4">
                 <div class="col-md-3">
-                    <h6 class="text-muted">Último arqueo</h6>
-                    {% if ultimo_arqueo %}
-                        <h5>{{ ultimo_arqueo.fecha_arqueo|date:"d/m/Y H:i" }}</h5>
-                    {% else %}
-                        <h5>Sin registros</h5>
-                    {% endif %}
+                    <div class="p-3 border rounded bg-light">
+                        <span class="text-muted d-block small mb-1">Último arqueo</span>
+                        <h6 class="fw-bold mb-0 text-dark">
+                            {% if ultimo_arqueo %}{{ ultimo_arqueo.fecha_arqueo|date:"d/m/Y H:i" }}{% else %}Sin registros{% endif %}
+                        </h6>
+                    </div>
                 </div>
                 <div class="col-md-3">
-                    <h6 class="text-muted">Última diferencia</h6>
-                    {% if ultimo_arqueo %}
-                        {% if ultimo_arqueo.diferencia == 0 %}
-                            <span class="badge bg-success fs-6">
-                                Caja cuadrada <br> ₡ {{ ultimo_arqueo.diferencia|floatformat:2 }}
-                            </span>
-                        {% elif ultimo_arqueo.diferencia > 0 %}
-                            <span class="badge bg-warning text-dark fs-6">
-                                Sobrante <br> + ₡ {{ ultimo_arqueo.diferencia|floatformat:2 }}
-                            </span>
-                        {% else %}
-                            <span class="badge bg-danger fs-6">
-                                Faltante <br> ₡ {{ ultimo_arqueo.diferencia|cut:"-"|floatformat:2 }}
-                            </span>
-                        {% endif %}
-                    {% else %}
-                        <span class="badge bg-secondary fs-6">Sin arqueos</span>
-                    {% endif %}
-                </div>
-                <div class="col-md-3">
-                    <h6 class="text-muted">Último usuario</h6>
-                    {% if ultimo_arqueo %}
-                        <h5>{{ ultimo_arqueo.usuario }}</h5>
-                    {% else %}
-                        <h5>Sin registros</h5>
-                    {% endif %}
-                </div>
-                <div class="col-md-3">
-                    <h6 class="text-muted">Total arqueos</h6>
-                    <h4 class="fw-bold">{{ total_arqueos }}</h4>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================================== -->
-    <!-- HISTORIAL DE ARQUEOS -->
-    <!-- ===================================== -->
-    {% if caja_abierta %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Historial de Arqueos</h5>
-        </div>
-        <div class="card-body">
-            {% if arqueos %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tabla-arqueos">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th class="text-end">Sistema</th>
-                            <th class="text-end">Contado</th>
-                            <th class="text-end">Diferencia</th>
-                            <th>Observaciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for arqueo in arqueos %}
-                        <tr>
-                            <td>{{ arqueo.fecha_arqueo|date:"d/m/Y H:i" }}</td>
-                            <td>{{ arqueo.usuario }}</td>
-                            <td class="text-end">₡ {{ arqueo.saldo_sistema }}</td>
-                            <td class="text-end">₡ {{ arqueo.saldo_contado }}</td>
-                            <td class="text-end">
-                                {% if arqueo.diferencia == 0 %}
-                                    <span class="badge bg-success">
-                                        Cuadrada <br> ₡ {{ arqueo.diferencia|floatformat:2 }}
-                                    </span>
-                                {% elif arqueo.diferencia > 0 %}
-                                    <span class="badge bg-warning text-dark">
-                                        Sobrante <br> + ₡ {{ arqueo.diferencia|floatformat:2 }}
-                                    </span>
+                    <div class="p-3 border rounded bg-light">
+                        <span class="text-muted d-block small mb-1">Última diferencia</span>
+                        <div class="mt-1">
+                            {% if ultimo_arqueo %}
+                                {% if ultimo_arqueo.diferencia == 0 %}
+                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Caja cuadrada (₡ 0.00)</span>
+                                {% elif ultimo_arqueo.diferencia > 0 %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Sobrante (+ ₡ {{ ultimo_arqueo.diferencia|floatformat:2 }})</span>
                                 {% else %}
-                                    <span class="badge bg-danger">
-                                        Faltante <br> ₡ {{ arqueo.diferencia|cut:"-"|floatformat:2 }}
-                                    </span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Faltante (₡ {{ ultimo_arqueo.diferencia|cut:"-"|floatformat:2 }})</span>
                                 {% endif %}
-                            </td>
-                            <td>{{ arqueo.observaciones|default:"-" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">Sin arqueos</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 border rounded bg-light">
+                        <span class="text-muted d-block small mb-1">Último usuario</span>
+                        <h6 class="fw-bold mb-0 text-dark">
+                            {% if ultimo_arqueo %}{{ ultimo_arqueo.usuario }}{% else %}Sin registros{% endif %}
+                        </h6>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 border rounded bg-light">
+                        <span class="text-muted d-block small mb-1">Total arqueos</span>
+                        <h6 class="fw-bold mb-0 text-dark">{{ total_arqueos }}</h6>
+                    </div>
+                </div>
             </div>
+
+            <!-- TABLA DE HISTORIAL DE ARQUEOS -->
+            {% if caja_abierta %}
+                {% if arqueos %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tabla-arqueos">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th class="text-end">Sistema</th>
+                                <th class="text-end">Contado</th>
+                                <th class="text-end">Diferencia</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for arqueo in arqueos %}
+                            <tr>
+                                <td class="text-muted small">{{ arqueo.fecha_arqueo|date:"d/m/Y H:i" }}</td>
+                                <td class="text-dark">{{ arqueo.usuario }}</td>
+                                <td class="text-end fw-semibold">₡ {{ arqueo.saldo_sistema|floatformat:2 }}</td>
+                                <td class="text-end fw-semibold">₡ {{ arqueo.saldo_contado|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    {% if arqueo.diferencia == 0 %}
+                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Cuadrada (₡ 0.00)</span>
+                                    {% elif arqueo.diferencia > 0 %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Sobrante (+ ₡ {{ arqueo.diferencia|floatformat:2 }})</span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Faltante (₡ {{ arqueo.diferencia|cut:"-"|floatformat:2 }})</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">{{ arqueo.observaciones|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-light border text-center text-muted mb-0 py-3">
+                    No existen arqueos registrados para esta apertura actual.
+                </div>
+                {% endif %}
             {% else %}
-            <div class="alert alert-info m-3">
-                No existen arqueos registrados para esta apertura.
+            <div class="alert alert-light border text-center text-muted mb-0 py-3">
+                Abra la caja para consultar el historial detallado de arqueos.
             </div>
             {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- ===================================== -->
-    <!-- ACCIONES -->
-    <!-- ===================================== -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Acciones</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex justify-content-center flex-wrap gap-3">
-                {% if caja_abierta %}
-                    <!-- Registrar Venta -->
-                    <a href="{% url 'ventas:crear_venta' %}" class="btn btn-outline-success d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Registrar venta">
-                        <i class="bi bi-cart-plus fs-3"></i>
-                    </a>
-                    <!-- Ver Lista de Ventas -->
-                    <a href="{% url 'ventas:lista_ventas' %}" class="btn btn-outline-primary d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Lista de ventas del día">
-                        <i class="bi bi-receipt fs-3"></i>
-                    </a>
-                    <a href="{% url 'caja:editar_apertura' apertura.id_apertura %}" class="btn btn-outline-primary d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Editar apertura">
-                        <i class="bi bi-cash-coin fs-3"></i>
-                    </a>
-                    <a href="{% url 'caja:editar_caja' caja.id_caja %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Editar configuración">
-                        <i class="bi bi-pencil-square fs-3"></i>
-                    </a>
-                    <a href="{% url 'caja:movimiento_caja' apertura.id_apertura %}" class="btn btn-outline-warning d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Registrar movimiento">
-                        <i class="bi bi-cash-stack fs-3"></i>
-                    </a>
-                    <a href="{% url 'caja:crear_arqueo' apertura.id_apertura %}" class="btn btn-outline-info d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Realizar arqueo">
-                        <i class="bi bi-clipboard-data fs-3"></i>
-                    </a>
-                    <a href="{% url 'caja:detalle_caja' apertura.id_apertura %}" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Ver detalle">
-                        <i class="bi bi-eye fs-3"></i>
-                    </a>
-                    <a href="{% url 'caja:cerrar_caja' apertura.id_apertura %}" class="btn btn-outline-danger d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Cerrar caja">
-                        <i class="bi bi-lock fs-3"></i>
-                    </a>
-                {% else %}
-                    <a href="{% url 'caja:abrir_caja' caja.id_caja %}" class="btn btn-outline-success d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Abrir caja">
-                        <i class="bi bi-unlock fs-3"></i>
-                    </a>
-                {% endif %}
-                <a href="{% url 'caja:lista_cajas' %}" class="btn btn-outline-dark d-flex align-items-center justify-content-center" style="width:70px;height:70px;" data-bs-toggle="tooltip" title="Volver">
-                    <i class="bi bi-arrow-left fs-3"></i>
-                </a>
-            </div>
         </div>
     </div>
 
@@ -353,7 +397,7 @@
             language: {
                 url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
             },
-            order: [[4, 'desc']], // Ordenar por fecha por defecto
+            order: [[4, 'desc']], // Ordenar por fecha descendente
             pageLength: 5,
             lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
         });
@@ -369,6 +413,12 @@
                 lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
             });
         }
+
+        // Inicializar Tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
     });
 </script>
 {% endblock %}

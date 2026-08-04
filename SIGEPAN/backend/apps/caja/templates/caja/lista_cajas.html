@@ -1,262 +1,213 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block css %}
+<!-- DataTables Bootstrap 5 CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
 
+{% block content %}
 <div class="container-fluid mt-4">
 
     <!-- ===================================== -->
     <!-- ENCABEZADO -->
     <!-- ===================================== -->
-
     <div class="d-flex justify-content-between align-items-center mb-4">
-
         <div>
-
             <h2 class="fw-bold mb-0">
-
-                Gestión de Cajas
-
+                <i class="bi bi-cash-stack text-success"></i> Gestión de Cajas
             </h2>
-
             <small class="text-muted">
-
-                Administración y control operativo de cajas.
-
+                Administración y control operativo de cajas por sucursal.
             </small>
-
         </div>
-
-        <a href="{% url 'caja:crear_caja' %}"
-           class="btn btn-outline-success d-flex align-items-center gap-2">
-
-            <i class="bi bi-plus-circle"></i>
-
+        <a href="{% url 'caja:crear_caja' %}" class="btn btn-success d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-plus-circle fs-5"></i>
             Nueva Caja
-
         </a>
-
     </div>
 
-
+    <!-- ===================================== -->
+    <!-- TARJETAS DE RESUMEN RÁPIDO -->
+    <!-- ===================================== -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-wallet2 fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Total Cajas</h6>
+                        <h3 class="fw-bold mb-0">{{ cajas|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Puedes complementar el conteo en el backend o dejar las tarjetas visuales de soporte -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-unlock fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Estado Operativo</h6>
+                        <span class="text-muted small">Control de turnos activos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-dark text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-building fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Sucursales</h6>
+                        <span class="text-muted small">Gestión centralizada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ===================================== -->
-    <!-- TABLA -->
+    <!-- TABLA DE CAJAS -->
     <!-- ===================================== -->
-
-    <div class="card shadow-sm">
-
+    <div class="card shadow-sm border-0">
         <div class="card-body">
-
             <div class="table-responsive">
-
-                <table class="table table-striped align-middle">
-
-                    <thead>
-
+                <table class="table table-hover align-middle mb-0" id="tabla-cajas">
+                    <thead class="table-light">
                         <tr>
-
                             <th>Nombre</th>
-
                             <th>Sucursal</th>
-
                             <th>Saldo Actual</th>
-
                             <th>Estado</th>
-
                             <th>Operación</th>
-
-                            <th class="text-center">
-
-                                Acciones
-
-                            </th>
-
+                            <th class="text-center">Acciones</th>
                         </tr>
-
                     </thead>
-
                     <tbody>
-
                     {% for caja in cajas %}
-
                         <tr>
-
                             <!-- NOMBRE -->
-
-                            <td>
-
-                                {{ caja.nombre }}
-
+                            <td class="fw-bold text-dark">
+                                <i class="bi bi-box-seam text-muted me-1"></i> {{ caja.nombre }}
                             </td>
-
 
                             <!-- SUCURSAL -->
-
                             <td>
-
                                 {{ caja.sucursal }}
-
                             </td>
-
 
                             <!-- SALDO -->
-
-                            <td>
-
-                                ₡ {{ caja.saldo_actual }}
-
+                            <td class="fw-semibold text-success">
+                                ₡ {{ caja.saldo_actual|floatformat:2 }}
                             </td>
-
 
                             <!-- ESTADO ADMINISTRATIVO -->
-
                             <td>
-
                                 {% if caja.estado %}
-
-                                    <span class="badge bg-success">
-
-                                        Activa
-
-                                    </span>
-
+                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>
                                 {% else %}
-
-                                    <span class="badge bg-danger">
-
-                                        Inactiva
-
-                                    </span>
-
+                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactiva</span>
                                 {% endif %}
-
                             </td>
-
 
                             <!-- ESTADO OPERATIVO -->
-
                             <td>
-
                                 {% if caja.apertura_activa %}
-
-                                    <span class="badge bg-primary">
-
-                                        Abierta
-
-                                    </span>
-
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Abierta</span>
                                 {% else %}
-
-                                    <span class="badge bg-secondary">
-
-                                        Cerrada
-
-                                    </span>
-
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">Cerrada</span>
                                 {% endif %}
-
                             </td>
-
-
 
                             <!-- ACCIONES -->
-
                             <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <!-- ADMINISTRAR -->
+                                    {% if caja.estado %}
+                                        <a href="{% url 'caja:administrar_caja' caja.id_caja %}"
+                                           class="btn btn-outline-dark btn-sm"
+                                           data-bs-toggle="tooltip"
+                                           title="Administrar caja">
+                                            <i class="bi bi-gear"></i>
+                                        </a>
+                                    {% endif %}
 
-                                <!-- ADMINISTRAR -->
+                                    <!-- ABRIR -->
+                                    {% if caja.estado and not caja.apertura_activa %}
+                                        <a href="{% url 'caja:abrir_caja' caja.id_caja %}"
+                                           class="btn btn-outline-success btn-sm"
+                                           data-bs-toggle="tooltip"
+                                           title="Abrir caja">
+                                            <i class="bi bi-unlock"></i>
+                                        </a>
+                                    {% endif %}
 
-                                {% if caja.estado %}
+                                    <!-- DESACTIVAR -->
+                                    {% if caja.estado %}
+                                        <a href="{% url 'caja:desactivar_caja' caja.id_caja %}"
+                                           class="btn btn-outline-warning btn-sm"
+                                           data-bs-toggle="tooltip"
+                                           title="Desactivar caja">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    {% endif %}
 
-                                    <a href="{% url 'caja:administrar_caja' caja.id_caja %}"
-                                       class="btn btn-outline-dark btn-sm"
-                                       data-bs-toggle="tooltip"
-                                       title="Administrar caja">
-
-                                        <i class="bi bi-gear"></i>
-
-                                    </a>
-
-                                {% endif %}
-
-
-
-                                <!-- ABRIR -->
-
-                                {% if caja.estado and not caja.apertura_activa %}
-
-                                    <a href="{% url 'caja:abrir_caja' caja.id_caja %}"
-                                       class="btn btn-outline-success btn-sm"
-                                       data-bs-toggle="tooltip"
-                                       title="Abrir caja">
-
-                                        <i class="bi bi-unlock"></i>
-
-                                    </a>
-
-                                {% endif %}
-
-
-                                <!-- DESACTIVAR -->
-
-                                {% if caja.estado %}
-
-                                    <a href="{% url 'caja:desactivar_caja' caja.id_caja %}"
-                                       class="btn btn-outline-warning btn-sm"
-                                       data-bs-toggle="tooltip"
-                                       title="Desactivar caja">
-
-                                        <i class="bi bi-x-circle"></i>
-
-                                    </a>
-
-                                {% endif %}
-
-
-
-                                <!-- ACTIVAR -->
-
-                                {% if not caja.estado %}
-
-                                    <a href="{% url 'caja:activar_caja' caja.id_caja %}"
-                                       class="btn btn-outline-success btn-sm"
-                                       data-bs-toggle="tooltip"
-                                       title="Activar caja">
-
-                                        <i class="bi bi-check-circle"></i>
-
-                                    </a>
-
-                                {% endif %}
-
+                                    <!-- ACTIVAR -->
+                                    {% if not caja.estado %}
+                                        <a href="{% url 'caja:activar_caja' caja.id_caja %}"
+                                           class="btn btn-outline-success btn-sm"
+                                           data-bs-toggle="tooltip"
+                                           title="Activar caja">
+                                            <i class="bi bi-check-circle"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
                             </td>
-
                         </tr>
-
                     {% empty %}
-
                         <tr>
-
-                            <td colspan="6"
-                                class="text-center text-muted">
-
-                                No existen cajas registradas.
-
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No existen cajas registradas en el sistema.
                             </td>
-
                         </tr>
-
                     {% endfor %}
-
                     </tbody>
-
                 </table>
-
             </div>
-
         </div>
-
     </div>
 
 </div>
+{% endblock %}
 
+{% block js %}
+<!-- DataTables JS y Bootstrap 5 Integration -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Inicializar DataTable para la lista de cajas
+        $('#tabla-cajas').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            },
+            order: [[0, 'asc']], // Ordenar por nombre por defecto
+            pageLength: 10,
+            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
+        });
+
+        // Inicializar tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
 {% endblock %}

@@ -12,8 +12,8 @@
 
         <div>
 
-            <h2 class="fw-bold mb-0">
-                Crear Caja
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-box-seam text-success me-2"></i> Crear Caja
             </h2>
 
             <small class="text-muted">
@@ -32,14 +32,12 @@
         <!-- INFORMACIÓN DE LA CAJA -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-
-                    Información de la Caja
-
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Información de la Caja
                 </h5>
 
             </div>
@@ -50,22 +48,19 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
-                        Sucursal
-
+                    <label class="form-label fw-semibold text-dark">
+                        Sucursal <span class="text-danger">*</span>
                     </label>
 
-                    {{ form.sucursal }}
-
-                    {% if form.sucursal.errors %}
-
-                    <div class="text-danger small">
-
-                        {{ form.sucursal.errors }}
-
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-building"></i></span>
+                        {{ form.sucursal }}
                     </div>
 
+                    {% if form.sucursal.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.sucursal.errors }}
+                    </div>
                     {% endif %}
 
                 </div>
@@ -74,22 +69,19 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
-                        Nombre Caja
-
+                    <label class="form-label fw-semibold text-dark">
+                        Nombre Caja <span class="text-danger">*</span>
                     </label>
 
-                    {{ form.nombre }}
-
-                    {% if form.nombre.errors %}
-
-                    <div class="text-danger small">
-
-                        {{ form.nombre.errors }}
-
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-tag"></i></span>
+                        {{ form.nombre }}
                     </div>
 
+                    {% if form.nombre.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.nombre.errors }}
+                    </div>
                     {% endif %}
 
                 </div>
@@ -98,63 +90,53 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
+                    <label class="form-label fw-semibold text-dark">
                         Descripción
-
                     </label>
 
                     {{ form.descripcion }}
 
                     {% if form.descripcion.errors %}
-
-                    <div class="text-danger small">
-
+                    <div class="text-danger small mt-1">
                         {{ form.descripcion.errors }}
-
                     </div>
-
                     {% endif %}
 
                 </div>
 
+                <!-- ESTADO -->
 
-            <!-- ESTADO -->
+                <div class="mb-3">
 
-            <div class="form-check">
+                    <div class="form-check form-switch">
+                        {{ form.estado }}
+                        <label class="form-check-label fw-semibold text-dark ms-2" id="estadoLabel">
+                            Activa
+                        </label>
+                    </div>
 
-                {{ form.estado }}
-
-                <label class="form-check-label" id="estadoLabel">
-                    Activa
-                </label>
-
-
-                {% if form.estado.errors %}
-
-                <div class="text-danger small">
-
-                    {{ form.estado.errors }}
+                    {% if form.estado.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.estado.errors }}
+                    </div>
+                    {% endif %}
 
                 </div>
 
-                {% endif %}
-
             </div>
 
+        </div>
 
         <!-- ===================================== -->
         <!-- ACCIONES -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-
-                    Acciones
-
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
                 </h5>
 
             </div>
@@ -167,7 +149,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-outline-success d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-success d-flex align-items-center justify-content-center shadow-sm"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
                         title="Guardar caja">
@@ -179,7 +161,7 @@
                     <!-- VOLVER -->
 
                     <a href="{% url 'caja:lista_cajas' %}"
-                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
                        style="width:70px;height:70px;"
                        data-bs-toggle="tooltip"
                        title="Volver">
@@ -198,44 +180,53 @@
 
 </div>
 
-        </div>
-
-    </form>
-
-
-</div>
-
-
 <script>
 
 document.addEventListener("DOMContentLoaded", function(){
 
+    // Asegurar clases de Bootstrap en los inputs de Django
+    const sucursalSelect = document.querySelector("#id_sucursal");
+    if (sucursalSelect && !sucursalSelect.classList.contains('form-select')) {
+        sucursalSelect.classList.add('form-select');
+    }
+
+    const nombreInput = document.querySelector("#id_nombre");
+    if (nombreInput && !nombreInput.classList.contains('form-control')) {
+        nombreInput.classList.add('form-control');
+    }
+
+    const descInput = document.querySelector("#id_descripcion");
+    if (descInput && !descInput.classList.contains('form-control')) {
+        descInput.classList.add('form-control');
+        descInput.rows = 3;
+    }
+
+    const estadoCheck = document.querySelector("#id_estado");
+    if (estadoCheck && !estadoCheck.classList.contains('form-check-input')) {
+        estadoCheck.classList.add('form-check-input');
+    }
+
     const checkbox = document.querySelector("#id_estado");
     const label = document.querySelector("#estadoLabel");
 
-
     function actualizarEstado(){
-
-        if(checkbox.checked){
-
+        if(checkbox && checkbox.checked){
             label.textContent = "Activa";
-
-        }else{
-
+        } else if(checkbox) {
             label.textContent = "Inactiva";
-
         }
-
     }
 
+    if(checkbox){
+        checkbox.addEventListener("change", actualizarEstado);
+        actualizarEstado();
+    }
 
-    checkbox.addEventListener(
-        "change",
-        actualizarEstado
-    );
-
-
-    actualizarEstado();
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
 
 });
 

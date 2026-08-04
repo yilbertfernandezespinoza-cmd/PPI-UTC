@@ -12,8 +12,8 @@
 
         <div>
 
-            <h2 class="fw-bold mb-0">
-                Detalle de Caja
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-journal-text text-primary me-2"></i> Detalle de Caja
             </h2>
 
             <small class="text-muted">
@@ -28,50 +28,52 @@
     <!-- INFORMACIÓN GENERAL -->
     <!-- ===================================== -->
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm border-0 mb-4">
 
-        <div class="card-header">
+        <div class="card-header bg-white py-3">
 
-            <h5 class="mb-0">
-                Información General
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-info-circle text-primary me-2"></i> Información General
             </h5>
 
         </div>
 
         <div class="card-body">
 
-            <div class="row">
+            <div class="row align-items-center">
 
                 <div class="col-md-6">
 
-                    <p>
-                        <strong>Caja:</strong>
-                        {{ apertura.caja.nombre }}
+                    <p class="mb-2">
+                        <strong class="text-muted">Caja:</strong>
+                        <span class="fw-semibold text-dark">{{ apertura.caja.nombre }}</span>
                     </p>
 
-                    <p>
-                        <strong>Responsable:</strong>
-                        {{ apertura.usuario }}
+                    <p class="mb-2">
+                        <strong class="text-muted">Responsable:</strong>
+                        <span class="fw-semibold text-dark">{{ apertura.usuario }}</span>
+                    </p>
+
+                    <p class="mb-2">
+                        <strong class="text-muted">Fecha de apertura:</strong>
+                        <span class="fw-semibold text-dark">{{ apertura.fecha_apertura|date:"d/m/Y H:i" }}</span>
+                    </p>
+
+                    <p class="mb-2">
+                        <strong class="text-muted">Monto inicial:</strong>
+                        <span class="fw-semibold text-dark">₡ {{ apertura.monto_inicial }}</span>
                     </p>
 
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6 mt-3 mt-md-0">
 
-                    <p>
-                        <strong>Fecha de apertura:</strong>
-                        {{ apertura.fecha_apertura|date:"d/m/Y H:i" }}
-                    </p>
-
-                    <p>
-                        <strong>Monto inicial:</strong>
-                        ₡ {{ apertura.monto_inicial }}
-                    </p>
-
-                    <p>
-                        <strong>Saldo sistema:</strong>
-                        ₡ {{ saldo_sistema|floatformat:2 }}
-                    </p>
+                    <div class="p-3 bg-light rounded shadow-sm border">
+                        <span class="d-block text-muted small fw-semibold text-uppercase mb-1">Saldo Sistema</span>
+                        <h3 class="fw-bold text-success mb-0">
+                            ₡ {{ saldo_sistema|floatformat:2 }}
+                        </h3>
+                    </div>
 
                 </div>
 
@@ -85,29 +87,26 @@
     <!-- MOVIMIENTOS -->
     <!-- ===================================== -->
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm border-0 mb-4">
 
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
 
-            <h5 class="mb-0">
-
-                Movimientos Registrados
-
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-list-check text-warning me-2"></i> Movimientos Registrados
             </h5>
 
             <span class="badge bg-primary">
-
                 {{ movimientos|length }} registros
-
             </span>
 
         </div>
 
-        <div class="card-body p-0">
+        <div class="card-body"> <!-- Se removió el p-0 para que DataTables gestione mejor los márgenes del buscador/paginación -->
 
             <div class="table-responsive">
 
-                <table class="table table-hover align-middle mb-0">
+                <!-- Se agregó el id="tablaMovimientos" para que funcione DataTables -->
+                <table id="tablaMovimientos" class="table table-hover align-middle mb-0 w-100">
 
                     <thead class="table-light">
 
@@ -168,11 +167,11 @@
                                 {{ movimiento.descripcion }}
                             </td>
 
-                            <td class="text-end">
+                            <td class="text-end fw-semibold">
                                 ₡ {{ movimiento.monto|floatformat:2 }}
                             </td>
 
-                            <td>
+                            <td class="text-muted small">
                                 {{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}
                             </td>
 
@@ -180,10 +179,12 @@
 
                         {% empty %}
 
+                        <!-- Nota: DataTables maneja su propio mensaje de "No data", pero dejamos el row por seguridad -->
                         <tr>
 
                             <td colspan="4" class="text-center text-muted py-4">
 
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
                                 No existen movimientos registrados.
 
                             </td>
@@ -206,14 +207,12 @@
     <!-- ACCIONES -->
     <!-- ===================================== -->
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm border-0 mb-4">
 
-        <div class="card-header">
+        <div class="card-header bg-white py-3">
 
-            <h5 class="mb-0">
-
-                Acciones
-
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-tools text-secondary me-2"></i> Acciones
             </h5>
 
         </div>
@@ -222,11 +221,10 @@
 
             <div class="d-flex justify-content-center gap-3">
 
-
                 <!-- VOLVER -->
 
                 <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
-                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
                    style="width:70px;height:70px;"
                    data-bs-toggle="tooltip"
                    title="Volver">
@@ -242,5 +240,50 @@
     </div>
 
 </div>
+
+<!-- Scripts de DataTables y Tooltips -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // Inicializar DataTables en la tabla de movimientos
+    if (document.getElementById("tablaMovimientos")) {
+        $('#tablaMovimientos').DataTable({
+            "language": {
+                "decimal": "",
+                "emptyTable": "No hay información disponible en la tabla",
+                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                "infoEmpty": "Mostrando 0 to 0 of 0 registros",
+                "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                "infoPostFix": "",
+                "thousands": ",",
+                "lengthMenu": "Mostrar _MENU_ registros",
+                "loadingRecords": "Cargando...",
+                "processing": "Procesando...",
+                "search": "Buscar:",
+                "zeroRecords": "No se encontraron resultados coincidentes",
+                "paginate": {
+                    "first": "Primero",
+                    "last": "Último",
+                    "next": "Siguiente",
+                    "previous": "Anterior"
+                },
+                "aria": {
+                    "sortAscending": ": activar para ordenar la columna ascendente",
+                    "sortDescending": ": activar para ordenar la columna descendente"
+                }
+            },
+            "pageLength": 10,
+            "order": [[3, "desc"]] // Ordenar por defecto por la columna de fecha (la 4ta columna, índice 3) de manera descendiente
+        });
+    }
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+});
+</script>
 
 {% endblock %}

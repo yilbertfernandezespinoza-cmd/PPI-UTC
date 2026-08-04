@@ -12,8 +12,8 @@
 
         <div>
 
-            <h2 class="fw-bold mb-0">
-                Arqueo de Caja
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-clipboard-data text-info me-2"></i> Arqueo de Caja
             </h2>
 
             <small class="text-muted">
@@ -32,12 +32,12 @@
         <!-- INFORMACIÓN DE CAJA -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Información de Caja
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Información de Caja
                 </h5>
 
             </div>
@@ -48,63 +48,42 @@
 
                     <div class="col-md-6">
 
-                        <p>
-
-                            <strong>Caja:</strong>
-
-                            {{ apertura.caja.nombre }}
-
+                        <p class="mb-2">
+                            <strong class="text-muted">Caja:</strong>
+                            <span class="fw-semibold text-dark">{{ apertura.caja.nombre }}</span>
                         </p>
 
-                        <p>
-
-                            <strong>Sucursal:</strong>
-
-                            {{ apertura.caja.sucursal }}
-
+                        <p class="mb-2">
+                            <strong class="text-muted">Sucursal:</strong>
+                            <span class="fw-semibold text-dark">{{ apertura.caja.sucursal }}</span>
                         </p>
 
-                        <p>
-
-                            <strong>Fecha apertura:</strong>
-
-                            {{ apertura.fecha_apertura|date:"d/m/Y H:i" }}
-
+                        <p class="mb-2">
+                            <strong class="text-muted">Fecha apertura:</strong>
+                            <span class="fw-semibold text-dark">{{ apertura.fecha_apertura|date:"d/m/Y H:i" }}</span>
                         </p>
 
-                        <p>
-
-                            <strong>Responsable apertura:</strong>
-
-                            {{ apertura.usuario }}
-
+                        <p class="mb-2">
+                            <strong class="text-muted">Responsable apertura:</strong>
+                            <span class="fw-semibold text-dark">{{ apertura.usuario }}</span>
                         </p>
 
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-6 border-start-md ps-md-4 mt-3 mt-md-0">
 
-                        <p>
-
-                            <strong>Saldo según sistema:</strong>
-
-                            ₡ {{ saldo_sistema|floatformat:2 }}
-
-                        </p>
-
-                        <span class="badge bg-info">
-
-                            Cálculo automático
-
-                        </span>
-
-                        <br><br>
-
-                        <small class="text-muted">
-
-                            La diferencia será calculada automáticamente al guardar el arqueo.
-
-                        </small>
+                        <div class="p-3 bg-light rounded shadow-sm border">
+                            <span class="d-block text-muted small fw-semibold text-uppercase mb-1">Saldo según sistema</span>
+                            <h3 class="fw-bold text-success mb-2">
+                                ₡ {{ saldo_sistema|floatformat:2 }}
+                            </h3>
+                            <span class="badge bg-info text-dark mb-2">
+                                <i class="bi bi-cpu me-1"></i> Cálculo automático
+                            </span>
+                            <small class="text-muted d-block">
+                                La diferencia será calculada automáticamente al guardar el arqueo.
+                            </small>
+                        </div>
 
                     </div>
 
@@ -118,12 +97,12 @@
         <!-- CONTEO FÍSICO -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Conteo Físico
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-cash-stack text-warning me-2"></i> Conteo Físico
                 </h5>
 
             </div>
@@ -132,44 +111,35 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
-                        Efectivo contado
-
+                    <label class="form-label fw-semibold text-dark">
+                        Efectivo contado <span class="text-danger">*</span>
                     </label>
 
-                    {{ form.saldo_contado }}
-
-                    {% if form.saldo_contado.errors %}
-
-                    <div class="text-danger small">
-
-                        {{ form.saldo_contado.errors }}
-
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">₡</span>
+                        {{ form.saldo_contado }}
                     </div>
 
+                    {% if form.saldo_contado.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.saldo_contado.errors }}
+                    </div>
                     {% endif %}
 
                 </div>
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
+                    <label class="form-label fw-semibold text-dark">
                         Observaciones
-
                     </label>
 
                     {{ form.observaciones }}
 
                     {% if form.observaciones.errors %}
-
-                    <div class="text-danger small">
-
+                    <div class="text-danger small mt-1">
                         {{ form.observaciones.errors }}
-
                     </div>
-
                     {% endif %}
 
                 </div>
@@ -182,12 +152,12 @@
         <!-- ACCIONES -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Acciones
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
                 </h5>
 
             </div>
@@ -200,7 +170,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-outline-info d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-info d-flex align-items-center justify-content-center shadow-sm"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
                         title="Guardar arqueo">
@@ -212,7 +182,7 @@
                     <!-- VOLVER -->
 
                     <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
-                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
                        style="width:70px;height:70px;"
                        data-bs-toggle="tooltip"
                        title="Volver">
@@ -230,5 +200,27 @@
     </form>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Asegurar clases de Bootstrap en los widgets del formulario de Django
+    const saldoContadoInput = document.querySelector("#id_saldo_contado");
+    if (saldoContadoInput && !saldoContadoInput.classList.contains('form-control')) {
+        saldoContadoInput.classList.add('form-control');
+    }
+
+    const obsInput = document.querySelector("#id_observaciones");
+    if (obsInput && !obsInput.classList.contains('form-control')) {
+        obsInput.classList.add('form-control');
+        obsInput.rows = 3;
+    }
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
 
 {% endblock %}

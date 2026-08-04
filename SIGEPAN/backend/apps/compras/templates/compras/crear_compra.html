@@ -1,132 +1,148 @@
 {% extends "base.html" %}
 
-
-
 {% block content %}
-
-
-<div class="container mt-4">
-
-
-<h2>
-Registrar compra
-</h2>
-
-
-
-<form method="POST">
-
-
-{% csrf_token %}
-
-
-
-<h4>
-Datos generales
-</h4>
-
-
-{{ compra_form.as_p }}
-
-
-
-<hr>
-
-
-
-<h4>
-Productos
-</h4>
-
-
-
-{{ detalle_formset.management_form }}
-
-
-
-<table class="table">
-
-
-<thead>
-
-<tr>
-
-<th>Producto</th>
-<th>Cantidad</th>
-<th>Precio</th>
-
-</tr>
-
-</thead>
-
-
-
-<tbody>
-
-
-{% for form in detalle_formset %}
-
-
-<tr>
-
-
-<td>
-
-{{ form.producto }}
-
-</td>
-
-
-<td>
-
-{{ form.cantidad }}
-
-</td>
-
-
-<td>
-
-{{ form.precio_unitario }}
-
-</td>
-
-
-</tr>
-
-
-{% endfor %}
-
-
-
-</tbody>
-
-
-</table>
-
-
-
-<button type="submit"
-class="btn btn-success">
-
-Guardar compra
-
-</button>
-
-
-
-<a href="{% url 'compras:lista_compras' %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
-
-
-
-</form>
-
-
+<div class="container-fluid py-4">
+
+    <!-- Cabecera del Módulo -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 text-dark fw-bold">
+                <i class="fas fa-cart-plus me-2"></i> Registrar Nueva Compra
+            </h2>
+            <p class="text-muted small mb-0">Complete la información general y detalle los insumos adquiridos.</p>
+        </div>
+        <div>
+            <a href="{% url 'compras:lista_compras' %}" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> Volver al listado
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form method="POST" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <!-- Alertas de errores generales si los hay -->
+        {% if compra_form.errors or detalle_formset.errors %}
+        <div class="alert alert-danger shadow-sm mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> Por favor, corrija los errores marcados en el formulario antes de guardar.
+        </div>
+        {% endif %}
+
+        <!-- Bloque 1: Datos Generales -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 text-primary fw-bold">
+                    <i class="fas fa-info-circle me-2"></i> Datos Generales
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for field in compra_form %}
+                    <div class="col-md-4">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold small text-muted">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text text-muted small">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloque 2: Productos / Insumos -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-primary fw-bold">
+                    <i class="fas fa-boxes me-2"></i> Productos o Insumos
+                </h5>
+                <span class="text-muted small">Detalle de líneas de compra</span>
+            </div>
+            <div class="card-body p-0">
+                {{ detalle_formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="width: 50%;">Producto</th>
+                                <th style="width: 20%;">Cantidad</th>
+                                <th style="width: 25%;">Precio Unitario (₡)</th>
+                                <th class="text-center" style="width: 5%;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in detalle_formset %}
+                            <tr>
+                                <td class="ps-3">
+                                    <!-- Ocultar campos de ID u ocultos del formset si existen -->
+                                    {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    {{ form.producto }}
+                                    {% for error in form.producto.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ form.cantidad }}
+                                    {% for error in form.cantidad.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ form.precio_unitario }}
+                                    {% for error in form.precio_unitario.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td class="text-center">
+                                    {% if form.can_delete %}
+                                        {{ form.DELETE }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción Final -->
+        <div class="d-flex justify-content-end gap-2 mb-5">
+            <a href="{% url 'compras:lista_compras' %}" class="btn btn-light border px-4">
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-success px-4 shadow-sm">
+                <i class="fas fa-save me-1"></i> Guardar compra
+            </button>
+        </div>
+
+    </form>
 </div>
 
-
+<!-- Script rápido opcional para asegurar que los inputs de Django usen clases Bootstrap -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Añade clases de Bootstrap a todos los inputs generados por Django que no las tengan
+        const inputs = document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea');
+        inputs.forEach(input => {
+            if (!input.classList.contains('form-control') && !input.classList.contains('form-select')) {
+                if (input.tagName === 'SELECT') {
+                    input.classList.add('form-select');
+                } else {
+                    input.classList.add('form-control');
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

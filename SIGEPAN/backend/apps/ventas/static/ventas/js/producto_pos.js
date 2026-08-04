@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const buscarProducto = document.getElementById("buscar_producto");
     const btnAgregar = document.getElementById("btn_agregar_producto");
     const carrito = document.getElementById("carrito_productos");
-    const listaProductos = document.getElementById("lista_productos_pos"); // CORRECCIÓN: Faltaba esta variable
+    const listaProductos = document.getElementById("lista_productos_pos");
     
-    // CORRECCIÓN CRÍTICA: Usar el contador oficial de Django Formset
+    // Contador oficial de Django Formset
     const contadorDjango = document.getElementById("id_detalle-TOTAL_FORMS");
 
     if (!buscarProducto || !btnAgregar || !carrito || !contadorDjango || !listaProductos) {
@@ -40,27 +40,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Delegación de eventos para eliminar filas dinámicas y recalcular
     carrito.addEventListener("click", function(e) {
-        // Si el clic fue en el botón de eliminar o en su ícono
         let btnEliminar = e.target.closest(".btn-eliminar-fila");
         if (btnEliminar) {
             let fila = btnEliminar.closest("tr");
             fila.remove();
             
+            // Reindexar formset después de eliminar
+            reindexarFormsetDetalles();
+            
             // Validar si la tabla quedó vacía para volver a mostrar el mensaje
             if (carrito.children.length === 0) {
                 carrito.innerHTML = `
                     <tr id="fila_vacia">
-                        <td colspan="5" class="text-center text-muted py-4 pos-cart-empty">
-                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        <td colspan="5" class="text-center text-muted py-5 pos-cart-empty">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
                             No hay productos agregados a la venta
                         </td>
                     </tr>
                 `;
             }
             
-            // Disparar recálculo global (se definirá en venta_pos.js)
-            if (typeof recalcularTotales === "function") {
-                recalcularTotales();
+            // Disparar recálculo global
+            if (typeof window.recalcularTotales === "function") {
+                window.recalcularTotales();
             }
         }
     });
@@ -70,6 +72,12 @@ document.addEventListener("DOMContentLoaded", function() {
         if (e.target.classList.contains("input-cantidad-pos")) {
             let fila = e.target.closest("tr");
             let cantidad = parseFloat(e.target.value) || 1;
+            
+            if (cantidad < 1) {
+                cantidad = 1;
+                e.target.value = 1;
+            }
+
             let precioUnitarioInput = fila.querySelector(".input-precio-unitario");
             let precio = parseFloat(precioUnitarioInput.value) || 0;
             
@@ -80,8 +88,8 @@ document.addEventListener("DOMContentLoaded", function() {
             fila.querySelector(".input-subtotal-oculto").value = nuevoSubtotal.toFixed(2);
             
             // Disparar recálculo global
-            if (typeof recalcularTotales === "function") {
-                recalcularTotales();
+            if (typeof window.recalcularTotales === "function") {
+                window.recalcularTotales();
             }
         }
     });
@@ -141,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function() {
         listaProductos.classList.remove("d-none");
     }
 
-// =====================================================
+    // =====================================================
     // FUNCIÓN DE REINDEXACIÓN PARA DJANGO FORMSET
     // =====================================================
     function reindexarFormsetDetalles() {
@@ -149,19 +157,18 @@ document.addEventListener("DOMContentLoaded", function() {
         filas.forEach((fila, nuevoIndice) => {
             const inputs = fila.querySelectorAll("input");
             inputs.forEach(input => {
-                // Reemplaza cualquier índice numérico anterior por el nuevo índice secuencial
                 input.name = input.name.replace(/detalle-\d+/, `detalle-${nuevoIndice}`);
             });
         });
-        // Actualiza el TOTAL_FORMS oficial que exige Django
-        contadorDjango.value = filas.length;
+        if (contadorDjango) {
+            contadorDjango.value = filas.length;
+        }
     }
 
     // =====================================================
     // FUNCIÓN AGREGAR PRODUCTO AL CARRITO
     // =====================================================
     function agregarProducto(producto) {
-        // Eliminar mensaje de carrito vacío si existe
         let filaVacia = document.getElementById("fila_vacia");
         if (filaVacia) {
             filaVacia.remove();
@@ -170,9 +177,10 @@ document.addEventListener("DOMContentLoaded", function() {
         let cantidad = 1;
         let precio = parseFloat(producto.precio);
         let subtotal = precio * cantidad;
+        
+        // Obtener el índice actual basado en el contador
         let indice = parseInt(contadorDjango.value) || 0;
 
-        // Crear nueva fila
         let fila = document.createElement("tr");
         fila.innerHTML = `
             <td class="align-middle">
@@ -199,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         carrito.appendChild(fila);
 
-        // Reindexar y actualizar el contador de Django de forma automática y limpia
+        // Reindexar y actualizar el contador de Django
         reindexarFormsetDetalles();
 
         // Limpiar búsqueda
@@ -208,8 +216,8 @@ document.addEventListener("DOMContentLoaded", function() {
         buscarProducto.focus();
 
         // Disparar recálculo global de totales
-        if (typeof recalcularTotales === "function") {
-            recalcularTotales();
+        if (typeof window.recalcularTotales === "function") {
+            window.recalcularTotales();
         }
     }
 });

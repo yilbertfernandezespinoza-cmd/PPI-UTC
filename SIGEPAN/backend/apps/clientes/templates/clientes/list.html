@@ -20,19 +20,19 @@
         </div>
 
         <!-- Grupo de Botones de Acción -->
-            <div class="d-flex gap-2">
-                <!-- Botón para volver a la venta -->
-                <a href="{% url 'ventas:crear_venta' %}" class="btn btn-secondary d-inline-flex align-items-center justify-content-center gap-1">
-                    <i class="bi bi-arrow-left"></i> Volver a Venta
-                </a>
+        <div class="d-flex gap-2">
+            <!-- Botón de retorno directo a Crear Venta -->
+            <a href="{% url 'ventas:crear_venta' %}" class="btn btn-secondary d-inline-flex align-items-center justify-content-center gap-1">
+                <i class="bi bi-arrow-left"></i> Volver a Ventas
+            </a>
 
-                <!-- Botón para registrar nuevo cliente -->
-                {% if puede_crear %}
-                <a href="{% url 'clientes:crear' %}" class="btn btn-warning text-dark d-inline-flex align-items-center justify-content-center gap-1 fw-bold">
-                    <i class="bi bi-person-plus"></i> Registrar Cliente
-                </a>
-                {% endif %}
-            </div>
+            <!-- Botón para registrar nuevo cliente -->
+            {% if puede_crear %}
+            <a href="{% url 'clientes:crear' %}" data-track-origin class="btn btn-warning text-dark d-inline-flex align-items-center justify-content-center gap-1 fw-bold">
+                <i class="bi bi-person-plus"></i> Registrar Cliente
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     <!-- BÚSQUEDA -->

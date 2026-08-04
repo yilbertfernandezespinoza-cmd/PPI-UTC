@@ -12,8 +12,8 @@
 
         <div>
 
-            <h2 class="fw-bold mb-0">
-                Cierre de Caja
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-lock text-danger me-2"></i> Cierre de Caja
             </h2>
 
             <small class="text-muted">
@@ -32,12 +32,12 @@
         <!-- INFORMACIÓN DE LA CAJA -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Información de la Caja
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Información de la Caja
                 </h5>
 
             </div>
@@ -50,43 +50,52 @@
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-muted">
                                 Caja
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.caja.nombre }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.caja.nombre }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-muted">
                                 Responsable
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.usuario }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.usuario }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-muted">
                                 Fecha de apertura
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.fecha_apertura }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.fecha_apertura }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
@@ -96,29 +105,35 @@
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-muted">
                                 Monto inicial
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="₡ {{ apertura.monto_inicial }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">₡</span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.monto_inicial }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-dark">
                                 Saldo del sistema
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="₡ {{ saldo_sistema|floatformat:2 }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-success fw-bold">₡</span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light fw-bold text-success"
+                                    value="{{ saldo_sistema|floatformat:2 }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
@@ -134,12 +149,12 @@
         <!-- DATOS DEL CIERRE -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Datos del Cierre
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-cash-stack text-warning me-2"></i> Datos del Cierre
                 </h5>
 
             </div>
@@ -148,14 +163,17 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-                        Monto contado físicamente
+                    <label class="form-label fw-semibold text-dark">
+                        Monto contado físicamente <span class="text-danger">*</span>
                     </label>
 
-                    {{ form.monto_final }}
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">₡</span>
+                        {{ form.monto_final }}
+                    </div>
 
                     {% if form.monto_final.errors %}
-                    <div class="text-danger small">
+                    <div class="text-danger small mt-1">
                         {{ form.monto_final.errors }}
                     </div>
                     {% endif %}
@@ -164,28 +182,32 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label class="form-label fw-semibold text-dark">
                         Diferencia
                     </label>
 
-                    <input
-                        type="text"
-                        id="diferencia"
-                        class="form-control"
-                        readonly>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-calculator"></i></span>
+                        <input
+                            type="text"
+                            id="diferencia"
+                            class="form-control bg-light fw-bold"
+                            readonly
+                            placeholder="Ingrese el monto físico...">
+                    </div>
 
                 </div>
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label class="form-label fw-semibold text-dark">
                         Observaciones
                     </label>
 
                     {{ form.observaciones }}
 
                     {% if form.observaciones.errors %}
-                    <div class="text-danger small">
+                    <div class="text-danger small mt-1">
                         {{ form.observaciones.errors }}
                     </div>
                     {% endif %}
@@ -200,12 +222,12 @@
         <!-- ACCIONES -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Acciones
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
                 </h5>
 
             </div>
@@ -218,7 +240,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-outline-danger d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-danger d-flex align-items-center justify-content-center shadow-sm"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
                         title="Confirmar cierre">
@@ -230,7 +252,7 @@
                     <!-- VOLVER -->
 
                     <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
-                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
                        style="width:70px;height:70px;"
                        data-bs-toggle="tooltip"
                        title="Volver">
@@ -254,6 +276,18 @@
 document.addEventListener(
     "DOMContentLoaded",
     function(){
+
+        // Asegurar que el widget de Django tome la clase form-control correctamente
+        const montoFinalWidget = document.getElementById("id_monto_final");
+        if (montoFinalWidget && !montoFinalWidget.classList.contains('form-control')) {
+            montoFinalWidget.classList.add('form-control');
+        }
+
+        const obsWidget = document.getElementById("id_observaciones");
+        if (obsWidget && !obsWidget.classList.contains('form-control')) {
+            obsWidget.classList.add('form-control');
+            obsWidget.rows = 3;
+        }
 
         const montoFinal =
             document.getElementById(

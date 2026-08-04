@@ -12,22 +12,17 @@
 
         <div>
 
-            <h2 class="fw-bold mb-0">
-
-                Editar Apertura de Caja
-
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-pencil-square text-primary me-2"></i> Editar Apertura de Caja
             </h2>
 
             <small class="text-muted">
-
                 Modificación administrativa de la apertura activa.
-
             </small>
 
         </div>
 
     </div>
-
 
     <form method="POST">
 
@@ -37,14 +32,12 @@
         <!-- DATOS DE LA APERTURA -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-
-                    Datos de la Apertura
-
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Datos de la Apertura
                 </h5>
 
             </div>
@@ -55,22 +48,21 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
+                    <label class="form-label fw-semibold text-dark">
                         Caja asignada
-
                     </label>
 
-                    <input
-                        type="text"
-                        class="form-control"
-                        value="{{ apertura.caja.nombre }}"
-                        readonly>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                        <input
+                            type="text"
+                            class="form-control bg-light"
+                            value="{{ apertura.caja.nombre }}"
+                            readonly>
+                    </div>
 
-                    <small class="text-muted">
-
+                    <small class="text-muted mt-1 d-block">
                         La apertura pertenece a esta caja y no puede modificarse.
-
                     </small>
 
                 </div>
@@ -79,22 +71,19 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
-                        Monto inicial
-
+                    <label class="form-label fw-semibold text-dark">
+                        Monto inicial <span class="text-danger">*</span>
                     </label>
 
-                    {{ form.monto_inicial }}
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">₡</span>
+                        {{ form.monto_inicial }}
+                    </div>
 
                     {% if form.monto_inicial.errors %}
-
-                        <div class="text-danger small">
-
+                        <div class="text-danger small mt-1">
                             {{ form.monto_inicial.errors }}
-
                         </div>
-
                     {% endif %}
 
                 </div>
@@ -103,35 +92,25 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-
+                    <label class="form-label fw-semibold text-dark">
                         Observaciones
-
                     </label>
 
                     {{ form.observaciones }}
 
                     {% if form.observaciones.errors %}
-
-                        <div class="text-danger small">
-
+                        <div class="text-danger small mt-1">
                             {{ form.observaciones.errors }}
-
                         </div>
-
                     {% endif %}
 
                 </div>
 
                 <!-- AVISO -->
 
-                <div class="alert alert-warning mb-0">
-
+                <div class="alert alert-warning border-0 shadow-sm mb-0">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
-
-                    Cualquier modificación del monto inicial será registrada automáticamente
-                    en el historial administrativo de la caja.
-
+                    Cualquier modificación del monto inicial será registrada automáticamente en el historial administrativo de la caja.
                 </div>
 
             </div>
@@ -142,14 +121,12 @@
         <!-- ACCIONES -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-
-                    Acciones
-
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
                 </h5>
 
             </div>
@@ -162,7 +139,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary d-flex align-items-center justify-content-center shadow-sm"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
                         title="Guardar cambios">
@@ -174,7 +151,7 @@
                     <!-- VOLVER -->
 
                     <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
-                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
                        style="width:70px;height:70px;"
                        data-bs-toggle="tooltip"
                        title="Volver">
@@ -192,5 +169,27 @@
     </form>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Asegurar clases de Bootstrap en los inputs de Django
+    const montoInput = document.querySelector("#id_monto_inicial");
+    if (montoInput && !montoInput.classList.contains('form-control')) {
+        montoInput.classList.add('form-control');
+    }
+
+    const obsInput = document.querySelector("#id_observaciones");
+    if (obsInput && !obsInput.classList.contains('form-control')) {
+        obsInput.classList.add('form-control');
+        obsInput.rows = 3;
+    }
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
 
 {% endblock %}

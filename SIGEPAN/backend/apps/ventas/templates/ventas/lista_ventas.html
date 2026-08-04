@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
-<!-- DataTables CSS Bootstrap 5 -->
+<!-- DataTables CSS Bootstrap 5 & Responsive -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
 {% endblock %}
 
 {% load ayuda_tags %}
@@ -46,7 +47,7 @@
         </div>
     </div>
 
-    <!-- TARJETAS DE MÉTRICAS SIMÉTRICAS (ALTURA IGUAL H-100) -->
+    <!-- TARJETAS DE MÉTRICAS SIMÉTRICAS -->
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
@@ -121,6 +122,8 @@
                                 </td>
                             </tr>
                         {% empty %}
+                            <!-- DataTables maneja bien los estados vacíos si se inicializa correctamente, 
+                                 pero dejamos la estructura limpia por compatibilidad -->
                         {% endfor %}
                     </tbody>
                 </table>
@@ -133,10 +136,12 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- jQuery y DataTables JS -->
+<!-- jQuery, DataTables JS & Responsive Extension -->
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
 <script>
     $(document).ready(function() {

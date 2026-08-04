@@ -12,8 +12,8 @@
 
         <div>
 
-            <h2 class="fw-bold mb-0">
-                Registrar Movimiento
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-cash-coin text-primary me-2"></i> Registrar Movimiento
             </h2>
 
             <small class="text-muted">
@@ -32,12 +32,12 @@
         <!-- INFORMACIÓN DE LA CAJA -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Información de la Caja
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Información de la Caja
                 </h5>
 
             </div>
@@ -50,15 +50,18 @@
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-dark">
                                 Caja
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.caja.nombre }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.caja.nombre }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
@@ -68,15 +71,18 @@
 
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold text-dark">
                                 Responsable
                             </label>
 
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="{{ apertura.usuario }}"
-                                readonly>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.usuario }}"
+                                    readonly>
+                            </div>
 
                         </div>
 
@@ -92,12 +98,12 @@
         <!-- DATOS DEL MOVIMIENTO -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Datos del Movimiento
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-wallet2 text-primary me-2"></i> Datos del Movimiento
                 </h5>
 
             </div>
@@ -106,60 +112,51 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-                        Tipo de movimiento
+                    <label class="form-label fw-semibold text-dark">
+                        Tipo de movimiento <span class="text-danger">*</span>
                     </label>
 
                     {{ form.tipo_movimiento }}
 
                     {% if form.tipo_movimiento.errors %}
-
-                        <div class="text-danger small">
-
+                        <div class="text-danger small mt-1">
                             {{ form.tipo_movimiento.errors }}
-
                         </div>
-
                     {% endif %}
 
                 </div>
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-                        Monto
+                    <label class="form-label fw-semibold text-dark">
+                        Monto <span class="text-danger">*</span>
                     </label>
 
-                    {{ form.monto }}
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">₡</span>
+                        {{ form.monto }}
+                    </div>
 
                     {% if form.monto.errors %}
-
-                        <div class="text-danger small">
-
+                        <div class="text-danger small mt-1">
                             {{ form.monto.errors }}
-
                         </div>
-
                     {% endif %}
 
                 </div>
 
                 <div class="mb-3">
 
-                    <label class="form-label">
-                        Descripción
+                    <label class="form-label fw-semibold text-dark">
+                        Descripción <span class="text-danger">*</span>
                     </label>
 
                     {{ form.descripcion }}
 
                     {% if form.descripcion.errors %}
-
-                        <div class="text-danger small">
-
+                        <div class="text-danger small mt-1">
                             {{ form.descripcion.errors }}
-
                         </div>
-
                     {% endif %}
 
                 </div>
@@ -172,12 +169,12 @@
         <!-- ACCIONES -->
         <!-- ===================================== -->
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm border-0 mb-4">
 
-            <div class="card-header">
+            <div class="card-header bg-white py-3">
 
-                <h5 class="mb-0">
-                    Acciones
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
                 </h5>
 
             </div>
@@ -190,7 +187,7 @@
 
                     <button
                         type="submit"
-                        class="btn btn-outline-success d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-success d-flex align-items-center justify-content-center shadow-sm"
                         style="width:70px;height:70px;"
                         data-bs-toggle="tooltip"
                         title="Guardar movimiento">
@@ -202,14 +199,15 @@
                     <!-- VOLVER -->
 
                     <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
-                    class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                    style="width:70px;height:70px;"
-                    data-bs-toggle="tooltip"
-                    title="Volver">
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
+                       style="width:70px;height:70px;"
+                       data-bs-toggle="tooltip"
+                       title="Volver">
 
                         <i class="bi bi-arrow-left fs-3"></i>
 
                     </a>
+
                 </div>
 
             </div>
@@ -219,5 +217,32 @@
     </form>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Asegurar clases de Bootstrap en los inputs generados por Django
+    const tipoSelect = document.querySelector("#id_tipo_movimiento");
+    if (tipoSelect && !tipoSelect.classList.contains('form-select')) {
+        tipoSelect.classList.add('form-select');
+    }
+
+    const montoInput = document.querySelector("#id_monto");
+    if (montoInput && !montoInput.classList.contains('form-control')) {
+        montoInput.classList.add('form-control');
+    }
+
+    const descInput = document.querySelector("#id_descripcion");
+    if (descInput && !descInput.classList.contains('form-control')) {
+        descInput.classList.add('form-control');
+        descInput.rows = 3;
+    }
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
 
 {% endblock %}

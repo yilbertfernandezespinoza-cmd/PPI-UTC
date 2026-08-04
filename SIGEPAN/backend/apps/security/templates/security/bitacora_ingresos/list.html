@@ -86,6 +86,17 @@
 
         {% endif %}
 
+        <div class="mb-3">
+            <a href="{% url 'security:bitacora_movimientos_pdf' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="{% url 'security:bitacora_movimientos_excel' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+        </div>
+
         <div id="tablaBitacoraIngresos"></div>
 
     </div>

@@ -46,7 +46,23 @@ class InventarioRepository:
         inventario.save()
 
         return inventario
-    
+
+    @staticmethod
+    def obtener_o_crear(id_producto, id_sucursal):
+        """
+        Obtiene el registro de inventario de un producto en una sucursal,
+        o lo crea en cero si todavía no existe.
+        """
+
+        inventario, _creado = Inventario.objects.get_or_create(
+            id_producto=id_producto,
+            id_sucursal=id_sucursal,
+            defaults={"stock_actual": 0},
+        )
+
+        return inventario
+
+
 class TipoMovimientoInventarioRepository:
     """
     Repositorio para el acceso a datos de los tipos de movimiento de inventario.
@@ -97,6 +113,7 @@ class TipoMovimientoInventarioRepository:
         tipo_movimiento.save()
 
         return tipo_movimiento
+
 
 class MovimientoInventarioRepository:
     """
@@ -169,4 +186,4 @@ class MovimientoInventarioRepository:
 
         movimiento.save()
 
-        return movimiento    
+        return movimiento

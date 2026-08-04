@@ -1,0 +1,32 @@
+<div class="card mb-4">
+
+    <div class="card-header">
+        <strong>Top 10 productos más vendidos (últimos 30 días)</strong>
+    </div>
+
+    <div class="card-body">
+
+        {% if top_productos %}
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Cantidad vendida</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in top_productos %}
+                <tr>
+                    <td>{{ producto.producto__nombre }}</td>
+                    <td class="text-end">{{ producto.cantidad_total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mb-0">Todavía no hay ventas registradas en este período.</p>
+        {% endif %}
+
+    </div>
+
+</div>

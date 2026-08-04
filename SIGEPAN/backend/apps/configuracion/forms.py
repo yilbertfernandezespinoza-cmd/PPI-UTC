@@ -1,6 +1,6 @@
 # Formularios del módulo
 from django import forms
-from .models import Modulo, Sucursal, ConfiguracionTributaria
+from .models import Modulo, Sucursal, ConfiguracionTributaria, DatosEmpresa
 
 
 class ModuloForm(forms.ModelForm):
@@ -93,3 +93,26 @@ class ConfiguracionTributariaForm(forms.ModelForm):
                 attrs={"class": "form-check-input"}
             ),
         }            
+
+class DatosEmpresaForm(forms.ModelForm):
+
+    class Meta:
+        model = DatosEmpresa
+
+        fields = [
+            "nombre_comercial",
+            "cedula_juridica",
+            "regimen_tributario",
+            "direccion_fiscal",
+            "telefono",
+            "correo",
+        ]
+
+        widgets = {
+            "nombre_comercial": forms.TextInput(attrs={"class": "form-control"}),
+            "cedula_juridica": forms.TextInput(attrs={"class": "form-control"}),
+            "regimen_tributario": forms.Select(attrs={"class": "form-control"}),
+            "direccion_fiscal": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "telefono": forms.TextInput(attrs={"class": "form-control"}),
+            "correo": forms.EmailInput(attrs={"class": "form-control"}),
+        }        

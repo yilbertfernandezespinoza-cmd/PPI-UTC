@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Datos de la Empresa</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Nombre comercial</label>
+                    {{ form.nombre_comercial }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Cédula jurídica</label>
+                    {{ form.cedula_juridica }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Régimen tributario</label>
+                    {{ form.regimen_tributario }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Teléfono</label>
+                    {{ form.telefono }}
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Dirección fiscal</label>
+                    {{ form.direccion_fiscal }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Correo electrónico</label>
+                    {{ form.correo }}
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-4">Guardar</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

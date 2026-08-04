@@ -10,6 +10,7 @@ from .views import (
     ConfiguracionTributariaListView,
     ConfiguracionTributariaCreateView,
     ConfiguracionTributariaUpdateView,
+    DatosEmpresaView,
 
 )
 
@@ -68,6 +69,12 @@ urlpatterns = [
         "tributaria/<int:id_configuracion_tributaria>/editar/",
         ConfiguracionTributariaUpdateView.as_view(),
         name="tributaria_update"
+    ),
+
+    path(
+        "datos-empresa/",
+        DatosEmpresaView.as_view(),
+        name="datos_empresa"
     ),
        
 ]

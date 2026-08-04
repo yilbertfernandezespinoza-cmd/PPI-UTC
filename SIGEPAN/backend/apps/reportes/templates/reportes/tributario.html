@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Reporte Tributario Mensual</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-3">
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=pdf"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=excel"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+        </div>
+
+        <p><strong>Total de ventas del período: ₡{{ total_ventas|floatformat:2 }}</strong></p>
+
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>Método de pago</th>
+                    <th class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in por_metodo %}
+                <tr>
+                    <td>{{ m.metodo_pago__nombre|default:"Sin especificar" }}</td>
+                    <td class="text-end">₡{{ m.total|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" class="text-muted">No hay ventas registradas en este período.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

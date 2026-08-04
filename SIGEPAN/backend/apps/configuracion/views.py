@@ -1,9 +1,11 @@
 from django.contrib import messages
 from django.urls import reverse_lazy
+from django.shortcuts import render, redirect
+from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView
 
-from .models import Modulo, Sucursal, ConfiguracionTributaria
-from .forms import ModuloForm, SucursalForm, ConfiguracionTributariaForm
+from .models import Modulo, Sucursal, ConfiguracionTributaria, DatosEmpresa
+from .forms import ModuloForm, SucursalForm, ConfiguracionTributariaForm, DatosEmpresaForm
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.audit import AuditMixin
 from apps.security.permissions import PermissionRequiredMixin
@@ -223,3 +225,40 @@ class ConfiguracionTributariaUpdateView(
         )
 
         return response    
+
+class DatosEmpresaView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, View):
+
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+    audit_module = "Configuración"
+    template_name = "configuracion/datos_empresa/form.html"
+
+    def get_object(self):
+        objeto, _ = DatosEmpresa.objects.get_or_create(
+            id_datos_empresa=1,
+            defaults={
+                "nombre_comercial": "",
+                "cedula_juridica": "",
+            },
+        )
+        return objeto
+
+    def get(self, request):
+        form = DatosEmpresaForm(instance=self.get_object())
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        objeto = self.get_object()
+        form = DatosEmpresaForm(request.POST, instance=objeto)
+
+        if form.is_valid():
+            form.save()
+            self.registrar_auditoria(
+                tipo_accion="MODIFICAR",
+                descripcion="Se actualizaron los datos de la empresa",
+            )
+            messages.success(request, "Datos de la empresa guardados correctamente.")
+            return redirect("configuracion:datos_empresa")
+
+        messages.error(request, "Revisa los datos ingresados.")
+        return render(request, self.template_name, {"form": form})    

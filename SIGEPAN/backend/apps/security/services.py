@@ -17,11 +17,14 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.hashers import (check_password, make_password)
+from django.utils import timezone
 
 from email.mime.image import MIMEImage
 from pathlib import Path
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+
+from datetime import datetime, timedelta
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 logger = logging.getLogger(__name__)
@@ -258,23 +261,37 @@ def registrar_log(
         navegador=request.META.get("HTTP_USER_AGENT", "")[:150],
     )    
 
+
 class BitacoraService:
 
     @staticmethod
-    def listar_ingresos():
-        """
-        Obtiene la bitácora de ingresos al sistema.
-        """
-
-        return LogAccionesRepository.listar_ingresos()
+    def filtrar_ingresos(usuario="", fecha_inicio="", fecha_fin=""):
+        queryset = LogAccionesRepository.listar_ingresos()
+        return BitacoraService._aplicar_filtros(queryset, usuario, fecha_inicio, fecha_fin)
 
     @staticmethod
-    def listar_movimientos():
-        """
-        Obtiene la bitácora de movimientos del sistema.
-        """
+    def filtrar_movimientos(usuario="", fecha_inicio="", fecha_fin=""):
+        queryset = LogAccionesRepository.listar_movimientos()
+        return BitacoraService._aplicar_filtros(queryset, usuario, fecha_inicio, fecha_fin)
 
-        return LogAccionesRepository.listar_movimientos()
+    @staticmethod
+    def _aplicar_filtros(queryset, usuario, fecha_inicio, fecha_fin):
+
+        if usuario:
+            queryset = queryset.filter(id_usuario__username__icontains=usuario.strip())
+
+        if fecha_inicio:
+            inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+            inicio = timezone.make_aware(inicio, timezone.get_current_timezone())
+            queryset = queryset.filter(fecha_hora__gte=inicio)
+
+        if fecha_fin:
+            fin = datetime.strptime(fecha_fin, "%Y-%m-%d") + timedelta(days=1)
+            fin = timezone.make_aware(fin, timezone.get_current_timezone())
+            queryset = queryset.filter(fecha_hora__lt=fin)
+
+        return queryset
+    
 class RolPermisoService:
 
     @staticmethod

@@ -28,6 +28,11 @@ MENU = [
         "opciones": [
 
             {
+                "titulo": "Datos de la Empresa",
+                "url": "configuracion:datos_empresa",
+                "icono": "bi-building-gear",
+            },
+            {
                 "titulo": "Sucursales",
                 "url": "configuracion:sucursal_list",
                 "icono": "bi-building",
@@ -113,6 +118,20 @@ MENU = [
             },
 
             {
+                "modulo_permiso": "Inventario",
+                "titulo": "Entrada de Inventario",
+                "url": "inventario:entrada_inventario",
+                "icono": "bi-box-arrow-in-down",
+            },
+
+            {
+                "modulo_permiso": "Inventario",
+                "titulo": "Movimientos de Inventario",
+                "url": "inventario:lista_movimientos",
+                "icono": "bi-arrow-left-right",
+            },
+
+            {
                 "modulo_permiso": "Compras",
                 "titulo": "Compras",
                 "url": "compras:lista_compras",
@@ -140,6 +159,35 @@ MENU = [
 
                 "dashboard": True,
                 "color": "dark",
+            },
+
+        ]
+    },
+
+    {
+        "modulo": "Reportes",
+        "icono": "bi-file-earmark-bar-graph",
+        "opciones": [
+
+            {
+                "titulo": "Reporte de Ventas",
+                "url": "reportes:ventas",
+                "icono": "bi-cash-stack",
+            },
+            {
+                "titulo": "Reporte de Inventario",
+                "url": "reportes:inventario",
+                "icono": "bi-box-seam",
+            },
+            {
+                "titulo": "Reporte Tributario",
+                "url": "reportes:tributario",
+                "icono": "bi-receipt-cutoff",
+            },
+            {
+                "titulo": "Reporte de Utilidad",
+                "url": "reportes:utilidad",
+                "icono": "bi-graph-up-arrow",
             },
 
         ]

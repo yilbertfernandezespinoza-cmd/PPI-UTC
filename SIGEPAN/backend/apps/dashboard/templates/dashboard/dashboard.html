@@ -6,6 +6,10 @@ Dashboard
 
 {% block content %}
 
+{% load ayuda_tags %}
+
+{% boton_ayuda "Configuración" "dashboard" %}
+
 <div class="container-fluid">
 
     {% include "dashboard/partials/bienvenida.html" %}
@@ -16,6 +20,12 @@ Dashboard
 
     {% if mostrar_accesos %}
         {% include "dashboard/partials/accesos.html" %}
+    {% endif %}
+
+
+    {% if mostrar_kpis %}
+        {% include "dashboard/partials/top_productos.html" %}
+        {% include "dashboard/partials/ventas_sucursal.html" %}
     {% endif %}
 
     {% if mostrar_actividad %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Reporte de Inventario</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <label class="form-label">Sucursal</label>
+                <select name="sucursal" class="form-select">
+                    <option value="">Todas</option>
+                    {% for s in sucursales %}
+                        <option value="{{ s.id_sucursal }}" {% if sucursal_id == s.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                            {{ s.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                    <input type="checkbox" name="bajo_minimo" value="1" class="form-check-input" id="bajoMinimo" {% if solo_bajo_minimo %}checked{% endif %}>
+                    <label class="form-check-label" for="bajoMinimo">Solo productos bajo el mínimo</label>
+                </div>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-3">
+            <a href="?sucursal={{ sucursal_id }}&formato=pdf" class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?sucursal={{ sucursal_id }}&formato=excel" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+        </div>
+
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Sucursal</th>
+                    <th class="text-end">Stock actual</th>
+                    <th class="text-end">Stock mínimo</th>
+                    <th class="text-end">Stock máximo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in inventario %}
+                <tr class="{% if i.stock_actual <= i.stock_minimo %}table-warning{% endif %}">
+                    <td>{{ i.id_producto.nombre }}</td>
+                    <td>{{ i.id_sucursal.nombre }}</td>
+                    <td class="text-end">{{ i.stock_actual }}</td>
+                    <td class="text-end">{{ i.stock_minimo }}</td>
+                    <td class="text-end">{{ i.stock_maximo }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-muted">No hay inventario registrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Reporte de Ventas</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Sucursal</label>
+                <select name="sucursal" class="form-select">
+                    <option value="">Todas</option>
+                    {% for s in sucursales %}
+                        <option value="{{ s.id_sucursal }}" {% if sucursal_id == s.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                            {{ s.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-3">
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&sucursal={{ sucursal_id }}&formato=pdf"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&sucursal={{ sucursal_id }}&formato=excel"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+        </div>
+
+        <p><strong>Total del período: ₡{{ total|floatformat:2 }}</strong></p>
+
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>N° Venta</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Usuario</th>
+                    <th>Sucursal</th>
+                    <th>Método de pago</th>
+                    <th class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in ventas %}
+                <tr>
+                    <td>{{ v.numero_venta }}</td>
+                    <td>{{ v.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ v.cliente.nombre|default:"Consumidor final" }}</td>
+                    <td>{{ v.usuario.username }}</td>
+                    <td>{{ v.caja.sucursal.nombre|default:"-" }}</td>
+                    <td>{{ v.metodo_pago.nombre }}</td>
+                    <td class="text-end">₡{{ v.total|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-muted">No hay ventas registradas en este período.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

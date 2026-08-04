@@ -206,3 +206,154 @@ class ConfiguracionTributaria(BaseModel):
     def __str__(self):
         return f"{self.nombre} ({self.porcentaje}%)"     
 
+class DatosEmpresa(BaseModel):
+    """
+    Datos fiscales de la empresa (RF-024). Registro único (singleton).
+    """
+
+    id_datos_empresa = models.AutoField(
+        primary_key=True,
+        db_column="id_datos_empresa"
+    )
+
+    nombre_comercial = models.CharField(
+        max_length=150,
+        db_column="nombre_comercial",
+        verbose_name="Nombre comercial"
+    )
+
+    cedula_juridica = models.CharField(
+        max_length=30,
+        db_column="cedula_juridica",
+        verbose_name="Cédula jurídica"
+    )
+
+    regimen_tributario = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        db_column="regimen_tributario",
+        verbose_name="Régimen tributario"
+    )
+
+    direccion_fiscal = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_column="direccion_fiscal",
+        verbose_name="Dirección fiscal"
+    )
+
+    telefono = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        db_column="telefono",
+        verbose_name="Teléfono"
+    )
+
+    correo = models.EmailField(
+        max_length=100,
+        blank=True,
+        null=True,
+        db_column="correo",
+        verbose_name="Correo electrónico"
+    )
+
+    class Meta:
+        db_table = "datos_empresa"
+        verbose_name = "Datos de la empresa"
+        verbose_name_plural = "Datos de la empresa"
+
+    def __str__(self):
+        return self.nombre_comercial
+
+class DatosEmpresa(models.Model):
+    """
+    Datos fiscales de la empresa (RF-024). Registro único (singleton).
+    Tabla creada directamente en la base de datos (Database First).
+    """
+
+    REGIMEN_TRADICIONAL = "TRADICIONAL"
+    REGIMEN_SIMPLIFICADO = "SIMPLIFICADO"
+    REGIMEN_OTRO = "OTRO"
+
+    REGIMENES_TRIBUTARIOS = [
+        (REGIMEN_TRADICIONAL, "Régimen Tradicional (General)"),
+        (REGIMEN_SIMPLIFICADO, "Régimen de Tributación Simplificada (RTS)"),
+        (REGIMEN_OTRO, "Otro"),
+    ]
+
+    id_datos_empresa = models.AutoField(
+        primary_key=True,
+        db_column="id_datos_empresa"
+    )
+
+    nombre_comercial = models.CharField(
+        max_length=150,
+        db_column="nombre_comercial",
+        verbose_name="Nombre comercial"
+    )
+
+    cedula_juridica = models.CharField(
+        max_length=30,
+        db_column="cedula_juridica",
+        verbose_name="Cédula jurídica"
+    )
+
+    regimen_tributario = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        choices=REGIMENES_TRIBUTARIOS,
+        db_column="regimen_tributario",
+        verbose_name="Régimen tributario"
+    )
+
+    direccion_fiscal = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_column="direccion_fiscal",
+        verbose_name="Dirección fiscal"
+    )
+
+    telefono = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        db_column="telefono",
+        verbose_name="Teléfono"
+    )
+
+    correo = models.EmailField(
+        max_length=150,
+        blank=True,
+        null=True,
+        db_column="correo",
+        verbose_name="Correo electrónico"
+    )
+
+    estado = models.BooleanField(
+        default=True,
+        db_column="estado"
+    )
+
+    fecha_creacion = models.DateTimeField(
+        db_column="fecha_creacion",
+        auto_now_add=True,
+    )
+
+    fecha_actualizacion = models.DateTimeField(
+        db_column="fecha_actualizacion",
+        auto_now=True,
+    )
+
+    class Meta:
+        managed = False
+        db_table = "datos_empresa"
+        verbose_name = "Datos de la empresa"
+        verbose_name_plural = "Datos de la empresa"
+
+    def __str__(self):
+        return self.nombre_comercial

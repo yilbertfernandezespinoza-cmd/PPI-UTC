@@ -62,6 +62,45 @@ class InventarioRepository:
 
         return inventario
 
+    @staticmethod
+    def obtener_por_producto_sucursal(id_producto, id_sucursal):
+        """
+        Obtiene el registro de inventario de un producto en una sucursal.
+        Devuelve None si no existe (a diferencia de obtener_o_crear, que sí
+        lo crea). Punto único de acceso: evita repetir
+        Inventario.objects.filter(...) con nombres de campo distintos en
+        cada app que necesita consultar existencias (ventas, compras).
+        """
+
+        return (
+            Inventario.objects
+            .filter(
+                id_producto=id_producto,
+                id_sucursal=id_sucursal,
+            )
+            .first()
+        )
+
+    @staticmethod
+    def obtener_para_actualizar(id_producto, id_sucursal):
+        """
+        Igual que obtener_por_producto_sucursal, pero bloquea la fila
+        (select_for_update) para uso dentro de una transacción atómica
+        que va a modificar el stock — evita condiciones de carrera cuando
+        dos ventas/compras simultáneas afectan el mismo producto+sucursal.
+        Debe llamarse siempre dentro de una vista/bloque @transaction.atomic.
+        """
+
+        return (
+            Inventario.objects
+            .select_for_update()
+            .filter(
+                id_producto=id_producto,
+                id_sucursal=id_sucursal,
+            )
+            .first()
+        )
+
 
 class TipoMovimientoInventarioRepository:
     """

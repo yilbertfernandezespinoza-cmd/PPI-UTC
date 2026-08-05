@@ -43,6 +43,11 @@ MENU = [
                 "icono": "bi-percent",
             },
             {
+                "titulo": "Métodos de Pago",
+                "url": "configuracion:metodo_pago_list",
+                "icono": "bi-credit-card",
+            },
+            {
                 "titulo": "Cargos",
                 "url": "empleados:cargo_list",
                 "icono": "bi-briefcase",
@@ -159,6 +164,27 @@ MENU = [
 
                 "dashboard": True,
                 "color": "dark",
+            },
+
+            {
+                "modulo_permiso": "Mermas",
+                "titulo": "Mermas",
+                "url": "mermas:listar",
+                "icono": "bi-exclamation-triangle",
+            },
+
+            {
+                "modulo_permiso": "Ajustes",
+                "titulo": "Ajustes de Inventario",
+                "url": "ajustes:listar",
+                "icono": "bi-sliders",
+            },
+
+            {
+                "modulo_permiso": "Gastos Operativos",
+                "titulo": "Gastos Operativos",
+                "url": "gastos_operativos:listar",
+                "icono": "bi-cash-coin",
             },
 
         ]

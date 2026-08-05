@@ -1,6 +1,6 @@
 # Formularios del módulo
 from django import forms
-from .models import Modulo, Sucursal, ConfiguracionTributaria, DatosEmpresa
+from .models import Modulo, Sucursal, MetodoPago, ConfiguracionTributaria, DatosEmpresa
 
 
 class ModuloForm(forms.ModelForm):
@@ -46,6 +46,52 @@ class SucursalForm(forms.ModelForm):
             "encargado": forms.TextInput(attrs={"class": "form-control"}),
             "estado": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }    
+
+class MetodoPagoForm(forms.ModelForm):
+
+    class Meta:
+        model = MetodoPago
+
+        fields = [
+            "nombre",
+            "descripcion",
+            "estado",
+        ]
+
+        widgets = {
+            "nombre": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Ejemplo: Efectivo, Tarjeta, SINPE Móvil",
+                }
+            ),
+            "descripcion": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Descripción del método de pago",
+                }
+            ),
+            "estado": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
+        }
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data["nombre"].strip()
+
+        existe = MetodoPago.objects.filter(nombre__iexact=nombre)
+
+        if self.instance.pk:
+            existe = existe.exclude(pk=self.instance.pk)
+
+        if existe.exists():
+            raise forms.ValidationError(
+                "Ya existe un método de pago con ese nombre."
+            )
+
+        return nombre
+
 
 class ConfiguracionTributariaForm(forms.ModelForm):
 

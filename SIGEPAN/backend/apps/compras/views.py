@@ -7,6 +7,7 @@ from django.shortcuts import (
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+from django.core.exceptions import ValidationError
 
 
 from .models import (
@@ -23,7 +24,9 @@ from .forms import (
 
 from apps.security.models import Usuario
 
-from apps.inventario.models import Inventario
+from apps.inventario.models import TipoMovimientoInventario
+from apps.inventario.repositories import InventarioRepository
+from apps.inventario.services import MovimientoInventarioService
 
 
 
@@ -96,7 +99,20 @@ def crear_compra(request):
 
         if compra_form.is_valid() and detalle_formset.is_valid():
 
-
+            # Tipo de movimiento requerido para poder registrar la entrada
+            # de inventario. Se valida antes de guardar nada de la compra
+            # para no dejarla a medias si todavía no se sembró el catálogo.
+            try:
+                tipo_entrada_compra = TipoMovimientoInventario.objects.get(
+                    nombre="ENTRADA_COMPRA"
+                )
+            except TipoMovimientoInventario.DoesNotExist:
+                messages.error(
+                    request,
+                    "Falta configurar el tipo de movimiento 'ENTRADA_COMPRA' en "
+                    "Inventario. Ejecute: python manage.py seed_tipos_movimiento"
+                )
+                return redirect("compras:crear_compra")
 
             compra = compra_form.save(
                 commit=False
@@ -164,27 +180,32 @@ def crear_compra(request):
 
 
                 # ======================================
-                # ACTUALIZAR INVENTARIO
+                # ACTUALIZAR INVENTARIO (vía
+                # MovimientoInventarioService: crea el registro de
+                # inventario si todavía no existe para ese producto+sucursal
+                # -antes se omitía en silencio- y deja rastro en
+                # movimiento_inventario en vez de mutar stock_actual a mano)
                 # ======================================
 
+                inventario = InventarioRepository.obtener_o_crear(
+                    detalle.producto, usuario_actual.id_sucursal
+                )
 
-                inventario = Inventario.objects.filter(
-
-                    producto=detalle.producto,
-
-                    sucursal=usuario_actual.id_sucursal
-
-                ).first()
-
-
-
-                if inventario:
-
-
-                    inventario.stock_actual += detalle.cantidad
-
-
-                    inventario.save()
+                try:
+                    MovimientoInventarioService.registrar_movimiento(
+                        inventario=inventario,
+                        tipo_movimiento=tipo_entrada_compra,
+                        usuario=usuario_actual,
+                        cantidad=detalle.cantidad,
+                        observaciones=f"Compra #{compra.id_compra}",
+                    )
+                except ValidationError as error:
+                    transaction.set_rollback(True)
+                    messages.error(
+                        request,
+                        f"{detalle.producto.nombre}: {'; '.join(error.messages) if hasattr(error, 'messages') else error}"
+                    )
+                    return redirect("compras:crear_compra")
 
 
 
@@ -343,33 +364,56 @@ def anular_compra(request, id_compra):
 
             )
 
+            try:
+                tipo_devolucion_compra = TipoMovimientoInventario.objects.get(
+                    nombre="DEVOLUCION_COMPRA"
+                )
+            except TipoMovimientoInventario.DoesNotExist:
+                messages.error(
+                    request,
+                    "Falta configurar el tipo de movimiento 'DEVOLUCION_COMPRA' "
+                    "en Inventario. Ejecute: python manage.py seed_tipos_movimiento"
+                )
+                return redirect("compras:lista_compras")
+
 
 
             # ======================================
-            # DEVOLVER INVENTARIO
+            # DEVOLVER INVENTARIO (vía MovimientoInventarioService)
             # ======================================
 
 
             for detalle in detalles:
 
 
-                inventario = Inventario.objects.filter(
+                inventario = InventarioRepository.obtener_para_actualizar(
+                    detalle.producto, usuario_actual.id_sucursal
+                )
 
-                    producto=detalle.producto,
+                if not inventario:
+                    messages.warning(
+                        request,
+                        f"No se encontró inventario de {detalle.producto.nombre} "
+                        f"en la sucursal actual; no se pudo revertir el stock de "
+                        f"esa línea."
+                    )
+                    continue
 
-                    sucursal=usuario_actual.id_sucursal
-
-                ).first()
-
-
-
-                if inventario:
-
-
-                    inventario.stock_actual -= detalle.cantidad
-
-
-                    inventario.save()
+                try:
+                    MovimientoInventarioService.registrar_movimiento(
+                        inventario=inventario,
+                        tipo_movimiento=tipo_devolucion_compra,
+                        usuario=usuario_actual,
+                        cantidad=detalle.cantidad,
+                        observaciones=f"Anulación de compra #{compra.id_compra}",
+                    )
+                except ValidationError as error:
+                    transaction.set_rollback(True)
+                    messages.error(
+                        request,
+                        f"{detalle.producto.nombre}: {'; '.join(error.messages) if hasattr(error, 'messages') else error}"
+                    )
+                    return redirect("compras:lista_compras")
 
 
 

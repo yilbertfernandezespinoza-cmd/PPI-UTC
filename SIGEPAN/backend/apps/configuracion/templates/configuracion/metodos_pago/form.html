@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if object %}Editar{% else %}Nuevo{% endif %} Método de Pago | SIGEPAN
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h1 class="h3 mb-3">
+        {% if object %}
+            Editar Método de Pago
+        {% else %}
+            Nuevo Método de Pago
+        {% endif %}
+    </h1>
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <form method="post">
+
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger small">
+                                {{ form.nombre.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check mt-4">
+                            {{ form.estado }}
+                            <label class="form-check-label">
+                                Activo
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Descripción</label>
+                        {{ form.descripcion }}
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i>
+                    Guardar
+                </button>
+
+                <a href="{% url 'configuracion:metodo_pago_list' %}"
+                   class="btn btn-secondary">
+                    Cancelar
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

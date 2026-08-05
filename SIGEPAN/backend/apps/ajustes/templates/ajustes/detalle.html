@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ajustes:listar' %}">Ajustes de inventario</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Ajuste #{{ ajuste.id_ajuste }}</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-warning bg-opacity-10">
+            <i class="bi bi-sliders text-warning"></i>
+            Ajuste #{{ ajuste.id_ajuste }}
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Producto</dt>
+                <dd class="col-sm-9">{{ ajuste.producto.nombre }}</dd>
+
+                <dt class="col-sm-3">Tipo</dt>
+                <dd class="col-sm-9">{{ ajuste.get_tipo_display }}</dd>
+
+                <dt class="col-sm-3">Cantidad</dt>
+                <dd class="col-sm-9">{{ ajuste.cantidad }}</dd>
+
+                <dt class="col-sm-3">Motivo</dt>
+                <dd class="col-sm-9">{{ ajuste.motivo }}</dd>
+
+                <dt class="col-sm-3">Fecha</dt>
+                <dd class="col-sm-9">{{ ajuste.fecha|date:"d/m/Y H:i" }}</dd>
+
+                <dt class="col-sm-3">Usuario</dt>
+                <dd class="col-sm-9">{{ ajuste.usuario }}</dd>
+
+                <dt class="col-sm-3">Observaciones</dt>
+                <dd class="col-sm-9">{{ ajuste.observaciones|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Registrado el</dt>
+                <dd class="col-sm-9">{{ ajuste.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <a href="{% url 'ajustes:listar' %}" class="btn btn-outline-secondary mt-3">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+
+</div>
+
+{% endblock %}

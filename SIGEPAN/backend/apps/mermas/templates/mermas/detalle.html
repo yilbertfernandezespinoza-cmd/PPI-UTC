@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'mermas:listar' %}">Mermas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Merma #{{ merma.id_merma }}</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-danger bg-opacity-10">
+            <i class="bi bi-exclamation-triangle text-danger"></i>
+            Merma #{{ merma.id_merma }}
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Producto</dt>
+                <dd class="col-sm-9">{{ merma.producto.nombre }}</dd>
+
+                <dt class="col-sm-3">Cantidad</dt>
+                <dd class="col-sm-9">{{ merma.cantidad }}</dd>
+
+                <dt class="col-sm-3">Motivo</dt>
+                <dd class="col-sm-9">{{ merma.motivo }}</dd>
+
+                <dt class="col-sm-3">Fecha</dt>
+                <dd class="col-sm-9">{{ merma.fecha|date:"d/m/Y H:i" }}</dd>
+
+                <dt class="col-sm-3">Usuario</dt>
+                <dd class="col-sm-9">{{ merma.usuario }}</dd>
+
+                <dt class="col-sm-3">Observaciones</dt>
+                <dd class="col-sm-9">{{ merma.observaciones|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Registrada el</dt>
+                <dd class="col-sm-9">{{ merma.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <a href="{% url 'mermas:listar' %}" class="btn btn-outline-secondary mt-3">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+
+</div>
+
+{% endblock %}

@@ -61,6 +61,9 @@ INSTALLED_APPS = [
     'apps.configuracion',
     'apps.dashboard',
     'apps.ayuda',
+    'apps.mermas',
+    'apps.ajustes',
+    'apps.gastos_operativos',
 ]
 
 MIDDLEWARE = [

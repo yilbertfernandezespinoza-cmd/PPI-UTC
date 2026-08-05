@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}
+Métodos de Pago | SIGEPAN
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+            <h1 class="h3 mb-0">
+                Métodos de Pago
+            </h1>
+
+            <p class="text-muted mb-0">
+                Catálogo de métodos de pago disponibles para ventas (RF-013).
+            </p>
+        </div>
+        {% if puede_crear %}
+        <a
+            href="{% url 'configuracion:metodo_pago_create' %}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-plus-circle"></i>
+            Nuevo método de pago
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <div id="tablaMetodosPago"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const metodosPago = [
+
+{% for metodo in metodos_pago %}
+
+{
+    id: {{ metodo.id_metodo_pago }},
+    nombre: "{{ metodo.nombre|escapejs }}",
+    descripcion: "{{ metodo.descripcion|default:'-'|escapejs }}",
+    estado: {{ metodo.estado|yesno:"true,false" }},
+    editar: "{% url 'configuracion:metodo_pago_update' metodo.id_metodo_pago %}"
+}{% if not forloop.last %},{% endif %}
+
+{% endfor %}
+
+];
+
+console.log("Métodos de pago:", metodosPago);
+
+SIGEPAN.table.create({
+
+    selector: "#tablaMetodosPago",
+
+    data: metodosPago,
+
+    columns: [
+
+        {
+            title: "Nombre",
+            field: "nombre"
+        },
+
+        {
+            title: "Descripción",
+            field: "descripcion"
+        },
+
+        {
+            title: "Estado",
+            field: "estado",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-danger">Inactivo</span>';
+            }
+        }
+
+        {% if puede_modificar %}
+
+        ,
+        {
+            title: "Acciones",
+            hozAlign: "center",
+
+            formatter(cell) {
+
+                const data = cell.getRow().getData();
+
+                return `
+                    <div class="d-flex justify-content-center">
+
+                        <a
+                            href="${data.editar}"
+                            class="btn btn-warning btn-sm"
+                        >
+                            Editar
+                        </a>
+
+                    </div>
+                `;
+
+            }
+
+        }
+
+        {% endif %}
+
+    ]
+
+});
+
+</script>
+
+{% endblock %}

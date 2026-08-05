@@ -43,7 +43,7 @@ class PermisoRepository:
     def listar():
         return (
             Permiso.objects
-            .select_related("modulo")
+            .select_related("id_modulo")
             .all()
         )
 

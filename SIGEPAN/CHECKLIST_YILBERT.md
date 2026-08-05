@@ -77,9 +77,58 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` terminado
 - RF-020: marcado "60-70% de avance" en el Excel; el código real tenía 0% de datos reales (solo placeholders). Ajustado en este checklist.
 - RF-021, RF-022, RF-023, RF-024: marcados "COMPLETO" en el Excel; en el código están parciales (falta exportación en 021/022, falta scope de Sheets en 023, RF-024 implementa algo distinto a lo documentado).
 
+## AUDITORÍA 2.0 — 2026-08-04 (post-merge integraciones, revisión completa RF vs código)
+
+### Crítico — bloquea la demo/entrega
+- [ ] **RF-012 Ventas: SIGUE COMPLETAMENTE ROTO.** El merge de César a `integraciones` NO corrigió ninguno de los 5 bugs originales y agregó 3 nuevos. No se puede completar ni una venta hoy. Detalle completo abajo en "Ventas — diagnóstico completo".
+- [ ] **RF-013 Métodos de Pago: NO EXISTE ninguna interfaz.** 0% — sin esto, Ventas tampoco puede funcionar aunque se arregle el resto (no hay forma de cargar métodos de pago reales, la tabla arranca vacía).
+
+### Alto — huecos de seguridad reales
+- [x] `apps/caja/`: TERMINADO. Se agregó `@login_required` (nuevo, en `apps/security/decorators.py`) a las 12 vistas del módulo — cubre `activar_caja`/`desactivar_caja` (antes por link GET sin login), `administrar_caja`/`detalle_caja` (antes sin verificar sesión) y el resto. Esto también cierra el riesgo de 500 en `movimiento_caja` (ya no se puede llegar a la vista sin una sesión válida). De paso se quitó el `print(request.POST)` de debug en `editar_caja`.
+- [x] `apps/proveedores/`: TERMINADO. `@login_required` agregado a las 4 vistas (listar/crear/editar/eliminar). Modelo `Proveedor` ahora declara `managed = False` (confirmado: la app no tiene carpeta de migraciones, sigue el patrón Database First del resto del proyecto).
+- [x] Bug corregido: `apps/security/views.py` línea ~404, cambiado `Q(email__icontains=...)` por `Q(id_empleado__correo__icontains=...)` (el correo vive en `Empleado.correo`, no en `Usuario`).
+- Nota de alcance: el fix de caja/proveedores es a nivel de **sesión** (igual que `SessionRequiredMixin`), no de permiso por módulo (`PermissionRequiredMixin`). Dejé listo un `permiso_requerido()` reutilizable en `apps/security/decorators.py` para cuando se pueda confirmar contra la BD real que existen filas de `Modulo`/`RolPermiso` para "Caja" y "Proveedores" — aplicarlo a ciegas ahora mismo arriesgaba bloquear el módulo completo si esas filas no existen todavía.
+- Verificación: `python manage.py check` corre limpio (0 issues) con todos los módulos tocados importando sin error.
+
+### Medio — RF completamente ausentes (0% de código, aunque las tablas SQL sí existen)
+- [ ] RF-017 Mermas — no existe ninguna app/modelo/vista. Además la tabla real `merma` no tiene columna `id_sucursal` (el requisito pide ese campo).
+- [ ] RF-018 Ajustes/Anulación — no existe. La tabla real `ajuste` no tiene `numero_documento` ni vínculo a `venta` (el requisito pide poder anular ventas desde aquí).
+- [ ] RF-026 Gastos Operativos — no existe. La tabla real `gasto_operativo` es la más completa de las 3, pero le falta columna `comprobante`.
+- [ ] RF-014/015 Caja: falta el campo "Turno" por completo (ni en modelo ni parece existir en BD), y `abrir_caja.html` no muestra Usuario/Sucursal/Fecha aunque sí se guardan. El cálculo de "Diferencia" en cierre de caja SÍ funciona bien y sin bugs.
+
+### Bajo — casi completos, ajuste menor
+- [ ] RF-032 Ayudas: CRUD completo y bien protegido, solo falta el campo "Imagen" que pide el requisito (ni en modelo, ni form, ni template).
+- [ ] RF-033 Acerca de: implementado con contenido real, solo falta mostrar el bloque de "información de contacto" en el template (el dato ya existe en `system_info.py`, es un fix de una sección de template).
+- [x] `apps/security/repositories.py` línea 46: corregido `select_related("modulo")` → `select_related("id_modulo")`.
+- [ ] `apps/configuracion/models.py`: la clase `DatosEmpresa` está definida DOS VECES en el mismo archivo (líneas ~209 y ~271) — la segunda pisa a la primera silenciosamente, limpiar código muerto.
+- [ ] `apps/caja/views.py`: `print(request.POST)` de debug olvidado en `editar_caja`.
+
+### Confirmado en buen estado
+- [x] RF-006 Usuarios y RF-007 Roles/Permisos: bien implementados, patrón correcto, contraseñas encriptadas (`make_password`/`check_password`), control de acceso doble en asignación de permisos. Solo el bug de `email` mencionado arriba.
+- [x] RF-016/028/030 (inventario, entrada, compras): correctos, ya verificados y probados.
+- [x] `apps/empleados/`: el más completo en seguridad (usa los 3 mixins correctamente), pero le falta vista de Detalle/Eliminar dedicada.
+- [x] `apps/proveedores/`: CRUD funcionalmente completo (ver hueco de seguridad arriba).
+
+### Ventas — diagnóstico completo (para discutir con César)
+Ninguno de los 5 bugs reportados antes se corrigió, y se agregaron 3 nuevos:
+1. `crear_venta` sigue sin calcular subtotal/impuesto/descuento/total (solo lo hace `guardar_venta_pendiente`, función distinta) — y ahora esto causa un `TypeError` (`Decimal < None`) en vez de solo dejar el dato vacío.
+2. `Inventario.objects.filter(producto=..., sucursal=...)` sigue en los 3 lugares de siempre (`id_producto`/`id_sucursal` son los nombres reales).
+3. `DetallePago` sigue mapeando a una tabla `detalle_pago` que no existe en la BD real — y ahora se usa MÁS que antes (formset completo, admin, múltiples vistas).
+4. El template de crear venta sigue sin inputs reales de método de pago/tipo de comprobante/impuesto/descuento.
+5. Ninguna vista de ventas tiene `SessionRequiredMixin`/`PermissionRequiredMixin`/`AuditMixin` — `anular_venta` sigue sin ningún control de acceso.
+6. **Nuevo:** los checkboxes de método de pago mandan el string `"EFECTIVO"`/`"TARJETA"` en vez del ID numérico que espera el formulario — el formset de pagos es inválido siempre, aparte del problema de la tabla inexistente.
+7. **Nuevo:** al retomar una venta pausada, no se borran los detalles previos antes de reinsertar (sí lo hace `guardar_venta_pendiente`, no `crear_venta`) — riesgo de líneas duplicadas y descuento de inventario por partida doble.
+8. **Nuevo:** precio unitario y subtotal de cada línea vienen de inputs ocultos del navegador sin revalidar contra `Producto.precio_venta` en el servidor — se puede manipular el precio desde DevTools.
+9. No existe emisión de ticket ni envío de comprobante por correo (botones existen en el HTML pero son `href="#"`, sin backend).
+10. `repositories.py`/`services.py` siguen vacíos — toda la lógica sigue en `views.py`, ahora más grande que antes.
+
+**Recomendación:** dado que quedan pocos días, esto necesita una decisión de equipo — no es un parche de 10 minutos como los bugs anteriores, es un problema de diseño (sobre todo el punto 3, `DetallePago` contra una tabla que no existe). Hay que decidir entre: (a) eliminar el concepto de pago dividido y usar solo `venta.id_metodo_pago` (como ya está en la BD real), simplificando bastante el formulario; o (b) crear la tabla `detalle_pago` en la BD real y ajustar todo el código para que funcione con eso. La opción (a) es mucho más rápida dado el tiempo disponible.
+
 ## Historial de avance
 - 2026-08-03: Checklist creado. Iniciando RF-020 (Dashboard).
 - 2026-08-03: RF-020, RF-021, RF-022, RF-008 (parcial), RF-019, RF-025, RF-027, RF-024, RF-034 y RF-031 terminados. Solo queda RF-023 (opcional) en la parte de código.
 - 2026-08-04: Se revisó el Excel de asignación de RF y se detectó apoyo pendiente a César en RF-016, RF-028, RF-029, RF-030. RF-016 y RF-028 terminados (bugs corregidos + pantalla de entrada de inventario construida desde cero). RF-029 verificado como completo. RF-030 con fix listo pero en pausa por coordinación con César.
+- 2026-08-04: Auditoría 2.0 completa post-merge `integraciones`. Hallazgo crítico: Ventas sigue 100% roto (el merge de César no corrigió nada y sumó 3 bugs nuevos). RF-013 (métodos de pago), RF-017 (mermas), RF-018 (ajustes) y RF-026 (gastos operativos) no existen en absoluto. Huecos de seguridad reales en `caja` y `proveedores` (vistas de escritura sin control de acceso). RF-032 y RF-033 casi completos (ajustes menores). Detalle completo en la sección "AUDITORÍA 2.0" arriba.
 - 2026-08-04: Auditoría completa del módulo de ventas: bug de `venta.total` era más grave de lo pensado (5+ bugs bloqueantes, ninguna venta se puede completar hoy). Reportado a César, quien se enfoca en resolverlo. RF-030 (compras) terminado y conectado con trazabilidad de inventario. RF-010 (categorías) y RF-011 (productos) revisados, corregidos (bugs de imagen, precio de venta, unidad de medida) y rediseñados visualmente (incluida migración de Productos a Tabulator). RF-023 terminado (scope de Google Sheets + refresh token) y se construyó la exportación a Sheets en los 4 reportes (requisito adicional del cliente).
 - [x] Recuperación de contraseña por correo — revisado. No era un bug del sistema: SMTP, DNS (MX/SPF/DKIM/DMARC) y el código de envío estaban correctos; el correo llegaba pero caía en spam por el cuerpo de texto plano del correo (era solo un placeholder genérico, señal típica de spam). Corregido en `RecuperacionPasswordService.solicitar_recuperacion` (`security/services.py`): ahora el texto plano tiene contenido real con el enlace, más `reply_to`. Verificado: el correo llega (a veces a spam, normal en un dominio de envío nuevo/bajo volumen — no depende del código).
+- 2026-08-04: Cerrados los 3 huecos de seguridad "Alto" de la Auditoría 2.0 mientras se espera a César para Ventas: `apps/caja/` (12 vistas con `@login_required` nuevo + debug print quitado), `apps/proveedores/` (4 vistas con `@login_required` + `managed=False` en el modelo), y el bug de búsqueda de usuarios por email en `security/views.py`. De paso se corrigió el `select_related` roto de `security/repositories.py`. Verificado con `python manage.py check` (0 issues).

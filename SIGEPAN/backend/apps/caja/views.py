@@ -18,6 +18,7 @@ from .models import (
 )
 
 from apps.security.models import Usuario
+from apps.security.decorators import login_required
 
 from .forms import (
     CajaForm,
@@ -66,6 +67,7 @@ def es_administrador(usuario):
 # LISTAR CAJAS
 # =====================================================
 
+@login_required
 def lista_cajas(request):
 
     cajas = Caja.objects.all()
@@ -89,6 +91,7 @@ def lista_cajas(request):
 # CREAR CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def crear_caja(request):
 
@@ -202,6 +205,7 @@ def crear_caja(request):
 # EDITAR CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def editar_caja(request, id_caja):
 
@@ -233,9 +237,6 @@ def editar_caja(request, id_caja):
     # =========================================
 
     if request.method == "POST":
-
-        print(request.POST)
-
 
         form = CajaForm(
             request.POST,
@@ -305,6 +306,7 @@ def editar_caja(request, id_caja):
 # ACTIVAR CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def activar_caja(request, id_caja):
 
@@ -346,6 +348,7 @@ def activar_caja(request, id_caja):
 # DESACTIVAR CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def desactivar_caja(request, id_caja):
 
@@ -408,6 +411,7 @@ def desactivar_caja(request, id_caja):
 # APERTURA DE CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def abrir_caja(request, id_caja):
     caja = get_object_or_404(
@@ -512,6 +516,7 @@ def abrir_caja(request, id_caja):
 # EDITAR APERTURA DE CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def editar_apertura(request, id_apertura):
 
@@ -622,6 +627,7 @@ def editar_apertura(request, id_apertura):
 # MOVIMIENTO DE CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def movimiento_caja(request, id_apertura):
 
@@ -708,6 +714,7 @@ def movimiento_caja(request, id_apertura):
 # ADMINISTRAR CAJA
 # =====================================================
 
+@login_required
 def administrar_caja(request, id_caja):
 
     # =========================================
@@ -861,6 +868,7 @@ def administrar_caja(request, id_caja):
 # DETALLE CAJA ABIERTA
 # =====================================================
 
+@login_required
 def detalle_caja(request, id_apertura):
 
 
@@ -913,6 +921,7 @@ def detalle_caja(request, id_apertura):
 # ARQUEO DE CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def crear_arqueo(request, id_apertura):
 
@@ -1104,6 +1113,7 @@ def crear_arqueo(request, id_apertura):
 # CIERRE DE CAJA
 # =====================================================
 
+@login_required
 @transaction.atomic
 def cerrar_caja(request, id_apertura):
 

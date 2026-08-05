@@ -1,0 +1,13 @@
+venv/
+**/__pycache__/
+**/*.pyc
+backend/staticfiles/
+backend/media/
+backend/.env
+.git/
+.gitignore
+*.md
+Auditoria_Tecnica_SIGEPAN.docx
+database/ddl/backup/
+tools/
+scripts/

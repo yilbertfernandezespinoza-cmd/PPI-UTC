@@ -401,7 +401,7 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
 
             queryset = queryset.filter(
                 Q(username__icontains=busqueda)
-                | Q(email__icontains=busqueda)
+                | Q(id_empleado__correo__icontains=busqueda)
                 | Q(id_empleado__nombre__icontains=busqueda)
                 | Q(id_empleado__apellido1__icontains=busqueda)
             )

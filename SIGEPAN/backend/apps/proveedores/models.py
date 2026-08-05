@@ -13,6 +13,7 @@ class Proveedor(models.Model):
     fecha_actualizacion = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
 
     class Meta:
+        managed = False
         db_table = "proveedor"
         verbose_name = "Proveedor"
         verbose_name_plural = "Proveedores"

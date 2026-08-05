@@ -24,6 +24,18 @@ urlpatterns = [
     ),
 
     # ==========================================
+    # PROCESAR VENTA (JSON/AJAX) — COBRAR O PAUSAR
+    # ==========================================
+    # Reemplaza el POST clásico de crear_venta() (formset) y a
+    # guardar_venta_pendiente(). El carrito del POS se envía completo como
+    # JSON (ver apps/ventas/views.py::procesar_venta para el contrato).
+    path(
+        "procesar/",
+        views.procesar_venta,
+        name="procesar_venta"
+    ),
+
+    # ==========================================
     # BÚSQUEDA DE CLIENTES (AJAX)
     # ==========================================
     path(
@@ -33,8 +45,12 @@ urlpatterns = [
     ),
 
     # ==========================================
-    # VENTAS PENDIENTES (PAUSAR / RETOMAR / GUARDAR / ELIMINAR)
+    # VENTAS PENDIENTES (LISTAR / RETOMAR / ELIMINAR)
     # ==========================================
+    # "pausar" ya no es una vista propia con URL/GET (pausar_venta) ni un
+    # POST con formset (guardar_venta_pendiente): ahora es la acción
+    # "pausar" de procesar_venta(). Se confirmó por grep que ningún
+    # template referenciaba pausar_venta antes de eliminarla.
     path(
         "pendientes/",
         views.listar_ventas_pendientes,
@@ -45,16 +61,6 @@ urlpatterns = [
         "pendientes/",
         views.listar_ventas_pendientes,
         name="lista_ventas_pausadas"
-    ),
-    path(
-        "guardar-pendiente/",
-        views.guardar_venta_pendiente,
-        name="guardar_venta_pendiente"
-    ),
-    path(
-        "pausar/<int:id_venta>/",
-        views.pausar_venta,
-        name="pausar_venta"
     ),
     path(
         "retomar/<int:id_venta>/",

@@ -1,42 +1,102 @@
 // =====================================================
 // SIGEPAN - Módulo: Ventas
 // Archivo: venta_pos.js
-// Descripción: Control de totales, resumen, generación de formsets de pago, búsqueda de clientes y gestión POS
+// Descripción: Lógica completa del POS (carrito, cuadrícula de
+//              categorías/productos, búsqueda de clientes, cobro y pausa).
 // =====================================================
+//
+// Este archivo reemplaza a producto_pos.js + venta_pos.js. Hasta el
+// 04-08-2026 el carrito del POS se armaba con inputs ocultos indexados
+// ("detalle-0-producto", "detalle-0-cantidad", ...) para calzar con un
+// Django inlineformset_factory. Ese enfoque generó tres rondas de bugs
+// (método de pago con texto en vez de PK real, reanudar sin repoblar el
+// carrito, y finalmente "id_detalle_venta: Este campo es obligatorio" al
+// pausar una venta) y se abandonó por completo.
+//
+// Ahora el carrito es un único array de JavaScript (fuente de verdad) que
+// se renderiza en la tabla #carrito_productos y se envía completo como
+// JSON a apps.ventas.views.procesar_venta vía fetch(). El servidor vuelve
+// a calcular precios/impuesto/total desde Producto.precio_venta: los
+// totales que se muestran aquí son solo un estimado visual para el
+// cajero, nunca la fuente de verdad del dinero.
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const formVenta = document.getElementById("form-pos-venta");
-    const contenedorPagos = document.getElementById("contenedor_pagos_dinamicos");
-    const contadorPagoDjango = document.getElementById("id_pago-TOTAL_FORMS");
-
-    // Variable de control para saber si la acción actual es guardar como pendiente
-    let esAccionPendiente = false;
-    const btnGuardarPendiente = document.getElementById("btn_guardar_pendiente");
-    if (btnGuardarPendiente) {
-        btnGuardarPendiente.addEventListener("click", function() {
-            esAccionPendiente = true;
-        });
+    // =====================================================
+    // 0. ELEMENTOS DEL DOM Y CONFIGURACIÓN
+    // =====================================================
+    const configPos = document.getElementById("config-pos");
+    if (!configPos) {
+        console.warn("No se encontró #config-pos: el POS no puede inicializarse.");
+        return;
     }
 
-    // ==========================================
-    // 0. FUNCIÓN GLOBAL DE LIMPIEZA DE PANTALLA
-    // ==========================================
-    window.limpiarPantallaPOS = function() {
-        if (formVenta) {
-            formVenta.reset();
+    const urlBuscarCliente = configPos.dataset.urlBuscarCliente;
+    const urlBuscarProducto = configPos.dataset.urlBuscarProducto;
+    const urlProcesarVenta = configPos.dataset.urlProcesarVenta;
+
+    const carritoTbody = document.getElementById("carrito_productos");
+    const buscarProductoInput = document.getElementById("buscar_producto");
+    const listaProductosPos = document.getElementById("lista_productos_pos");
+    const contenedorCategorias = document.getElementById("pos_categorias");
+    const gridProductos = document.getElementById("pos_productos_grid");
+
+    const buscarClienteInput = document.getElementById("buscar_cliente");
+    const btnBuscarCliente = document.getElementById("btn_buscar_cliente");
+    const listaClientesPos = document.getElementById("lista_clientes_pos");
+    const clienteIdInput = document.getElementById("cliente_id");
+    const clienteSeleccionadoSpan = document.getElementById("cliente_seleccionado");
+
+    const btnCobrar = document.getElementById("btn_cobrar");
+    const btnGuardarPendiente = document.getElementById("btn_guardar_pendiente");
+    const btnCancelar = document.getElementById("btn_cancelar");
+    const posAlertas = document.getElementById("pos_alertas");
+
+    // =====================================================
+    // 1. ESTADO: EL CARRITO (fuente de verdad única)
+    // =====================================================
+    // Cada línea: { producto_id, nombre, precio, cantidad, subtotal }
+    let carrito = [];
+
+    // =====================================================
+    // 2. UTILIDADES
+    // =====================================================
+    function getCsrfToken() {
+        const input = document.querySelector("input[name=csrfmiddlewaretoken]");
+        return input ? input.value : "";
+    }
+
+    function formatoMoneda(valor) {
+        return "₡" + (parseFloat(valor) || 0).toFixed(2);
+    }
+
+    function mostrarAlerta(mensaje, tipo) {
+        tipo = tipo || "danger";
+        if (!posAlertas) {
+            alert(mensaje);
+            return;
         }
+        posAlertas.innerHTML = `
+            <div class="alert alert-${tipo} alert-dismissible fade show shadow-sm" role="alert">
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        posAlertas.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
-        // Restablecer cliente predeterminado
-        const clienteId = document.getElementById("cliente_id");
-        const clienteSeleccionado = document.getElementById("cliente_seleccionado");
-        if (clienteId) clienteId.value = "";
-        if (clienteSeleccionado) clienteSeleccionado.innerText = "Público General";
+    function limpiarAlertas() {
+        if (posAlertas) posAlertas.innerHTML = "";
+    }
 
-        // Vaciar la tabla de productos / carrito
-        const carritoProductos = document.getElementById("carrito_productos");
-        if (carritoProductos) {
-            carritoProductos.innerHTML = `
+    // =====================================================
+    // 3. RENDER DEL CARRITO (a partir del array, nunca al revés)
+    // =====================================================
+    function renderizarCarrito() {
+        if (!carritoTbody) return;
+
+        if (carrito.length === 0) {
+            carritoTbody.innerHTML = `
                 <tr id="fila_vacia">
                     <td colspan="5" class="text-center text-muted py-5 pos-cart-empty">
                         <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
@@ -44,225 +104,527 @@ document.addEventListener("DOMContentLoaded", function () {
                     </td>
                 </tr>
             `;
+            recalcularTotales();
+            return;
         }
 
-        // Desmarcar checkboxes de pago y vaciar contenedor dinámico
-        document.querySelectorAll(".metodo-pago-checkbox").forEach(cb => cb.checked = false);
-        if (contenedorPagos) contenedorPagos.innerHTML = "";
+        carritoTbody.innerHTML = carrito.map(function (linea, indice) {
+            const subtotal = linea.precio * linea.cantidad;
+            return `
+                <tr data-indice="${indice}">
+                    <td class="align-middle">${linea.nombre}</td>
+                    <td class="align-middle text-center">
+                        <input
+                            class="form-control form-control-sm text-center mx-auto input-cantidad-pos"
+                            style="width: 80px;"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value="${linea.cantidad}"
+                            data-indice="${indice}"
+                        >
+                    </td>
+                    <td class="align-middle text-end">${formatoMoneda(linea.precio)}</td>
+                    <td class="align-middle text-end fw-bold">${formatoMoneda(subtotal)}</td>
+                    <td class="align-middle text-center">
+                        <button type="button" class="btn btn-danger btn-sm btn-eliminar-fila" data-indice="${indice}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
 
-        // Recalcular totales a cero
-        if (typeof window.recalcularTotales === "function") {
-            window.recalcularTotales();
-        }
-    };
+        recalcularTotales();
+    }
 
-    // ==========================================
-    // 1. FUNCIÓN GLOBAL DE RECÁLCULO
-    // ==========================================
-    window.recalcularTotales = function() {
-        let subtotalGeneral = 0;
-        const inputsSubtotal = document.querySelectorAll(".input-subtotal-oculto");
+    // Delegación de eventos: cambiar cantidad
+    if (carritoTbody) {
+        carritoTbody.addEventListener("change", function (e) {
+            if (!e.target.classList.contains("input-cantidad-pos")) return;
 
-        inputsSubtotal.forEach(function(input) {
-            subtotalGeneral += parseFloat(input.value) || 0;
+            const indice = parseInt(e.target.dataset.indice, 10);
+            let cantidad = parseInt(e.target.value, 10);
+
+            if (!cantidad || cantidad < 1) {
+                cantidad = 1;
+            }
+
+            if (carrito[indice]) {
+                carrito[indice].cantidad = cantidad;
+            }
+
+            renderizarCarrito();
         });
 
-        // Cálculo de IVA (13%)
-        let iva = subtotalGeneral * 0.13;
-        let descuento = 0; 
-        let totalGeneral = subtotalGeneral + iva - descuento;
+        // Delegación de eventos: eliminar fila
+        carritoTbody.addEventListener("click", function (e) {
+            const btn = e.target.closest(".btn-eliminar-fila");
+            if (!btn) return;
 
-        // Actualizar interfaz visual
+            const indice = parseInt(btn.dataset.indice, 10);
+            carrito.splice(indice, 1);
+            renderizarCarrito();
+        });
+    }
+
+    // =====================================================
+    // 4. AGREGAR PRODUCTO AL CARRITO
+    // =====================================================
+    // Usada tanto por los tiles de la cuadrícula de categorías como por el
+    // buscador de texto y por el repoblado de una venta pausada. Si el
+    // producto ya está en el carrito, solo suma la cantidad en vez de
+    // crear una fila duplicada.
+    function agregarProductoAlCarrito(producto, cantidad) {
+        cantidad = cantidad || 1;
+
+        const productoId = parseInt(producto.id ?? producto.producto_id, 10);
+        const precio = parseFloat(producto.precio ?? producto.precio_venta ?? 0);
+        const nombre = producto.nombre;
+
+        const existente = carrito.find(function (linea) {
+            return linea.producto_id === productoId;
+        });
+
+        if (existente) {
+            existente.cantidad += cantidad;
+        } else {
+            carrito.push({
+                producto_id: productoId,
+                nombre: nombre,
+                precio: precio,
+                cantidad: cantidad,
+            });
+        }
+
+        renderizarCarrito();
+    }
+
+    // =====================================================
+    // 5. RECALCULAR TOTALES (SOLO PREVIEW VISUAL)
+    // =====================================================
+    // El total real (incluyendo impuesto, que depende de la configuración
+    // tributaria activa) siempre lo calcula el servidor en procesar_venta.
+    // Aquí se usa una tasa de IVA fija (13%) únicamente para que el cajero
+    // vea un estimado mientras arma el carrito.
+    window.recalcularTotales = function () {
+        const subtotal = carrito.reduce(function (acumulado, linea) {
+            return acumulado + (linea.precio * linea.cantidad);
+        }, 0);
+
+        const iva = subtotal * 0.13;
+        const descuento = 0;
+        const total = subtotal + iva - descuento;
+
         const elSubtotal = document.getElementById("resumen_subtotal");
         const elIva = document.getElementById("resumen_iva");
         const elDescuento = document.getElementById("resumen_descuento");
         const elTotal = document.getElementById("resumen_total");
 
-        if (elSubtotal) elSubtotal.innerText = `₡${subtotalGeneral.toFixed(2)}`;
-        if (elIva) elIva.innerText = `₡${iva.toFixed(2)}`;
-        if (elDescuento) elDescuento.innerText = `₡${descuento.toFixed(2)}`;
-        if (elTotal) elTotal.innerText = `₡${totalGeneral.toFixed(2)}`;
+        if (elSubtotal) elSubtotal.innerText = formatoMoneda(subtotal);
+        if (elIva) elIva.innerText = formatoMoneda(iva);
+        if (elDescuento) elDescuento.innerText = formatoMoneda(descuento);
+        if (elTotal) elTotal.innerText = formatoMoneda(total);
     };
 
-    // ==========================================
-    // 2. SINCRONIZACIÓN DE PAGOS Y VALIDACIÓN PREVIA AL SUBMIT (COBRO)
-    // ==========================================
-    if (formVenta) {
-        formVenta.addEventListener("submit", function(e) {
-            const carrito = document.getElementById("carrito_productos");
-            const filaVacia = document.getElementById("fila_vacia");
-
-            // Validar carrito con productos
-            if (!carrito || filaVacia || carrito.children.length === 0) {
-                e.preventDefault();
-                alert("Debe agregar al menos un producto al carrito antes de continuar.");
-                esAccionPendiente = false; // Resetear bandera
-                return;
-            }
-
-            // Detectar si el envío proviene del botón de guardar pendiente
-            const submitter = e.submitter;
-            const esPendientePorSubmitter = submitter && (
-                submitter.id === "btn_guardar_pendiente" || 
-                (submitter.getAttribute("formaction") && submitter.getAttribute("formaction").includes("pendiente"))
-            );
-
-            if (esAccionPendiente || esPendientePorSubmitter) {
-                // Si es venta pendiente, no exigimos checkboxes de pago
-                if (contenedorPagos) contenedorPagos.innerHTML = "";
-                if (contadorPagoDjango) contadorPagoDjango.value = 0;
-                esAccionPendiente = false; // Resetear bandera
-                return; // Permitir el envío al backend
-            }
-
-            // Limpiar contenedor de pagos dinámicos previos
-            if (contenedorPagos) contenedorPagos.innerHTML = "";
-
-            // Capturar checkboxes de pago seleccionados para venta normal
-            const checkboxesPago = document.querySelectorAll(".metodo-pago-checkbox:checked");
-
-            if (checkboxesPago.length === 0) {
-                e.preventDefault();
-                alert("Debe seleccionar al menos un método de pago.");
-                return;
-            }
-
-            // Obtener el total numérico actual de la venta
-            const elTotalText = document.getElementById("resumen_total");
-            let totalTexto = elTotalText ? elTotalText.innerText : "0";
-            let totalNumerico = parseFloat(totalTexto.replace("₡", "").replace(/,/g, "")) || 0;
-
-            // Actualizar TOTAL_FORMS del Formset de Pago de Django
-            if (contadorPagoDjango) {
-                contadorPagoDjango.value = checkboxesPago.length;
-            }
-
-            // DISTRIBUCIÓN EXACTA DE PAGOS (Blindaje contra errores de céntimos)
-            let acumuladoAsignado = 0;
-
-            checkboxesPago.forEach(function(checkbox, indice) {
-                let metodo = checkbox.getAttribute("data-metodo");
-                let montoAsignado;
-
-                if (indice === checkboxesPago.length - 1) {
-                    montoAsignado = totalNumerico - acumuladoAsignado;
-                } else {
-                    montoAsignado = Math.round((totalNumerico / checkboxesPago.length) * 100) / 100;
-                    acumuladoAsignado += montoAsignado;
-                }
-
-                let htmlInputs = `
-                    <input type="hidden" name="pago-${indice}-metodo_pago" value="${metodo}">
-                    <input type="hidden" name="pago-${indice}-monto" value="${montoAsignado.toFixed(2)}">
-                    <input type="hidden" name="pago-${indice}-referencia" value="POS-AUTOGENERADO">
-                `;
-                if (contenedorPagos) {
-                    contenedorPagos.insertAdjacentHTML("beforeend", htmlInputs);
-                }
-            });
-        });
+    function recalcularTotales() {
+        window.recalcularTotales();
     }
 
-    // ==========================================
-    // 3. BOTÓN: CANCELAR VENTA
-    // ==========================================
-    const btnCancelar = document.getElementById("btn_cancelar");
-    if (btnCancelar) {
-        btnCancelar.addEventListener("click", function(e) {
-            e.preventDefault();
+    // =====================================================
+    // 6. BUSCADOR DE TEXTO DE PRODUCTOS (debounce + AJAX)
+    // =====================================================
+    let timeoutBusquedaProducto = null;
 
-            if (confirm("¿Está seguro de que desea cancelar la venta actual? Se perderán los productos seleccionados.")) {
-                window.limpiarPantallaPOS();
+    if (buscarProductoInput) {
+        buscarProductoInput.addEventListener("keyup", function () {
+            clearTimeout(timeoutBusquedaProducto);
+            timeoutBusquedaProducto = setTimeout(buscarProductosPorTexto, 300);
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!e.target.closest("#buscar_producto, #lista_productos_pos")) {
+                listaProductosPos.classList.add("d-none");
             }
         });
     }
 
-    // ==========================================
-    // 4. BÚSQUEDA Y SELECCIÓN DE CLIENTES (AJAX)
-    // ==========================================
-    const $inputBuscarCliente = $('#buscar_cliente');
-    const $listaClientes = $('#lista_clientes_pos');
-    const $clienteId = $('#cliente_id');
-    const $clienteSeleccionado = $('#cliente_seleccionado');
-    
-    // Obtener la URL segura inyectada desde Django
-    const configPos = document.getElementById('config-pos');
-    const urlBuscarCliente = configPos ? $(configPos).data('url-buscar-cliente') : 'clientes/buscar/';
+    async function buscarProductosPorTexto() {
+        const texto = buscarProductoInput.value.trim();
 
-    function realizarBusquedaCliente(query) {
-        if (query.trim().length === 0) {
-            $listaClientes.html('').hide();
+        if (texto.length < 2) {
+            listaProductosPos.innerHTML = "";
+            listaProductosPos.classList.add("d-none");
             return;
         }
 
-        $.ajax({
-            url: urlBuscarCliente,
-            data: { 'q': query },
-            dataType: 'json',
-            success: function(data) {
-                $listaClientes.html('');
+        try {
+            const respuesta = await fetch(`${urlBuscarProducto}?q=${encodeURIComponent(texto)}`);
+            const productos = await respuesta.json();
+            mostrarResultadosBusquedaProducto(productos);
+        } catch (error) {
+            console.error("Error buscando productos en SIGEPAN:", error);
+        }
+    }
+
+    function mostrarResultadosBusquedaProducto(productos) {
+        listaProductosPos.innerHTML = "";
+
+        if (productos.length === 0) {
+            listaProductosPos.innerHTML = `
+                <div class="list-group-item text-muted">No se encontraron productos</div>
+            `;
+            listaProductosPos.classList.remove("d-none");
+            return;
+        }
+
+        productos.forEach(function (producto) {
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = "list-group-item list-group-item-action";
+            item.innerHTML = `
+                <strong>${producto.nombre}</strong><br>
+                <small>Código: ${producto.codigo} | Precio: ${formatoMoneda(producto.precio)}</small>
+            `;
+
+            item.addEventListener("click", function () {
+                agregarProductoAlCarrito(producto, 1);
+                buscarProductoInput.value = "";
+                listaProductosPos.innerHTML = "";
+                listaProductosPos.classList.add("d-none");
+                buscarProductoInput.focus();
+            });
+
+            listaProductosPos.appendChild(item);
+        });
+
+        listaProductosPos.classList.remove("d-none");
+    }
+
+    // =====================================================
+    // 7. CUADRÍCULA DE CATEGORÍAS + PRODUCTOS (tiles táctiles)
+    // =====================================================
+    if (contenedorCategorias) {
+        contenedorCategorias.addEventListener("click", async function (e) {
+            const boton = e.target.closest(".pos-category-btn");
+            if (!boton) return;
+
+            contenedorCategorias.querySelectorAll(".pos-category-btn").forEach(function (b) {
+                b.classList.remove("active");
+            });
+            boton.classList.add("active");
+
+            const categoriaId = boton.dataset.categoriaId;
+            await cargarProductosPorCategoria(categoriaId);
+        });
+    }
+
+    async function cargarProductosPorCategoria(categoriaId) {
+        gridProductos.innerHTML = `
+            <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Cargando productos...</p>
+        `;
+
+        try {
+            const respuesta = await fetch(`${urlBuscarProducto}?categoria_id=${encodeURIComponent(categoriaId)}`);
+            const productos = await respuesta.json();
+            renderizarGridProductos(productos);
+        } catch (error) {
+            console.error("Error cargando productos por categoría en SIGEPAN:", error);
+            gridProductos.innerHTML = `
+                <p class="text-danger small mb-0">No se pudieron cargar los productos de esta categoría.</p>
+            `;
+        }
+    }
+
+    function renderizarGridProductos(productos) {
+        if (!productos || productos.length === 0) {
+            gridProductos.innerHTML = `
+                <p class="text-muted small mb-0">Esta categoría no tiene productos activos.</p>
+            `;
+            return;
+        }
+
+        gridProductos.innerHTML = "";
+
+        productos.forEach(function (producto) {
+            const tile = document.createElement("button");
+            tile.type = "button";
+            tile.className = "pos-product-tile";
+            tile.innerHTML = `
+                <span class="pos-product-tile-nombre">${producto.nombre}</span>
+                <span class="pos-product-tile-precio">${formatoMoneda(producto.precio)}</span>
+            `;
+
+            tile.addEventListener("click", function () {
+                agregarProductoAlCarrito(producto, 1);
+
+                // Feedback visual inmediato: el tile "destella" al agregarse.
+                tile.classList.add("pos-product-tile-added");
+                setTimeout(function () {
+                    tile.classList.remove("pos-product-tile-added");
+                }, 250);
+            });
+
+            gridProductos.appendChild(tile);
+        });
+    }
+
+    // =====================================================
+    // 8. BÚSQUEDA Y SELECCIÓN DE CLIENTES (AJAX)
+    // =====================================================
+    let timeoutBusquedaCliente = null;
+
+    function realizarBusquedaCliente(query) {
+        if (!query || query.trim().length === 0) {
+            listaClientesPos.innerHTML = "";
+            listaClientesPos.classList.add("d-none");
+            return;
+        }
+
+        fetch(`${urlBuscarCliente}?q=${encodeURIComponent(query)}`)
+            .then(function (respuesta) { return respuesta.json(); })
+            .then(function (data) {
+                listaClientesPos.innerHTML = "";
+
                 if (data.length > 0) {
-                    data.forEach(function(cliente) {
-                        $listaClientes.append(`
-                            <a href="#" class="list-group-item list-group-item-action cliente-opcion py-2" 
-                               data-id="${cliente.id_cliente || cliente.id}" 
-                               data-nombre="${cliente.nombre}">
-                                <div class="d-flex justify-content-between">
-                                    <span class="fw-bold">${cliente.nombre}</span>
-                                    <small class="text-muted">ID: ${cliente.identificacion || 'N/A'}</small>
-                                </div>
-                            </a>
-                        `);
+                    data.forEach(function (cliente) {
+                        const item = document.createElement("a");
+                        item.href = "#";
+                        item.className = "list-group-item list-group-item-action cliente-opcion py-2";
+                        item.dataset.id = cliente.id;
+                        item.dataset.nombre = cliente.nombre;
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">${cliente.nombre}</span>
+                                <small class="text-muted">ID: ${cliente.identificacion || "N/A"}</small>
+                            </div>
+                        `;
+                        listaClientesPos.appendChild(item);
                     });
-                    $listaClientes.show();
                 } else {
-                    $listaClientes.html(`
-                        <div class="list-group-item text-muted py-2 small">
-                            No se encontraron clientes
-                        </div>
-                    `).show();
+                    listaClientesPos.innerHTML = `
+                        <div class="list-group-item text-muted py-2 small">No se encontraron clientes</div>
+                    `;
                 }
-            },
-            error: function(xhr) {
-                console.error("Error al buscar clientes:", xhr.responseText);
-            }
+
+                listaClientesPos.classList.remove("d-none");
+            })
+            .catch(function (error) {
+                console.error("Error al buscar clientes:", error);
+            });
+    }
+
+    if (buscarClienteInput) {
+        buscarClienteInput.addEventListener("input", function () {
+            clearTimeout(timeoutBusquedaCliente);
+            const valor = this.value;
+            timeoutBusquedaCliente = setTimeout(function () {
+                realizarBusquedaCliente(valor);
+            }, 300);
         });
     }
 
-    if ($inputBuscarCliente.length) {
-        // Evento al escribir
-        $inputBuscarCliente.on('input', function() {
-            realizarBusquedaCliente($(this).val());
+    if (btnBuscarCliente) {
+        btnBuscarCliente.addEventListener("click", function () {
+            realizarBusquedaCliente(buscarClienteInput.value);
         });
+    }
 
-        // Evento al hacer clic en el botón de búsqueda
-        $('#btn_buscar_cliente').on('click', function() {
-            realizarBusquedaCliente($inputBuscarCliente.val());
-        });
+    if (listaClientesPos) {
+        listaClientesPos.addEventListener("click", function (e) {
+            const opcion = e.target.closest(".cliente-opcion");
+            if (!opcion) return;
 
-        // Seleccionar cliente de la lista
-        $(document).on('click', '.cliente-opcion', function(e) {
             e.preventDefault();
-            const idCliente = $(this).data('id');
-            const nombreCliente = $(this).data('nombre');
-
-            $clienteId.val(idCliente);
-            $clienteSeleccionado.text(nombreCliente);
-
-            $listaClientes.html('').hide();
-            $inputBuscarCliente.val('');
+            clienteIdInput.value = opcion.dataset.id;
+            clienteSeleccionadoSpan.textContent = opcion.dataset.nombre;
+            listaClientesPos.innerHTML = "";
+            listaClientesPos.classList.add("d-none");
+            buscarClienteInput.value = "";
         });
 
-        // Ocultar lista al hacer clic fuera
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#buscar_cliente, #lista_clientes_pos, #btn_buscar_cliente').length) {
-                $listaClientes.hide();
+        document.addEventListener("click", function (e) {
+            if (!e.target.closest("#buscar_cliente, #lista_clientes_pos, #btn_buscar_cliente")) {
+                listaClientesPos.classList.add("d-none");
             }
         });
     }
 
-    // Ejecutar recálculo inicial (indispensable si se retomó una venta pendiente)
-    if (typeof window.recalcularTotales === "function") {
-        window.recalcularTotales();
+    function limpiarCliente() {
+        clienteIdInput.value = "";
+        clienteSeleccionadoSpan.textContent = "Público General";
     }
+
+    // =====================================================
+    // 9. DISTRIBUCIÓN DE PAGOS (según checkboxes marcados)
+    // =====================================================
+    // Reparte el total estimado entre los métodos de pago seleccionados en
+    // partes iguales (con la diferencia de céntimos absorbida por el
+    // último), igual que el flujo anterior. Es solo una propuesta inicial:
+    // el servidor únicamente exige que la SUMA de los pagos cubra el total
+    // real que él mismo calcula.
+    function construirPagosDesdeCheckboxes(totalEstimado) {
+        const checkboxes = document.querySelectorAll(".metodo-pago-checkbox:checked");
+        const pagos = [];
+        let acumulado = 0;
+
+        checkboxes.forEach(function (checkbox, indice) {
+            let monto;
+            if (indice === checkboxes.length - 1) {
+                monto = totalEstimado - acumulado;
+            } else {
+                monto = Math.round((totalEstimado / checkboxes.length) * 100) / 100;
+                acumulado += monto;
+            }
+
+            pagos.push({
+                metodo_pago_id: parseInt(checkbox.dataset.metodo, 10),
+                monto: monto.toFixed(2),
+                referencia: "",
+            });
+        });
+
+        return pagos;
+    }
+
+    function obtenerTotalEstimado() {
+        const elTotal = document.getElementById("resumen_total");
+        const texto = elTotal ? elTotal.innerText : "0";
+        return parseFloat(texto.replace("₡", "").replace(/,/g, "")) || 0;
+    }
+
+    // =====================================================
+    // 10. ENVÍO A procesar_venta() (JSON/AJAX)
+    // =====================================================
+    async function enviarVenta(accion) {
+        if (carrito.length === 0) {
+            mostrarAlerta("Debe agregar al menos un producto al carrito antes de continuar.");
+            return;
+        }
+
+        const payload = {
+            accion: accion,
+            cliente_id: clienteIdInput.value ? parseInt(clienteIdInput.value, 10) : null,
+            tipo_comprobante: "TICKET",
+            productos: carrito.map(function (linea) {
+                return {
+                    producto_id: linea.producto_id,
+                    cantidad: linea.cantidad,
+                };
+            }),
+        };
+
+        if (accion === "cobrar") {
+            const checkboxes = document.querySelectorAll(".metodo-pago-checkbox:checked");
+            if (checkboxes.length === 0) {
+                mostrarAlerta("Debe seleccionar al menos un método de pago.");
+                return;
+            }
+            payload.pagos = construirPagosDesdeCheckboxes(obtenerTotalEstimado());
+        }
+
+        const botones = [btnCobrar, btnGuardarPendiente].filter(Boolean);
+        botones.forEach(function (b) { b.disabled = true; });
+        limpiarAlertas();
+
+        try {
+            const respuesta = await fetch(urlProcesarVenta, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrfToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await respuesta.json();
+
+            if (data.ok) {
+                mostrarAlerta(
+                    accion === "cobrar"
+                        ? `Venta ${data.numero_venta} registrada correctamente. Redirigiendo...`
+                        : `Venta ${data.numero_venta} guardada como pendiente. Redirigiendo...`,
+                    "success"
+                );
+                setTimeout(function () {
+                    window.location.href = data.redirect_url;
+                }, 600);
+                return;
+            }
+
+            mostrarAlerta(data.error || "No se pudo procesar la venta.");
+        } catch (error) {
+            console.error("Error al procesar la venta en SIGEPAN:", error);
+            mostrarAlerta("Ocurrió un error de comunicación con el servidor. Intente nuevamente.");
+        } finally {
+            botones.forEach(function (b) { b.disabled = false; });
+        }
+    }
+
+    if (btnCobrar) {
+        btnCobrar.addEventListener("click", function () {
+            enviarVenta("cobrar");
+        });
+    }
+
+    if (btnGuardarPendiente) {
+        btnGuardarPendiente.addEventListener("click", function () {
+            enviarVenta("pausar");
+        });
+    }
+
+    // =====================================================
+    // 11. CANCELAR VENTA (limpiar pantalla sin guardar nada)
+    // =====================================================
+    if (btnCancelar) {
+        btnCancelar.addEventListener("click", function () {
+            if (carrito.length === 0) return;
+
+            if (confirm("¿Está seguro de que desea cancelar la venta actual? Se perderán los productos seleccionados.")) {
+                carrito = [];
+                renderizarCarrito();
+                limpiarCliente();
+                document.querySelectorAll(".metodo-pago-checkbox").forEach(function (cb) { cb.checked = false; });
+                limpiarAlertas();
+            }
+        });
+    }
+
+    // =====================================================
+    // 12. REANUDAR UNA VENTA PAUSADA
+    // =====================================================
+    // El carrito arranca directamente desde el JSON que sirvió
+    // crear_venta() (detalles_activos_json) — sin pasar por ninguna
+    // función puente ni por inputs ocultos indexados.
+    const elProductosPendientes = document.getElementById("productos-pendientes-reanudados");
+    const elClienteActivo = document.getElementById("cliente-activo-reanudado");
+
+    const productosPendientesReanudados = elProductosPendientes
+        ? JSON.parse(elProductosPendientes.textContent)
+        : [];
+    const clienteActivoReanudado = elClienteActivo
+        ? JSON.parse(elClienteActivo.textContent)
+        : null;
+
+    if (productosPendientesReanudados && productosPendientesReanudados.length > 0) {
+        carrito = productosPendientesReanudados.map(function (item) {
+            return {
+                producto_id: item.producto_id,
+                nombre: item.nombre,
+                precio: parseFloat(item.precio) || 0,
+                cantidad: parseInt(item.cantidad, 10) || 1,
+            };
+        });
+    }
+
+    if (clienteActivoReanudado) {
+        clienteIdInput.value = clienteActivoReanudado.id;
+        clienteSeleccionadoSpan.textContent = clienteActivoReanudado.nombre;
+    }
+
+    // =====================================================
+    // 13. RENDER INICIAL
+    // =====================================================
+    renderizarCarrito();
 });

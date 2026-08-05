@@ -19,6 +19,7 @@ class MovimientoInventarioService:
         "AJUSTE_NEGATIVO",
         "DEVOLUCION_COMPRA",
         "TRASLADO_SALIDA",
+        "MERMA",
     }
 
     @staticmethod

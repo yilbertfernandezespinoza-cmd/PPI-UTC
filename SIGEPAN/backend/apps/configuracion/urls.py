@@ -7,6 +7,9 @@ from .views import (
     SucursalListView,
     SucursalCreateView,
     SucursalUpdateView,
+    MetodoPagoListView,
+    MetodoPagoCreateView,
+    MetodoPagoUpdateView,
     ConfiguracionTributariaListView,
     ConfiguracionTributariaCreateView,
     ConfiguracionTributariaUpdateView,
@@ -53,7 +56,25 @@ urlpatterns = [
         SucursalUpdateView.as_view(),
         name="sucursal_update"
     ),
-        path(
+    path(
+        "metodos-pago/",
+        MetodoPagoListView.as_view(),
+        name="metodo_pago_list"
+    ),
+
+    path(
+        "metodos-pago/nuevo/",
+        MetodoPagoCreateView.as_view(),
+        name="metodo_pago_create"
+    ),
+
+    path(
+        "metodos-pago/<int:id_metodo_pago>/editar/",
+        MetodoPagoUpdateView.as_view(),
+        name="metodo_pago_update"
+    ),
+
+    path(
         "tributaria/",
         ConfiguracionTributariaListView.as_view(),
         name="tributaria_list"

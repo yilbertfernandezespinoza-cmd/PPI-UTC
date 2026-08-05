@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Gastos operativos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-cash-coin text-secondary"></i> Gastos operativos</h2>
+        <a href="{% url 'gastos_operativos:registrar' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Registrar gasto
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Sucursal</label>
+                    <select name="sucursal" class="form-select">
+                        <option value="">Todas</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id_sucursal }}" {% if filtro_sucursal == sucursal.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                            {{ sucursal.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria }}" {% if filtro_categoria == categoria %}selected{% endif %}>{{ categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="desde" class="form-control" value="{{ filtro_desde }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="hasta" class="form-control" value="{{ filtro_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Sucursal</th>
+                        <th>Categoría</th>
+                        <th>Descripción</th>
+                        <th>Monto</th>
+                        <th>Caja</th>
+                        <th>Usuario</th>
+                        <th>Estado</th>
+                        {% if puede_eliminar %}<th></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gasto in gastos %}
+                    <tr>
+                        <td>{{ gasto.fecha_gasto|date:"d/m/Y H:i" }}</td>
+                        <td>{{ gasto.sucursal.nombre }}</td>
+                        <td>{{ gasto.categoria }}</td>
+                        <td>{{ gasto.descripcion }}</td>
+                        <td>₡{{ gasto.monto }}</td>
+                        <td>
+                            {% if gasto.caja %}
+                            <span class="badge bg-info bg-opacity-10 text-info">{{ gasto.caja.nombre }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ gasto.usuario }}</td>
+                        <td>
+                            {% if gasto.estado %}
+                            <span class="badge bg-success bg-opacity-10 text-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        {% if puede_eliminar %}
+                        <td class="text-end">
+                            <form method="post" action="{% url 'gastos_operativos:estado' gasto.id_gasto %}" onsubmit="return confirm('{% if gasto.estado %}¿Desea deshabilitar{% else %}¿Desea habilitar{% endif %} este gasto?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-{% if gasto.estado %}danger{% else %}success{% endif %} btn-sm">
+                                    <i class="bi {% if gasto.estado %}bi-ban{% else %}bi-check-circle{% endif %}"></i>
+                                    {% if gasto.estado %}Deshabilitar{% else %}Activar{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">No hay gastos operativos registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

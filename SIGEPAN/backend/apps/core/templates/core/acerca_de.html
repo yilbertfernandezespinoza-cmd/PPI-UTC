@@ -274,7 +274,85 @@ Acerca de | SIGEPAN
 
     </div>
 
-   
+    <!-- ===================================================== -->
+    <!-- INFORMACIÓN DE CONTACTO -->
+    <!-- ===================================================== -->
+
+    <div class="card mt-4">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+
+                <i class="bi bi-envelope me-2"></i>
+
+                Información de Contacto
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-borderless mb-0">
+
+                <tbody>
+
+                    <tr>
+
+                        <th width="35%">
+
+                            Empresa
+
+                        </th>
+
+                        <td>
+
+                            {{ contacto.empresa }}
+
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <th>
+
+                            Correo
+
+                        </th>
+
+                        <td>
+
+                            <a href="mailto:{{ contacto.correo }}">{{ contacto.correo }}</a>
+
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <th>
+
+                            País
+
+                        </th>
+
+                        <td>
+
+                            {{ contacto.pais }}
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
 
 </div>
 

@@ -18,7 +18,8 @@ from .models import (
 )
 
 from apps.security.models import Usuario
-from apps.security.decorators import login_required
+from apps.security.decorators import login_required, permiso_requerido
+from apps.security.services import registrar_log
 
 from .forms import (
     CajaForm,
@@ -68,6 +69,7 @@ def es_administrador(usuario):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CONSULTAR")
 def lista_cajas(request):
 
     cajas = Caja.objects.all()
@@ -92,6 +94,7 @@ def lista_cajas(request):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CREAR")
 @transaction.atomic
 def crear_caja(request):
 
@@ -172,13 +175,19 @@ def crear_caja(request):
 
             caja.save()
 
- 
+
             messages.success(
                 request,
                 "Caja creada correctamente."
             )
 
-
+            registrar_log(
+                request=request,
+                usuario=usuario,
+                modulo="Caja",
+                tipo_accion="CREAR",
+                descripcion=f"Se creó la caja {caja.nombre}",
+            )
 
             return redirect(
                 "caja:lista_cajas"
@@ -206,6 +215,7 @@ def crear_caja(request):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "MODIFICAR")
 @transaction.atomic
 def editar_caja(request, id_caja):
 
@@ -264,6 +274,13 @@ def editar_caja(request, id_caja):
                 "Caja actualizada correctamente."
             )
 
+            registrar_log(
+                request=request,
+                usuario=request.usuario,
+                modulo="Caja",
+                tipo_accion="MODIFICAR",
+                descripcion=f"Se actualizó la caja {caja.nombre}",
+            )
 
             return redirect(
                 "caja:administrar_caja",
@@ -307,6 +324,7 @@ def editar_caja(request, id_caja):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "MODIFICAR")
 @transaction.atomic
 def activar_caja(request, id_caja):
 
@@ -335,6 +353,13 @@ def activar_caja(request, id_caja):
 
     )
 
+    registrar_log(
+        request=request,
+        usuario=request.usuario,
+        modulo="Caja",
+        tipo_accion="MODIFICAR",
+        descripcion=f"Se activó la caja {caja.nombre}",
+    )
 
     return redirect(
 
@@ -349,6 +374,7 @@ def activar_caja(request, id_caja):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "ELIMINAR")
 @transaction.atomic
 def desactivar_caja(request, id_caja):
 
@@ -400,6 +426,13 @@ def desactivar_caja(request, id_caja):
 
     )
 
+    registrar_log(
+        request=request,
+        usuario=request.usuario,
+        modulo="Caja",
+        tipo_accion="ELIMINAR",
+        descripcion=f"Se desactivó la caja {caja.nombre}",
+    )
 
     return redirect(
 
@@ -412,6 +445,7 @@ def desactivar_caja(request, id_caja):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CREAR")
 @transaction.atomic
 def abrir_caja(request, id_caja):
     caja = get_object_or_404(
@@ -472,12 +506,7 @@ def abrir_caja(request, id_caja):
             apertura.estado = True
 
 
-            usuario_id = request.session.get("usuario_id")
-
-            apertura.usuario = get_object_or_404(
-                Usuario,
-                id_usuario=usuario_id
-            )
+            apertura.usuario = request.usuario
 
 
             apertura.save()
@@ -489,6 +518,13 @@ def abrir_caja(request, id_caja):
                 "Caja abierta correctamente."
             )
 
+            registrar_log(
+                request=request,
+                usuario=request.usuario,
+                modulo="Caja",
+                tipo_accion="CREAR",
+                descripcion=f"Se abrió la caja {caja.nombre}",
+            )
 
             return redirect(
                 "caja:administrar_caja",
@@ -517,6 +553,7 @@ def abrir_caja(request, id_caja):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "MODIFICAR")
 @transaction.atomic
 def editar_apertura(request, id_apertura):
 
@@ -572,13 +609,11 @@ def editar_apertura(request, id_apertura):
 
             if monto_anterior != apertura.monto_inicial:
 
-                usuario = obtener_usuario(request)
-
                 HistorialCaja.objects.create(
 
                     caja=apertura.caja,
 
-                    usuario=usuario,
+                    usuario=request.usuario,
 
                     tipo_cambio="AJUSTE_APERTURA",
 
@@ -593,6 +628,14 @@ def editar_apertura(request, id_apertura):
             messages.success(
                 request,
                 "Apertura actualizada correctamente."
+            )
+
+            registrar_log(
+                request=request,
+                usuario=request.usuario,
+                modulo="Caja",
+                tipo_accion="MODIFICAR",
+                descripcion=f"Se actualizó la apertura de la caja {apertura.caja.nombre}",
             )
 
             return redirect(
@@ -628,6 +671,7 @@ def editar_apertura(request, id_apertura):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CREAR")
 @transaction.atomic
 def movimiento_caja(request, id_apertura):
 
@@ -640,7 +684,7 @@ def movimiento_caja(request, id_apertura):
 
     )
 
-    usuario_actual = obtener_usuario(request)   
+    usuario_actual = request.usuario
 
 
     if not apertura.estado:
@@ -684,6 +728,14 @@ def movimiento_caja(request, id_apertura):
                 "Movimiento registrado correctamente."
             )
 
+            registrar_log(
+                request=request,
+                usuario=usuario_actual,
+                modulo="Caja",
+                tipo_accion="CREAR",
+                descripcion=f"Se registró un movimiento de caja en {apertura.caja.nombre}",
+            )
+
             return redirect(
                 "caja:administrar_caja",
                 id_caja=apertura.caja.id_caja
@@ -715,6 +767,7 @@ def movimiento_caja(request, id_apertura):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CONSULTAR")
 def administrar_caja(request, id_caja):
 
     # =========================================
@@ -869,6 +922,7 @@ def administrar_caja(request, id_caja):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CONSULTAR")
 def detalle_caja(request, id_apertura):
 
 
@@ -922,6 +976,7 @@ def detalle_caja(request, id_apertura):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "CREAR")
 @transaction.atomic
 def crear_arqueo(request, id_apertura):
 
@@ -1022,41 +1077,7 @@ def crear_arqueo(request, id_apertura):
             # USUARIO RESPONSABLE
             # =========================================
 
-            usuario_id = request.session.get(
-
-                "usuario_id"
-
-            )
-
-
-
-            if not usuario_id:
-
-
-                messages.error(
-
-                    request,
-
-                    "No se pudo identificar el usuario actual."
-
-                )
-
-
-                return redirect(
-
-                    "security:login"
-
-                )
-
-
-
-            arqueo.usuario = get_object_or_404(
-
-                Usuario,
-
-                id_usuario=usuario_id
-
-            )
+            arqueo.usuario = request.usuario
 
 
 
@@ -1072,7 +1093,13 @@ def crear_arqueo(request, id_apertura):
 
             )
 
-
+            registrar_log(
+                request=request,
+                usuario=request.usuario,
+                modulo="Caja",
+                tipo_accion="CREAR",
+                descripcion=f"Se registró un arqueo en {apertura.caja.nombre}",
+            )
 
             return redirect(
 
@@ -1114,6 +1141,7 @@ def crear_arqueo(request, id_apertura):
 # =====================================================
 
 @login_required
+@permiso_requerido("Caja", "ELIMINAR")
 @transaction.atomic
 def cerrar_caja(request, id_apertura):
 
@@ -1256,37 +1284,7 @@ def cerrar_caja(request, id_apertura):
             # USUARIO RESPONSABLE
             # =========================================
 
-            usuario_id = request.session.get(
-
-                "usuario_id"
-
-            )
-
-
-            if not usuario_id:
-
-                messages.error(
-
-                    request,
-
-                    "No se pudo identificar el usuario actual."
-
-                )
-
-                return redirect(
-
-                    "security:login"
-
-                )
-
-
-            cierre.usuario = get_object_or_404(
-
-                Usuario,
-
-                id_usuario=usuario_id
-
-            )
+            cierre.usuario = request.usuario
 
 
             cierre.save()
@@ -1314,7 +1312,13 @@ def cerrar_caja(request, id_apertura):
                 "Caja cerrada correctamente."
             )
 
-
+            registrar_log(
+                request=request,
+                usuario=request.usuario,
+                modulo="Caja",
+                tipo_accion="ELIMINAR",
+                descripcion=f"Se cerró la caja {apertura.caja.nombre}",
+            )
 
             return redirect(
                 "caja:lista_cajas"

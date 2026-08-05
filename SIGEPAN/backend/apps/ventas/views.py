@@ -1,22 +1,26 @@
 import json
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Sum
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.urls import reverse
 
-from apps.security.models import Usuario
+from apps.security.models import Usuario, RolPermiso
+from apps.security.decorators import login_required, permiso_requerido
+from apps.security.services import registrar_log
 from apps.inventario.models import TipoMovimientoInventario
 from apps.inventario.repositories import InventarioRepository
 from apps.inventario.services import MovimientoInventarioService
 from apps.clientes.models import Cliente
 from apps.productos.models import Producto
 from apps.categorias.models import Categoria
-from apps.configuracion.models import MetodoPago
+from apps.configuracion.models import MetodoPago, ConfiguracionTributaria
 from apps.caja.models import MovimientoCaja, AperturaCaja
 
 from .models import Venta, DetalleVenta, DetallePago
@@ -31,13 +35,49 @@ from .utils import (
 # LISTAR VENTAS
 # =====================================================
 
+@login_required
+@permiso_requerido("Ventas", "CONSULTAR")
 def lista_ventas(request):
-    ventas = Venta.objects.all().order_by("-fecha")
+    # Reporte de ventas del día: filtra por la fecha recibida en ?fecha=
+    # (input type="date" del template) o, si no se envía nada, por hoy.
+    fecha_str = request.GET.get("fecha", "").strip()
+
+    if fecha_str:
+        try:
+            fecha_filtro = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_filtro = timezone.localdate()
+    else:
+        fecha_filtro = timezone.localdate()
+
+    ventas = Venta.objects.filter(
+        fecha__date=fecha_filtro
+    ).select_related("cliente").order_by("-fecha")
+
+    # Las anuladas (estado=False) se siguen listando (para que se vea el
+    # badge "Anulada"), pero no cuentan para el total recaudado del día.
+    ventas_activas = ventas.filter(estado=True)
+
+    total_recaudado = ventas_activas.aggregate(
+        total=Sum("total")
+    )["total"] or Decimal("0.00")
+
+    cantidad_ventas = ventas_activas.count()
+
+    # Caja abierta del usuario actual, para el botón "Volver a Caja".
+    apertura = AperturaCaja.objects.filter(
+        usuario=request.usuario, estado=True
+    ).select_related("caja").first()
+
     return render(
         request,
         "ventas/lista_ventas.html",
         {
-            "ventas": ventas
+            "ventas": ventas,
+            "fecha_filtro": fecha_filtro,
+            "total_recaudado": total_recaudado,
+            "cantidad_ventas": cantidad_ventas,
+            "apertura": apertura,
         }
     )
 
@@ -52,14 +92,11 @@ def lista_ventas(request):
 # procesar_venta() más abajo, que recibe el carrito completo como JSON vía
 # fetch() desde crear_venta.html.
 
+@login_required
+@permiso_requerido("Ventas", "CREAR")
 def crear_venta(request):
-    # 1. Validar usuario en sesión
-    usuario_id = request.session.get("usuario_id")
-    if not usuario_id:
-        messages.error(request, "No se pudo identificar el usuario actual.")
-        return redirect("security:login")
-
-    usuario = get_object_or_404(Usuario, id_usuario=usuario_id)
+    # 1. Usuario en sesión (ya validado por @login_required)
+    usuario = request.usuario
 
     # 2. Validar caja abierta
     apertura = AperturaCaja.objects.filter(
@@ -98,6 +135,16 @@ def crear_venta(request):
         nombre__iexact="Pendiente"
     ).order_by("nombre")
 
+    # Tasa de IVA real (suma de las tasas activas con aplica_ventas=True),
+    # para que el preview del carrito en el navegador use el mismo
+    # porcentaje que calcular_impuesto_ventas() usa en el servidor — antes
+    # el JS tenía un 13% fijo, que podía no coincidir con la tasa
+    # configurada y rechazar un cobro válido por "monto insuficiente".
+    tasa_iva = ConfiguracionTributaria.objects.filter(
+        estado=True,
+        aplica_ventas=True,
+    ).aggregate(total=Sum("porcentaje"))["total"] or Decimal("0.00")
+
     # Catálogo de categorías activas para la cuadrícula táctil de productos
     # del POS (pestañas de categoría + tiles de producto). Los productos de
     # cada pestaña se cargan por AJAX vía productos:buscar_producto_pos
@@ -125,6 +172,7 @@ def crear_venta(request):
             "detalles_activos": detalles_activos_list,
             "metodos_pago_disponibles": metodos_pago_disponibles,
             "categorias": categorias,
+            "tasa_iva": tasa_iva,
         }
     )
 
@@ -182,17 +230,39 @@ def procesar_venta(request):
     if request.method != "POST":
         return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
 
-    # 1. Usuario y caja abierta (mismos requisitos que el flujo anterior)
+    # 1. Usuario, permiso y caja abierta.
+    #
+    # Endpoint JSON/AJAX: no se usa @login_required/@permiso_requerido
+    # (redirigen a HTML, lo que rompe el fetch() del navegador) — se
+    # valida sesión y permiso a mano, respondiendo siempre JSON.
     usuario_id = request.session.get("usuario_id")
     if not usuario_id:
         return JsonResponse(
             {"ok": False, "error": "No se pudo identificar el usuario actual. Inicie sesión nuevamente."},
-            status=400,
+            status=401,
         )
 
-    usuario = Usuario.objects.filter(id_usuario=usuario_id).first()
+    usuario = Usuario.objects.filter(id_usuario=usuario_id, estado=True).first()
     if not usuario:
-        return JsonResponse({"ok": False, "error": "Usuario no encontrado."}, status=400)
+        return JsonResponse({"ok": False, "error": "Usuario no encontrado o inactivo."}, status=401)
+
+    tiene_permiso = RolPermiso.objects.filter(
+        id_rol=usuario.id_rol,
+        id_permiso__id_modulo__nombre="Ventas",
+        id_permiso__accion="CREAR",
+    ).exists()
+    if not tiene_permiso:
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Ventas",
+            tipo_accion="ACCESO_DENEGADO",
+            descripcion="Intento de ejecutar CREAR sin autorización.",
+        )
+        return JsonResponse(
+            {"ok": False, "error": "No tiene permisos para registrar ventas."},
+            status=403,
+        )
 
     apertura = AperturaCaja.objects.filter(
         usuario=usuario, estado=True
@@ -340,6 +410,14 @@ def procesar_venta(request):
         if "venta_activa_id" in request.session:
             del request.session["venta_activa_id"]
 
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Ventas",
+            tipo_accion="CREAR",
+            descripcion=f"Se pausó la venta {venta.numero_venta}",
+        )
+
         return JsonResponse({
             "ok": True,
             "id_venta": venta.id_venta,
@@ -470,6 +548,7 @@ def procesar_venta(request):
         monto=venta.total,
         descripcion=f"Venta {venta.numero_venta}",
         fecha_movimiento=timezone.now(),
+        fecha_creacion=timezone.now(),
     )
 
     # Si se está reanudando una venta pausada, sus líneas previas (guardadas
@@ -523,6 +602,14 @@ def procesar_venta(request):
         ventas_pendientes.remove(venta.id_venta)
         request.session["ventas_pendientes"] = ventas_pendientes
 
+    registrar_log(
+        request=request,
+        usuario=usuario,
+        modulo="Ventas",
+        tipo_accion="CREAR",
+        descripcion=f"Se registró la venta {venta.numero_venta}",
+    )
+
     return JsonResponse({
         "ok": True,
         "id_venta": venta.id_venta,
@@ -540,6 +627,8 @@ def procesar_venta(request):
 # procesar_venta() (JSON). listar_ventas_pendientes, retomar_venta y
 # eliminar_venta_pendiente no dependían del formset y siguen igual.
 
+@login_required
+@permiso_requerido("Ventas", "CONSULTAR")
 def listar_ventas_pendientes(request):
     """Muestra la lista de facturas que fueron pausadas temporalmente."""
     ids_pendientes = request.session.get('ventas_pendientes', [])
@@ -554,6 +643,8 @@ def listar_ventas_pendientes(request):
     )
 
 
+@login_required
+@permiso_requerido("Ventas", "CREAR")
 def retomar_venta(request, id_venta):
     """Carga una venta pendiente de regreso al POS para continuar con el cobro."""
     request.session['venta_activa_id'] = id_venta
@@ -567,9 +658,19 @@ def retomar_venta(request, id_venta):
     return redirect('ventas:crear_venta')
 
 
+@login_required
+@permiso_requerido("Ventas", "ELIMINAR")
 @transaction.atomic
 def eliminar_venta_pendiente(request, id_venta):
     """Elimina una venta pendiente de la sesión y borra su registro borrador."""
+
+    # Antes accesible por GET (un simple <a href>, sin CSRF): cualquier
+    # enlace/imagen manipulado podía borrar una venta pendiente con solo
+    # cargarse en el navegador de un usuario autenticado. Ahora exige POST
+    # (el template ya envía la eliminación como formulario con token CSRF).
+    if request.method != "POST":
+        return redirect('ventas:ventas_pendientes')
+
     ventas_pendientes = request.session.get('ventas_pendientes', [])
     if id_venta in ventas_pendientes:
         ventas_pendientes.remove(id_venta)
@@ -577,9 +678,18 @@ def eliminar_venta_pendiente(request, id_venta):
 
     venta = Venta.objects.filter(id_venta=id_venta).first()
     if venta:
+        numero_venta = venta.numero_venta
         DetalleVenta.objects.filter(venta=venta).delete()
         DetallePago.objects.filter(venta=venta).delete()
         venta.delete()
+
+        registrar_log(
+            request=request,
+            usuario=request.usuario,
+            modulo="Ventas",
+            tipo_accion="ELIMINAR",
+            descripcion=f"Se eliminó la venta pendiente {numero_venta}",
+        )
 
     messages.success(request, "Venta pendiente eliminada correctamente.")
     return redirect('ventas:ventas_pendientes')
@@ -589,6 +699,8 @@ def eliminar_venta_pendiente(request, id_venta):
 # DETALLE DE VENTA
 # =====================================================
 
+@login_required
+@permiso_requerido("Ventas", "CONSULTAR")
 def detalle_venta(request, id_venta):
     venta = get_object_or_404(Venta, id_venta=id_venta)
     detalles = DetalleVenta.objects.filter(venta=venta)
@@ -609,6 +721,8 @@ def detalle_venta(request, id_venta):
 # ANULAR VENTA
 # =====================================================
 
+@login_required
+@permiso_requerido("Ventas", "ELIMINAR")
 @transaction.atomic
 def anular_venta(request, id_venta):
     """
@@ -623,15 +737,16 @@ def anular_venta(request, id_venta):
         return redirect('ventas:lista_ventas')
 
     if request.method == "POST":
-        # 0. Identificar al usuario que anula (requerido por
-        #    MovimientoInventarioService para dejar rastro en la auditoría
-        #    de inventario; antes esta vista no identificaba a nadie).
-        usuario_id = request.session.get("usuario_id")
-        if not usuario_id:
-            messages.error(request, "No se pudo identificar el usuario actual.")
-            return redirect("security:login")
+        # 0. Usuario que anula (ya validado por @login_required; se usa
+        #    para dejar rastro en la auditoría de inventario).
+        usuario = request.usuario
 
-        usuario = get_object_or_404(Usuario, id_usuario=usuario_id)
+        # El formulario pide un motivo de anulación (campo obligatorio en
+        # anular_venta.html), pero la tabla real `venta` no tiene columna
+        # para guardarlo. En vez de descartarlo en silencio, se persiste en
+        # la bitácora (LogAcciones vía registrar_log), que es la fuente de
+        # auditoría del sistema para este tipo de acción.
+        motivo_anulacion = (request.POST.get("motivo_anulacion") or "").strip()
 
         try:
             tipo_devolucion_venta = TipoMovimientoInventario.objects.get(
@@ -669,6 +784,19 @@ def anular_venta(request, id_venta):
                 )
 
         messages.success(request, f"La venta **{venta.numero_venta}** ha sido anulada exitosamente y el inventario fue devuelto.")
+
+        descripcion_log = f"Se anuló la venta {venta.numero_venta}"
+        if motivo_anulacion:
+            descripcion_log += f" — motivo: {motivo_anulacion}"
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Ventas",
+            tipo_accion="MODIFICAR",
+            descripcion=descripcion_log,
+        )
+
         return redirect('ventas:lista_ventas')
 
     context = {
@@ -682,6 +810,12 @@ def anular_venta(request, id_venta):
 # =====================================================
 
 def buscar_clientes_pos(request):
+    # Endpoint AJAX (fetch desde el POS): no se usa @login_required (que
+    # redirige a /security/login/, rompiendo el fetch con HTML en vez de
+    # JSON) — se valida la sesión a mano y se responde 401 en JSON.
+    if not request.session.get("usuario_id"):
+        return JsonResponse({"error": "No autenticado."}, status=401)
+
     query = request.GET.get("q", "").strip()
     clientes_data = []
 

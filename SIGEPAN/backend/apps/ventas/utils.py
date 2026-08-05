@@ -1,27 +1,41 @@
 from decimal import Decimal, ROUND_HALF_UP
 
+from django.db import transaction
+
 from .models import Venta
 
 
 def generar_numero_venta():
+    """
+    Genera el próximo número de venta consecutivo (V000001, V000002, ...).
 
-    ultima_venta = (
-        Venta.objects
-        .order_by("-id_venta")
-        .first()
-    )
+    Debe llamarse siempre dentro de una transacción (procesar_venta ya está
+    envuelta en @transaction.atomic). select_for_update() bloquea la fila
+    de la última venta hasta que esa transacción termine (commit/rollback):
+    si dos cobros llegan al mismo tiempo, el segundo espera a que el
+    primero guarde su venta antes de leer "la última venta", evitando que
+    ambos calculen el mismo número y choquen contra el UNIQUE de
+    numero_venta.
+    """
 
+    with transaction.atomic():
 
-    if ultima_venta:
+        ultima_venta = (
+            Venta.objects
+            .select_for_update()
+            .order_by("-id_venta")
+            .first()
+        )
 
-        numero = ultima_venta.id_venta + 1
+        if ultima_venta:
 
-    else:
+            numero = ultima_venta.id_venta + 1
 
-        numero = 1
+        else:
 
+            numero = 1
 
-    return f"V{numero:06d}"
+        return f"V{numero:06d}"
 
 
 def calcular_impuesto_ventas(subtotal):

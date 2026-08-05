@@ -17,7 +17,7 @@ class AyudaService:
         return AyudaRepository.obtener_por_id(id_ayuda)
 
     @staticmethod
-    def crear(modulo_id, pantalla, titulo, contenido, icono=None, orden=1):
+    def crear(modulo_id, pantalla, titulo, contenido, icono=None, imagen=None, orden=1):
         """
         Crea una nueva ayuda.
         """
@@ -43,6 +43,7 @@ class AyudaService:
             titulo=titulo,
             contenido=contenido,
             icono=icono,
+            imagen=imagen,
             orden=orden
         )
 
@@ -54,7 +55,8 @@ class AyudaService:
         titulo,
         contenido,
         icono,
-        orden
+        orden,
+        imagen=None,
     ):
 
         ayuda = AyudaRepository.obtener_por_id(id_ayuda)
@@ -86,6 +88,7 @@ class AyudaService:
             titulo=titulo,
             contenido=contenido,
             icono=icono,
+            imagen=imagen,
             orden=orden
         )
 

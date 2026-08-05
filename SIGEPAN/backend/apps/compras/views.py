@@ -24,6 +24,8 @@ from .forms import (
 
 
 from apps.security.models import Usuario
+from apps.security.decorators import login_required, permiso_requerido
+from apps.security.services import registrar_log
 
 from apps.inventario.models import TipoMovimientoInventario
 from apps.inventario.repositories import InventarioRepository
@@ -34,6 +36,8 @@ from apps.inventario.services import MovimientoInventarioService
 # LISTAR COMPRAS
 # =====================================================
 
+@login_required
+@permiso_requerido("Compras", "CONSULTAR")
 def lista_compras(request):
 
     compras = Compra.objects.all().order_by("-fecha")
@@ -49,6 +53,8 @@ def lista_compras(request):
 # CREAR COMPRA
 # =====================================================
 
+@login_required
+@permiso_requerido("Compras", "CREAR")
 @transaction.atomic
 def crear_compra(request):
 
@@ -140,6 +146,14 @@ def crear_compra(request):
 
             messages.success(request, "Compra registrada correctamente.")
 
+            registrar_log(
+                request=request,
+                usuario=usuario_actual,
+                modulo="Compras",
+                tipo_accion="CREAR",
+                descripcion=f"Se registró la compra #{compra.id_compra}",
+            )
+
             return redirect(
                 "compras:detalle_compra",
                 id_compra=compra.id_compra
@@ -163,6 +177,8 @@ def crear_compra(request):
 # DETALLE DE COMPRA
 # =====================================================
 
+@login_required
+@permiso_requerido("Compras", "CONSULTAR")
 def detalle_compra(request, id_compra):
 
     compra = get_object_or_404(Compra, id_compra=id_compra)
@@ -183,6 +199,8 @@ def detalle_compra(request, id_compra):
 # ANULAR COMPRA
 # =====================================================
 
+@login_required
+@permiso_requerido("Compras", "ELIMINAR")
 @transaction.atomic
 def anular_compra(request, id_compra):
 
@@ -249,6 +267,14 @@ def anular_compra(request, id_compra):
             compra.save()
 
             messages.success(request, "Compra anulada correctamente.")
+
+            registrar_log(
+                request=request,
+                usuario=usuario_actual,
+                modulo="Compras",
+                tipo_accion="MODIFICAR",
+                descripcion=f"Se anuló la compra #{compra.id_compra}",
+            )
 
         return redirect("compras:lista_compras")
 

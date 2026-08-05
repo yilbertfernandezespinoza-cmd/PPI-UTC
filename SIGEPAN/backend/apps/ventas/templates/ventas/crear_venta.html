@@ -66,6 +66,7 @@
          data-url-buscar-cliente="{% url 'ventas:buscar_clientes_pos' %}"
          data-url-buscar-producto="{% url 'productos:buscar_producto_pos' %}"
          data-url-procesar-venta="{% url 'ventas:procesar_venta' %}"
+         data-tasa-iva="{{ tasa_iva|stringformat:'f' }}"
          style="display: none;"></div>
 
     <div class="row g-4">

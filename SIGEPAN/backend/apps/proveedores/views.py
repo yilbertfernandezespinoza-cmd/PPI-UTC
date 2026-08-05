@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Proveedor
 from .forms import ProveedorForm
+from apps.security.decorators import login_required
 
+@login_required
 def lista_proveedores(request):
     proveedores = Proveedor.objects.all()
     return render(request, 'proveedores/lista.html', {'proveedores': proveedores})
 
+@login_required
 def nuevo_proveedor(request):
     if request.method == 'POST':
         form = ProveedorForm(request.POST)
@@ -16,6 +19,7 @@ def nuevo_proveedor(request):
         form = ProveedorForm()
     return render(request, 'proveedores/nuevo.html', {'form': form})
 
+@login_required
 def editar_proveedor(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)
     if request.method == 'POST':
@@ -27,6 +31,7 @@ def editar_proveedor(request, pk):
         form = ProveedorForm(instance=proveedor)
     return render(request, 'proveedores/editar.html', {'form': form})
 
+@login_required
 def eliminar_proveedor(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)
     if request.method == 'POST':

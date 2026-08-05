@@ -66,6 +66,12 @@ class Usuario(BaseModel):
         db_column="google_token"
     )
 
+    google_refresh_token = models.TextField(
+        blank=True,
+        null=True,
+        db_column="google_refresh_token"
+    )
+
     ultimo_acceso = models.DateTimeField(
         blank=True,
         null=True,

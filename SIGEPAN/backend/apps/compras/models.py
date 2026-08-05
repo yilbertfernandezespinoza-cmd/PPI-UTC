@@ -23,6 +23,11 @@ class Compra(models.Model):
         db_column="id_usuario"
     )
 
+    sucursal = models.ForeignKey(
+        "configuracion.Sucursal",
+        on_delete=models.PROTECT,
+        db_column="id_sucursal"
+    )
 
     fecha = models.DateTimeField(
         db_column="fecha"

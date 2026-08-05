@@ -49,6 +49,10 @@
                class="btn btn-outline-success btn-sm">
                 <i class="bi bi-file-earmark-excel"></i> Exportar Excel
             </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&sucursal={{ sucursal_id }}&formato=sheets"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
         </div>
 
         <p><strong>Total del período: ₡{{ total|floatformat:2 }}</strong></p>

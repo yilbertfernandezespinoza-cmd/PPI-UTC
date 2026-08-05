@@ -5,55 +5,88 @@
 {% block content %}
 
 {% boton_ayuda "Productos" "productos" %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Gestión de Productos</h3>
-        <a href="{% url 'productos:nuevo_producto' %}" class="btn btn-primary float-right">Nuevo Producto</a>
-      </div>
-      <div class="card-body">
-        <table class="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Precio Compra</th>
-              <th>Precio Venta</th>
-              <th>Utilidad (%)</th>
-              <th>Impuesto (%)</th>
-              <th>Unidad Medida</th>
-              <th>Categoría</th>
-              <th>Imagen</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for producto in productos %}
-            <tr>
-              <td>{{ producto.codigo }}</td>
-              <td>{{ producto.nombre }}</td>
-              <td>{{ producto.descripcion }}</td>
-              <td>{{ producto.precio_compra }}</td>
-              <td>{{ producto.precio_venta }}</td>
-              <td>{{ producto.porcentaje_utilidad }}</td>
-              <td>{{ producto.porcentaje_impuesto }}</td>
-              <td>{{ producto.unidad_medida }}</td>
-              <td>{{ producto.id_categoria.nombre }}</td>
-              <td>{{ producto.imagen }}</td>
-              <td>{{ producto.estado|yesno:"Activo,Inactivo" }}</td>
-              <td>
-                <a href="{% url 'productos:editar_producto' producto.id_producto %}" class="btn btn-warning btn-sm">Editar</a>
-                <a href="{% url 'productos:eliminar_producto' producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">
+                <i class="bi bi-box-seam text-warning"></i> Gestión de Productos
+            </h2>
+            <small class="text-muted">
+                Administra el catálogo de productos del sistema.
+            </small>
+        </div>
+        <a href="{% url 'productos:nuevo_producto' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-plus-circle fs-5"></i>
+            Nuevo Producto
+        </a>
     </div>
-  </div>
-</section>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <input type="text" id="buscarProductos" class="form-control" placeholder="Buscar por código o nombre...">
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div id="tablaProductos"></div>
+        </div>
+    </div>
+
+</div>
+
+{{ productos_json|json_script:"productos-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const productosElement = document.getElementById("productos-data");
+    const productos = productosElement ? JSON.parse(productosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaProductos",
+        search: "#buscarProductos",
+        data: productos,
+        columns: [
+            { title: "Código", field: "codigo" },
+            { title: "Nombre", field: "nombre" },
+            { title: "Precio Compra (₡)", field: "precio_compra" },
+            { title: "Precio Venta (₡)", field: "precio_venta" },
+            { title: "Unidad", field: "unidad_medida" },
+            { title: "Categoría", field: "categoria" },
+            {
+                title: "Estado",
+                field: "estado",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success">Activo</span>'
+                        : '<span class="badge bg-danger">Inactivo</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    return `
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="${data.editar}" class="btn btn-outline-warning btn-sm" title="Editar">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="${data.eliminar}" class="btn btn-outline-danger btn-sm" title="Deshabilitar">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </div>
+                    `;
+                }
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}

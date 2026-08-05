@@ -1,26 +1,60 @@
 {% extends 'base.html' %}
+
 {% block content %}
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-12">
+        <h1>
+          <i class="fas fa-exclamation-triangle text-warning mr-2"></i> Desactivar Proveedor
+        </h1>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="content">
   <div class="container-fluid">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Eliminar Proveedor</h3>
-        <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary float-right">Volver</a>
-      </div>
-      <div class="card-body">
-        <form method="post">
-          {% csrf_token %}
-          <p>¿Está seguro que desea desactivar al proveedor 
-            <strong>{{ proveedor.nombre }}</strong>?
-          </p>
-          <p>Estado actual: 
-            <span class="{% if proveedor.estado %}text-success{% else %}text-danger{% endif %}">
-              {{ proveedor.estado|yesno:"Activo,Inactivo" }}
-            </span>
-          </p>
-          <button type="submit" class="btn btn-danger">Eliminar</button>
-          <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary">Cancelar</a>
-        </form>
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card card-danger card-outline">
+          <div class="card-header">
+            <h3 class="card-title">Confirmación de Eliminación</h3>
+          </div>
+          
+          <form method="post">
+            <div class="card-body">
+              {% csrf_token %}
+              
+              <div class="alert alert-warning alert-dismissible">
+                <h5><i class="icon fas fa-ban"></i> ¡Atención!</h5>
+                Esta acción cambiará el estado del proveedor o lo desactivará del sistema.
+              </div>
+
+              <p class="lead">
+                ¿Está seguro que desea desactivar al proveedor 
+                <strong class="text-primary">{{ proveedor.nombre }}</strong>?
+              </p>
+              
+              <p class="mb-0">
+                Estado actual: 
+                <span class="badge {% if proveedor.estado %}bg-success{% else %}bg-danger{% endif %} ml-1">
+                  {{ proveedor.estado|yesno:"Activo,Inactivo" }}
+                </span>
+              </p>
+            </div>
+
+            <!-- card-footer con los botones alineados a la izquierda y el de cancelar en gris (btn-secondary) -->
+            <div class="card-footer text-left">
+              <button type="submit" class="btn btn-danger font-weight-bold mr-2">
+                <i class="fas fa-trash-alt mr-1"></i> Eliminar
+              </button>
+              <a href="{% url 'proveedores:lista_proveedores' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Cancelar y volver
+              </a>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>

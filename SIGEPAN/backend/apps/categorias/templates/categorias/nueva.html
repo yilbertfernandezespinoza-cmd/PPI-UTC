@@ -1,50 +1,91 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<div class="container-fluid mt-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0">
-            <i class="bi bi-tag text-primary"></i> Nueva Categoría
-        </h2>
-        <a href="{% url 'categorias:lista_categorias' %}" class="btn btn-secondary d-flex align-items-center gap-2">
-            <i class="bi bi-arrow-left"></i>
-            Volver
-        </a>
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1>Gestión de Categorías</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'categorias:lista_categorias' %}">Categorías</a></li>
+          <li class="breadcrumb-item active">Nueva</li>
+        </ol>
+      </div>
     </div>
+  </div>
+</section>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
+<section class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-8 offset-md-2">
+        <div class="card card-primary card-outline">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-plus-circle mr-1"></i> Registrar Nueva Categoría
+            </h3>
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            <div class="card-body">
+              
+              <!-- Mensaje general de errores si el formulario no es válido -->
+              {% if form.errors %}
+              <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                <h5><i class="icon fas fa-ban"></i> ¡Atención!</h5>
+                Por favor, corrige los errores en el formulario.
+              </div>
+              {% endif %}
 
-            <form method="post">
-                {% csrf_token %}
+              <!-- Campo Nombre -->
+              <div class="form-group">
+                <label for="{{ form.nombre.id_for_label }}">
+                  <i class="fas tag text-muted"></i> Nombre <span class="text-danger">*</span>
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                  <div class="invalid-feedback d-block">{{ form.nombre.errors.0 }}</div>
+                {% endif %}
+              </div>
 
-                <div class="mb-3">
-                    <label for="id_nombre" class="form-label">Nombre</label>
-                    {{ form.nombre }}
-                    {% if form.nombre.errors %}
-                        <div class="text-danger small mt-1">{{ form.nombre.errors|striptags }}</div>
-                    {% endif %}
+              <!-- Campo Descripción -->
+              <div class="form-group">
+                <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                  <div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Campo Estado (Checkbox o Select según tu modelo) -->
+              <div class="form-group">
+                <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                  {{ form.estado }}
+                  <label class="custom-control-label" for="{{ form.estado.id_for_label }}">Categoría Activa</label>
                 </div>
+                {% if form.estado.errors %}
+                  <div class="invalid-feedback d-block">{{ form.estado.errors.0 }}</div>
+                {% endif %}
+              </div>
 
-                <div class="mb-4">
-                    <label for="id_descripcion" class="form-label">Descripción</label>
-                    {{ form.descripcion }}
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle me-1"></i>
-                    Guardar
-                </button>
-                <a href="{% url 'categorias:lista_categorias' %}" class="btn btn-outline-secondary">
-                    Cancelar
-                </a>
-            </form>
-
+            </div>
+            
+            <div class="card-footer text-right">
+              <a href="{% url 'categorias:lista_categorias' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Categoría
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
-
-</div>
-
+  </div>
+</section>
 {% endblock %}

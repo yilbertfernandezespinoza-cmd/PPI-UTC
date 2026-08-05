@@ -748,7 +748,7 @@ def generar_url_google():
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile",
-            
+            "https://www.googleapis.com/auth/spreadsheets",
         ],
     )
 
@@ -781,6 +781,7 @@ def procesar_callback_google(request):
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/spreadsheets",
         ],
         state=request.session.get("google_state"),
     )
@@ -809,4 +810,5 @@ def procesar_callback_google(request):
         "google_id": informacion["id"],
         "google_email": informacion["email"],
         "token": credentials.token,
+        "refresh_token": credentials.refresh_token,
     }

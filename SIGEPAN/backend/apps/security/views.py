@@ -1036,11 +1036,15 @@ def google_callback(request):
         usuario.google_email = datos_google["google_email"]
         usuario.google_token = datos_google["token"]
 
+        if datos_google.get("refresh_token"):
+            usuario.google_refresh_token = datos_google["refresh_token"]
+
         usuario.save(
             update_fields=[
                 "google_id",
                 "google_email",
                 "google_token",
+                "google_refresh_token"
             ]
         )
 
@@ -1086,12 +1090,14 @@ def google_desvincular(request):
         usuario.google_email = None
         usuario.google_id = None
         usuario.google_token = None
+        usuario.google_refresh_token = None
 
         usuario.save(
             update_fields=[
                 "google_email",
                 "google_id",
                 "google_token",
+                "google_refresh_token",
             ]
         )
 

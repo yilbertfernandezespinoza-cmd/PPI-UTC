@@ -9,6 +9,18 @@ class CategoriaForm(forms.ModelForm):
         model = Categoria
         fields = ['nombre', 'descripcion']
 
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej. Panadería, Repostería, Bebidas'
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción breve de la categoría'
+            }),
+        }
+
     def clean_nombre(self):
         nombre = self.cleaned_data["nombre"].strip()
 
@@ -29,4 +41,3 @@ class CategoriaForm(forms.ModelForm):
             )
 
         return nombre
-    

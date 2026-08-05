@@ -629,6 +629,15 @@ class MenuService:
 
                 nueva_opcion["url"] = url
 
+                # "url_dashboard" es opcional: solo la usan las opciones
+                # que necesitan que su tarjeta de acceso rápido del
+                # dashboard apunte a una pantalla distinta de su link en
+                # el menú lateral (ver "Ventas" en menu.py).
+                if "url_dashboard" in opcion:
+                    nueva_opcion["url_dashboard"] = reverse(
+                        opcion["url_dashboard"]
+                    )
+
                 nueva_opcion["activa"] = (
                     request.path == url
                 )

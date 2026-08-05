@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load static %}
+{% load ayuda_tags %}
 
 {% block title %}
 Acerca de | SIGEPAN
@@ -10,6 +11,7 @@ Acerca de | SIGEPAN
 
 <div class="container-fluid">
 
+    {% boton_ayuda "Seguridad" "acerca_de" %}
 
     <!-- ===================================================== -->
     <!-- LOGO -->

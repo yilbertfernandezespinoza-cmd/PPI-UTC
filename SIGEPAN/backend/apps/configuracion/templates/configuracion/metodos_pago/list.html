@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block title %}
 Métodos de Pago | SIGEPAN
 {% endblock %}
@@ -7,6 +9,8 @@ Métodos de Pago | SIGEPAN
 {% block content %}
 
 <div class="container-fluid">
+
+    {% boton_ayuda "Configuración" "metodos_pago" %}
 
     <div class="d-flex justify-content-between align-items-center mb-3">
 

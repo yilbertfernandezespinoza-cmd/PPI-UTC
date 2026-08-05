@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block content %}
 
 <div class="container mt-4">
+
+    {% boton_ayuda "Gastos Operativos" "gastos_operativos" %}
 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">

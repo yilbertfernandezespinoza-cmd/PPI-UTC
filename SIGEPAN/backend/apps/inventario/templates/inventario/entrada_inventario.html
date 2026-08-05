@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block content %}
 
 <div class="container mt-4">
+
+    {% boton_ayuda "Inventario" "entrada_inventario" %}
 
     <h2 class="mb-4">Entrada de Inventario</h2>
 

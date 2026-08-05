@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load ayuda_tags %}
 
 {% block css %}
 <link rel="stylesheet" href="{% static 'ventas/css/venta_pos.css' %}">
@@ -7,6 +8,8 @@
 
 {% block content %}
 <div class="container-fluid py-4 pos-container">
+
+    {% boton_ayuda "Ventas" "nueva_venta" %}
 
     <!-- =====================================================
          ENCABEZADO POS

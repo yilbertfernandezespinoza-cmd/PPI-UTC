@@ -150,6 +150,12 @@ MENU = [
                 "modulo_permiso": "Ventas",
                 "titulo": "Ventas",
                 "url": "ventas:lista_ventas",
+                # El acceso rápido del dashboard debe abrir directamente una
+                # venta nueva (POS), no el reporte de ventas diarias — el
+                # link del menú lateral sí debe seguir yendo al reporte
+                # (lista_ventas), por eso se usa una URL aparte solo para
+                # la tarjeta del dashboard en vez de cambiar "url".
+                "url_dashboard": "ventas:crear_venta",
                 "icono": "bi-cash-stack",
 
                 "dashboard": True,

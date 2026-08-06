@@ -54,6 +54,14 @@ class Inventario(BaseModel):
     )
 
     class Meta:
+        # managed=False (06-08): esta tabla ya existe en la BD real
+        # (Database First), igual que el resto de tablas del proyecto.
+        # Sin esto, y sin carpeta migrations/ para esta app, un
+        # `makemigrations`/`migrate` en un entorno nuevo podría intentar
+        # crear/gestionar esta tabla como si Django fuera dueño de su
+        # esquema, chocando con la tabla real (hallazgo de la auditoría de
+        # BD del 05-08).
+        managed = False
         db_table = "inventario"
         verbose_name = "Inventario"
         verbose_name_plural = "Inventarios"
@@ -91,6 +99,8 @@ class TipoMovimientoInventario(BaseModel):
     )
 
     class Meta:
+        # managed=False (06-08): mismo motivo que Inventario más arriba.
+        managed = False
         db_table = "tipo_movimiento_inventario"
         verbose_name = "Tipo de Movimiento de Inventario"
         verbose_name_plural = "Tipos de Movimiento de Inventario"
@@ -157,6 +167,8 @@ class MovimientoInventario(BaseModel):
     )
 
     class Meta:
+        # managed=False (06-08): mismo motivo que Inventario más arriba.
+        managed = False
         db_table = "movimiento_inventario"
         verbose_name = "Movimiento de Inventario"
         verbose_name_plural = "Movimientos de Inventario"

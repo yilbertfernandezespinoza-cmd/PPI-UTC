@@ -1,4 +1,23 @@
+from datetime import datetime, timedelta
+
+from django.utils import timezone
+
 from .models import GastoOperativo
+
+
+def _limite_inferior(fecha):
+    """
+    Medianoche local (aware) del día `fecha` — evita depender de que MySQL
+    tenga cargadas las tablas de zona horaria (CONVERT_TZ), que es lo que
+    necesitaría internamente `fecha_gasto__date__gte=`/`__lte=` con
+    USE_TZ=True. Mismo fix aplicado en dashboard/reportes/ventas (05-08).
+    """
+    return timezone.make_aware(datetime.combine(fecha, datetime.min.time()))
+
+
+def _limite_superior(fecha):
+    """Medianoche local (aware) del día siguiente a `fecha` (límite exclusivo)."""
+    return _limite_inferior(fecha) + timedelta(days=1)
 
 
 class GastoOperativoRepository:
@@ -78,9 +97,9 @@ class GastoOperativoRepository:
             consulta = consulta.filter(categoria__iexact=categoria)
 
         if desde:
-            consulta = consulta.filter(fecha_gasto__date__gte=desde)
+            consulta = consulta.filter(fecha_gasto__gte=_limite_inferior(desde))
 
         if hasta:
-            consulta = consulta.filter(fecha_gasto__date__lte=hasta)
+            consulta = consulta.filter(fecha_gasto__lt=_limite_superior(hasta))
 
         return consulta

@@ -11,6 +11,7 @@ from django.views.generic import View
 from apps.security.audit import AuditMixin
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.permissions import PermissionRequiredMixin
+from apps.security.decorators import login_required, permiso_requerido
 
 from .models import Inventario
 from .forms import InventarioForm, MovimientoInventarioForm
@@ -21,7 +22,20 @@ from .services import MovimientoInventarioService
 # =====================================================
 # LISTA DE INVENTARIO
 # =====================================================
+#
+# Hallazgo de auditoría de seguridad (04-08-2026): estas 3 vistas no
+# tenían NINGÚN control de sesión ni de permisos, a diferencia de
+# EntradaInventarioView/MovimientosInventarioListView (más abajo en este
+# mismo archivo), que sí usan SessionRequiredMixin/PermissionRequiredMixin.
+# Cualquiera con la URL podía ver y editar stock/umbrales sin autenticarse.
+# Se usa el decorador @login_required/@permiso_requerido (equivalente para
+# vistas basadas en función) en vez de convertirlas a CBV, para mantener el
+# arreglo como un parche puntual, reutilizando el módulo de permisos
+# "Inventario" que ya existe en la base de datos (lo usan las otras 2
+# vistas de este archivo).
 
+@login_required
+@permiso_requerido("Inventario", "CONSULTAR")
 def lista_inventario(request):
 
     inventarios = Inventario.objects.all().order_by(
@@ -39,6 +53,8 @@ def lista_inventario(request):
 # DETALLE INVENTARIO
 # =====================================================
 
+@login_required
+@permiso_requerido("Inventario", "CONSULTAR")
 def detalle_inventario(request, id_inventario):
 
     inventario = get_object_or_404(
@@ -57,6 +73,8 @@ def detalle_inventario(request, id_inventario):
 # EDITAR CONFIGURACION INVENTARIO
 # =====================================================
 
+@login_required
+@permiso_requerido("Inventario", "MODIFICAR")
 def editar_inventario(request, id_inventario):
 
     inventario = get_object_or_404(

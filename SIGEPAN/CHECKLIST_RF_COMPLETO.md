@@ -1,7 +1,121 @@
 # Checklist de desarrollo — SIGEPAN (34 RF)
 
-> Última actualización: 2026-08-04 (noche) · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, y el CRUD de RF-013 (métodos de pago) hechos en esta sesión.
+> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**.
 > Marca `[x]` cuando el ítem esté verificado en código (no solo "hecho de memoria"). Actualiza el `% avance` de la cabecera al cerrar ítems.
+
+## 🔴 Segunda auditoría (06-08) — 4 agentes verificando lo del 05-08
+
+Se pidió una segunda ronda de auditoría (dev/UX, BD, seguridad, y un cuarto agente dedicado exclusivamente a
+comparar este mismo documento contra el código real) para confirmar que todo lo del 05-08 quedó bien hecho,
+mientras César probaba en su máquina. Resultado: **todo lo del 05-08 quedó correctamente implementado, sin
+regresiones** — los 4 fixes de seguridad, el rediseño de búsqueda de cliente, el comprobante con marca
+La Pana, el envío por correo y el fix de zona horaria en los 6 archivos pasaron la verificación de los 4
+agentes. Se encontró y corrigió 1 bug real (preexistente, no introducido el 05-08) y se corrigieron 2
+pequeñas desincronizaciones del propio checklist:
+
+- [x] **🔴 Bug real corregido: `desactivar_caja` nunca detectaba una apertura activa**
+  (`apps/caja/views.py`). La validación `if hasattr(caja, "apertura_activa") and caja.apertura_activa:`
+  nunca era verdadera: `apertura_activa` es un atributo que solo se asigna dinámicamente en `lista_cajas()`
+  (fuera de esta función), pero `desactivar_caja` obtiene la caja con un `get_object_or_404` nuevo que jamás
+  tiene ese atributo — el `hasattr()` devolvía `False` siempre. En la práctica, **se podía desactivar
+  cualquier caja aunque tuviera una apertura activa**, pese a que la función muestra un mensaje de error
+  diciendo que no se puede. Corregido: ahora consulta directamente
+  `AperturaCaja.objects.filter(caja=caja, estado=True).exists()`.
+- [x] Corrección al propio checklist: la sección "Deuda técnica transversal" seguía listando `MetodoPago`
+  como pendiente de migrar a `BaseModel`, cuando ya lo hizo (confirmado en `apps/configuracion/models.py` y
+  documentado en RF-013) — se quitó de esa lista.
+- [x] Corrección al propio checklist: el ítem "Retirar `print()` de depuración en `security/views.py`" ya no
+  aplica — se revisó el archivo completo y no queda ningún `print()`. Se marca como resuelto.
+- [x] Ajuste menor de consistencia (no era un bug, solo una inconsistencia visual): al reanudar una venta
+  pausada con cliente asociado, `crear_venta.html` mostraba solo `cliente.nombre` (primer nombre) en vez de
+  `cliente.nombre_completo` como el resto del POS — corregido.
+- 🟢 `buscar_clientes_pos` (POS) expone el `telefono` del cliente en el JSON — la auditoría lo marcó como
+  hallazgo de bajo riesgo por no tener uso visible en el JS todavía, pero César confirmó (06-08) que se
+  usa de forma interna para temas administrativos, así que se mantiene tal cual (sigue requiriendo sesión
+  autenticada de todas formas).
+- 🟡 Hallazgos menores sin acción tomada (bajo riesgo, quedan anotados para más adelante):
+  `apps/ventas/static/ventas/js/producto_pos.js` quedó como archivo muerto sin referencias (no se pudo
+  borrar desde este entorno por permisos del sandbox — es 100% seguro de eliminar manualmente cuando
+  César quiera); el docstring de `apps/security/decorators.py::permiso_requerido` sigue diciendo "no se
+  aplica todavía en caja/proveedores" cuando `caja` ya lo usa extensamente — comentario desactualizado,
+  sin impacto real.
+
+## 🔴 Bugs reportados por César en pruebas reales (05-08, tarde) — corregidos
+
+Encontrados probando en tu máquina, no por los agentes de auditoría — ambos eran bugs reales de código:
+
+- [x] **"Volver a Caja" en Reporte de Ventas Diarias (`apps/ventas/templates/ventas/lista_ventas.html`,
+  línea 38) enviaba el ID equivocado**: el link a `caja:administrar_caja` usaba `apertura.id_apertura` (la
+  PK de `AperturaCaja`, la fila de "apertura de caja") en vez de `apertura.caja_id` (la PK real de `Caja`).
+  Como son dos secuencias de ID totalmente distintas, casi cualquier apertura activa generaba un link a un
+  `id_caja` que no existe → `Http404: No Caja matches the given query`. Corregido: ahora usa
+  `apertura.caja_id`.
+- [x] **"No aparecen las ventas del día" — bug sistémico de zona horaria, no solo de Ventas**: `lista_ventas()`
+  filtraba con `Venta.objects.filter(fecha__date=fecha_filtro)`. Con `USE_TZ=True` y `TIME_ZONE =
+  'America/Costa_Rica'` (`config/settings.py`), ese lookup le pide a MySQL convertir el `DATETIME` guardado
+  (en UTC) a hora local vía `CONVERT_TZ()` — función que **devuelve `NULL` en silencio, sin ningún error**,
+  si las tablas de zona horaria de MySQL no están cargadas (`mysql_tzinfo_to_sql`, un paso manual que casi
+  nunca viene hecho por defecto en una instalación nueva de MySQL, sobre todo en Windows). El resultado:
+  el filtro por fecha no encontraba ninguna fila, como si no existiera ninguna venta ese día, sin ningún
+  mensaje de error que lo delatara. Se corrigió calculando el rango `[medianoche de hoy, medianoche de
+  mañana)` en Python (con `timezone.make_aware`) y filtrando con `fecha__gte=`/`fecha__lt=` en vez de
+  `fecha__date=` — ya no depende de `CONVERT_TZ` para nada.
+
+  **Se encontró el mismo patrón repetido en 5 archivos más y se corrigió en todos, no solo en Ventas**, para
+  no dejar la misma trampa esperando en el resto del sistema:
+  - `apps/dashboard/repositories.py` — **este es probablemente la causa real (o una causa adicional) del
+    viejo bug "ventas no suman al dashboard diario"** que se había investigado el 04-08 y se había atribuido
+    solo al bug de método de pago con PK inválida. Si tus tablas de zona horaria de MySQL no estaban
+    cargadas, el dashboard mostraría ₡0 en "Ventas del día" incluso después de aquel primer fix. También se
+    corrigió `ventas_del_mes()` (usaba `fecha__year=`/`fecha__month=`, mismo problema) y se cambió
+    `date.today()` por `timezone.localdate()` (usa la zona horaria configurada en Django, no la del sistema
+    operativo del servidor, que podría no coincidir).
+  - `apps/reportes/repositories.py` (RF-019/025/027, Yilbert) — los 3 métodos que reciben rango de fechas
+    (`ventas`, `ventas_por_metodo_pago`, `costos_estimados`).
+  - `apps/ajustes/repositories.py` (RF-018), `apps/gastos_operativos/repositories.py` (RF-026),
+    `apps/mermas/repositories.py` (RF-017) — el filtro por rango de fechas de cada listado.
+  - **Acción recomendada de todas formas en tu máquina**: aunque el código ya no depende de esto, sigue
+    siendo buena práctica cargar las tablas de zona horaria de MySQL (`mysql_tzinfo_to_sql` en Linux/Mac, o
+    el paquete de zonas horarias de MySQL para Windows) — hay otras operaciones de Django/MySQL que sí las
+    usan y sin ellas pueden fallar en silencio de la misma forma en código futuro.
+
+## 🔴 Hallazgos de seguridad corregidos hoy (05-08), pendientes de probar en tu máquina
+
+Los 4 agentes de auditoría (ver metodología abajo) encontraron 4 problemas reales de seguridad dentro del alcance de los RF de César. Los 4 quedaron corregidos en código hoy mismo:
+
+- [x] **RF-016 (`apps/inventario/views.py`)**: `lista_inventario`, `detalle_inventario` y `editar_inventario` no
+  tenían absolutamente ningún control de sesión ni de permisos — cualquiera con la URL podía ver y editar
+  existencias/umbrales sin autenticarse. Se agregaron los decoradores `@login_required` +
+  `@permiso_requerido("Inventario", "CONSULTAR"/"MODIFICAR")`. Como no se pudo confirmar que ya existiera un
+  permiso `MODIFICAR` sembrado para el módulo "Inventario" (solo `CONSULTAR`/`CREAR` estaban confirmados por
+  las otras dos vistas de este mismo archivo), se extendió `seed_permisos_modulos.py` para garantizar ese
+  permiso de forma idempotente (no toca ni duplica `CONSULTAR`/`CREAR`, que ya existían) — **debes volver a
+  correr `python manage.py seed_permisos_modulos` en tu máquina antes de probar `editar_inventario`**, si no
+  el decorador nuevo bloquearía a todos los usuarios, incluido Administrador.
+- [x] **RF-029 (`apps/clientes/views.py::buscar_cliente_pos`)**: endpoint duplicado y sin usar (el POS real usa
+  `ventas:buscar_clientes_pos`) que exponía nombre + cédula/DIMEX de cualquier cliente sin sesión. Se le agregó
+  la misma validación manual de sesión (`request.session.get("usuario_id")`, 401 en JSON) que ya usan los demás
+  endpoints AJAX del proyecto.
+- [x] **RF-014 (`apps/caja/views.py::activar_caja`/`desactivar_caja`)**: mutaban el estado de una caja en una
+  petición GET (se disparaban desde un `<a href>` en `lista_cajas.html`), sin exigir POST ni CSRF — visitar el
+  link bastaba para activar/desactivar. Se agregó el guard `if request.method != "POST": return redirect(...)`
+  en ambas vistas y se convirtieron los `<a href>` del template en `<form method="post">{% csrf_token %}` con
+  confirmación (`confirm()`) antes de enviar.
+- [x] **RF-010 (`apps/categorias/templates/categorias/lista.html`)**: XSS reflejado vía `|safe` sobre
+  `categoria.descripcion|default:"<span ...>Sin descripción</span>"` — si algún día se guarda una descripción
+  con HTML/JS, se ejecutaría en el navegador de quien vea el listado. Se quitó el `|safe` y se reemplazó por un
+  `{% if categoria.descripcion %}...{% else %}...{% endif %}`, dejando que Django autoescape el texto real.
+
+**Correcciones a entradas del checklist que resultaron obsoletas** (confirmadas leyendo el código real, no solo
+la auditoría anterior):
+- RF-010 (`categorias/views.py`) y RF-011 (`productos/views.py`) **ya tienen** `@login_required` +
+  `@permiso_requerido(...)` en las 4 vistas de cada app — la entrada "Sin SessionRequiredMixin/
+  PermissionRequiredMixin" que decía este documento ya no aplica, se corrige más abajo en sus secciones.
+- RF-011: `precio_venta` **ya se calcula en el servidor** vía `ProductoService.calcular_precio_venta()`, tanto
+  en `nuevo_producto` como en `editar_producto` — la entrada "se calcula solo en JavaScript" ya no aplica.
+- RF-012: `generar_numero_venta()` (`apps/ventas/utils.py`) **ya usa `select_for_update()`** dentro de
+  `transaction.atomic()` para evitar colisiones de `numero_venta` en concurrencia — la entrada "se calcula sin
+  bloqueo" ya no aplica.
 
 ## ⚠️ Antes de probar lo de hoy: acción requerida en tu máquina
 
@@ -66,13 +180,13 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-007 | Roles y permisos | Yilbert | 100% |
 | RF-008 | Menú principal | Yilbert | 85% |
 | RF-009 | Gestión de sucursales | Yilbert | 100% |
-| RF-010 | Gestión de categorías | César | 55% |
-| RF-011 | Gestión de productos | César | 65% 🟡 (verificar en tu máquina) |
-| RF-012 | Registro de ventas | César | 92% 🟡 (verificar en tu máquina) |
+| RF-010 | Gestión de categorías | César | 65% |
+| RF-011 | Gestión de productos | César | 75% 🟡 (verificar en tu máquina) |
+| RF-012 | Registro de ventas | César | 98% 🟡 (verificar en tu máquina) |
 | RF-013 | Métodos de pago | César | 90% 🟡 (verificar en tu máquina) |
-| RF-014 | Apertura de caja | César | 70% |
+| RF-014 | Apertura de caja | César | 72% |
 | RF-015 | Cierre de caja | César | 60% |
-| RF-016 | Control de inventario | César/Yilbert | 75% 🟡 (verificar en tu máquina) |
+| RF-016 | Control de inventario | César/Yilbert | 90% 🟡 (verificar en tu máquina) |
 | RF-017 | Registro de mermas | César | 80% 🟡 (verificar en tu máquina) |
 | RF-018 | Anulación y ajustes | César | 75% 🟡 (verificar en tu máquina) |
 | RF-019 | Reportes operativos | Yilbert | 80% |
@@ -85,8 +199,8 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-026 | Gastos operativos | César | 75% 🟡 (verificar en tu máquina) |
 | RF-027 | Reporte de utilidad estimada | Yilbert | 85% |
 | RF-028 | Entrada de inventario | Yilbert (apoyo) | 85% |
-| RF-029 | Gestión de clientes | César | 95% |
-| RF-030 | Registro de compras | César | 80% 🟡 (verificar en tu máquina) |
+| RF-029 | Gestión de clientes | César | 96% |
+| RF-030 | Registro de compras | César | 90% 🟡 (verificar en tu máquina) |
 | RF-031 | Ayuda contextual | Yilbert | 85% |
 | RF-032 | Administración de ayudas | Yilbert | 70% |
 | RF-033 | Acerca de | Yilbert | 95% |
@@ -211,13 +325,19 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 ## RF-010 — Gestión de categorías
 **Completado**
 - [x] CRUD funcional (listar, crear, editar, cambiar estado) en `categorias/views.py`.
+- [x] Las 4 vistas (`lista_categorias`, `nueva_categoria`, `editar_categoria`, `cambiar_estado_categoria`) **ya
+  tienen** `@login_required` + `@permiso_requerido("Categorías", ...)` — confirmado leyendo el archivo el
+  05-08; la entrada de "sin control de sesión" que tenía este documento estaba obsoleta.
+- [x] **XSS corregido (05-08)**: `lista.html` reflejaba `categoria.descripcion` con `|safe` para poder inyectar
+  un `<span>` de placeholder cuando estaba vacía — se cambió a un `{% if %}` normal, sin `|safe`.
 
 **Pendiente**
 - [ ] `Categoria` no hereda `BaseModel` (campos `estado`/`fecha_creacion`/`fecha_actualizacion` redefinidos manualmente).
 - [ ] `repositories.py` y `services.py` vacíos (solo comentario de plantilla).
-- [ ] Sin `SessionRequiredMixin`/`PermissionRequiredMixin` — cualquier usuario con la URL puede crear/editar sin autenticarse.
 - [ ] Sin auditoría (no registra en `log_acciones`).
 - [ ] Validación de duplicados vive en `forms.ValidationError` en vez de en un Service.
+- [ ] 🟡 (UX/UI, 05-08) `lista.html` mezcla clases de Bootstrap 4/AdminLTE3 (`mr-`/`form-group`) con Bootstrap 5
+  (`me-`/`d-flex`) — no rompe nada, pero es inconsistente con el resto del sistema.
 
 ---
 
@@ -232,14 +352,19 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   sigue siendo `varchar(30)`, mismo tamaño, mismo tipo, así que los productos ya guardados no se ven
   afectados. Migración `0002_alter_producto_unidad_medida` agregada (`AlterField`, sin tocar datos).
 
+- [x] Las 4 vistas **ya tienen** `@login_required` + `@permiso_requerido("Productos", ...)` — la entrada "sin
+  permisos" que tenía este documento estaba obsoleta (confirmado leyendo el código el 05-08).
+- [x] `precio_venta` **ya se calcula en el servidor**, no en JS: `ProductoService.calcular_precio_venta()`
+  (`apps/productos/services.py`) se llama en `nuevo_producto` y `editar_producto` antes de guardar — la
+  entrada "se calcula solo en JavaScript" estaba obsoleta.
+
 **Pendiente**
 - [ ] **Verificar en tu máquina**: `manage.py migrate productos` (aplica la migración 0002) y luego crear/
   editar un producto para confirmar que el `<select>` de Unidad de medida ya tiene opciones y el formulario
   guarda.
-- [ ] `Repository`/`Service` vacíos; `Producto` no hereda `BaseModel`.
-- [ ] Sin permisos ni auditoría.
+- [ ] `Repository`/`Service` vacíos salvo `ProductoService.calcular_precio_venta()`; `Producto` no hereda `BaseModel`.
+- [ ] Sin auditoría (no registra en `log_acciones`).
 - [ ] Sin campo `stock_minimo` en el modelo (vive en `Inventario`).
-- [ ] 🟡 `precio_venta` se calcula solo en JavaScript del navegador — un POST directo puede fijar cualquier precio sin validación de servidor. Mover el cálculo a un Service server-side.
 
 ---
 
@@ -330,6 +455,59 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   `categoria_id` (sin él, el comportamiento es idéntico al de siempre: mínimo 2 caracteres, top 10
   resultados por `?q=`; con `categoria_id`, ignora el mínimo de caracteres y devuelve hasta 60 productos de
   esa categoría).
+- [x] **Rediseño de búsqueda de cliente en el POS (05-08, pedido explícito de César)**: buscar cliente por
+  nombre podía devolver "miles de personas con el mismo nombre" — `Cliente.identificacion` (cédula/DIMEX) sí
+  es `unique=True` en la BD, así que ahora es el criterio prioritario. `apps/ventas/views.py::buscar_clientes_pos`
+  cambió de contrato: si el texto coincide exacto (case-insensitive) con la identificación de un cliente
+  activo, responde `{"exacto": true, "resultados": [ese_cliente]}` y el JS lo autoselecciona sin que el
+  cajero tenga que hacer clic (como un lector de cédula/código de barras). Si no hay match exacto, busca por
+  identificación/nombre/apellidos (antes solo buscaba nombre o identificación, no apellidos), limitado a 10,
+  con la cédula priorizada; también se agregó el filtro `estado=True` que faltaba (clientes deshabilitados
+  aparecían en el POS). En `crear_venta.html` se agregó un botón "Cambiar cliente" junto al cliente
+  seleccionado para deshacer la selección sin recargar la página.
+- [x] **Comprobante de venta imprimible (05-08, pedido explícito de César)**: nueva vista
+  `apps.ventas.views.comprobante_venta` (`GET /ventas/<id_venta>/comprobante/`,
+  `name="ventas:comprobante_venta"`) + template standalone `ventas/comprobante_venta.html` (no extiende
+  `base.html`, sin sidebar/navbar, con `@media print` para ocultar los botones al imprimir). Muestra
+  datos de la empresa (`configuracion.DatosEmpresa`, singleton `id_datos_empresa=1`), datos de la venta
+  (número, fecha, sucursal, caja, cajero), datos del cliente (o "Consumidor Final"), detalle de productos,
+  totales y detalle de pagos. `detalle_venta.html` ya no dice "en pausa" para ventas cobradas ni muestra el
+  botón "Reanudar" fuera de lugar: `detalle_venta()` ahora calcula `es_pendiente` (verdadero solo si
+  `venta.metodo_pago.nombre` es "Pendiente", mismo criterio que usa `procesar_venta` para pausar) y el
+  template condiciona ambos elementos a ese valor. El link "Imprimir comprobante" (antes `<a href="#">`
+  muerto) ahora apunta de verdad a `comprobante_venta`.
+- [x] **Diseño de marca "La Pana" en el comprobante (05-08, pedido explícito de César, para la entrega a la
+  empresa que prestó su nombre al proyecto)**: `comprobante_venta.html` ya no muestra el texto "SIGEPAN"
+  como encabezado — se reemplazó por el logo de La Pana (`static/img/logos/lapana-logo.jpeg`, recortado en
+  círculo con `border-radius: 50%`), centrado arriba, con los datos del emisor (Cédula Física, Dirección,
+  Teléfono, correo) alineados a la izquierda debajo. Esos 4 datos usan `{{ datos_empresa.<campo>|default:"..."
+  }}`: si más adelante se cargan los datos reales de La Pana en Configuración → Datos de la Empresa, el
+  comprobante los toma automáticamente sin tocar el template de nuevo; mientras tanto muestra los valores
+  reales que dio César (cédula física 2-0557-0979, dirección San José/Moravia/San Vicente/Urb. Saint Claire,
+  teléfono 4082-3934, lapanacostarrica@gmail.com). Debajo se agregó una sección "Datos del cliente"
+  (Cliente, Cédula del cliente, Correo, Cajero, Hora) antes del detalle de la compra, tal como se pidió.
+- [x] **"Enviar por correo" habilitado (05-08)**: antes era un botón deshabilitado sin funcionalidad. Ahora
+  es una acción real: nueva vista `apps.ventas.views.enviar_comprobante_email`
+  (`POST /ventas/<id_venta>/enviar-correo/`, solo POST — mismo criterio de CSRF/POST aplicado el 05-08 a
+  `activar_caja`/`desactivar_caja`, nunca disparar una acción con efecto real desde un GET/link), que llama a
+  un nuevo servicio `apps.ventas.services.ComprobanteEmailService.enviar()` (primer contenido real de
+  `ventas/services.py`, que hasta ahora estaba vacío). Sigue el mismo patrón que ya usaba
+  `security.services.RecuperacionPasswordService` (logo embebido vía `Content-ID`/`EmailMultiAlternatives`,
+  en vez de un `<img src="...">` normal que muchos correos bloquean), pero con una plantilla propia
+  (`ventas/templates/emails/comprobante_venta_email.html`, tabla HTML con estilos inline — requisito para
+  que se vea bien en clientes de correo reales) con la identidad de La Pana, no de SIGEPAN/Y&C, porque este
+  correo lo recibe el cliente final de la panadería. El botón en `detalle_venta.html` solo se habilita si
+  `venta.cliente.correo` existe; si la venta no tiene cliente o el cliente no tiene correo, queda
+  deshabilitado con un tooltip explicando por qué. Los errores de envío (SMTP mal configurado, sin conexión)
+  se capturan y muestran como `messages.error(...)` en vez de romper la página. Se registra en la bitácora
+  reutilizando el tipo `EXPORTAR` del ENUM real de `log_acciones` (no existe un tipo dedicado para "envío de
+  correo"; `EXPORTAR` es el mismo que ya usa Reportes para "entregar un documento generado hacia afuera del
+  sistema", que es conceptualmente lo mismo).
+  - **Verificar en tu máquina**: `EMAIL_BACKEND` por defecto es la consola (`django.core.mail.backends.
+    console.EmailBackend` — imprime el correo en la terminal en vez de enviarlo de verdad), así que para un
+    envío real hay que configurar `EMAIL_HOST`/`EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD`/`DEFAULT_FROM_EMAIL`
+    en el `.env` (ya existían esas variables, se usan también para recuperación de contraseña). Probar
+    primero con la consola para confirmar que el HTML se ve bien, y luego con SMTP real antes de la entrega.
 
 **Pendiente**
 - [ ] **Verificar en tu máquina (con `manage.py` real y MySQL) antes de dar por cerrado el módulo:**
@@ -360,10 +538,34 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
      calcula el servidor, y `procesar_venta` rechazará el cobro con "monto pagado menor al total". No es un
      bug nuevo de esta migración (el JS anterior también asumía 13% fijo), pero conviene probarlo si la
      tasa configurada no es exactamente 13%.
-- [ ] `Repository`/`Service` propios de `ventas` (`apps/ventas/repositories.py`, `apps/ventas/services.py`)
-  siguen vacíos; sin `PermissionRequiredMixin`/`AuditMixin` en las vistas (RF-004) — deuda técnica conocida,
-  no se tocó en esta migración a propósito (fuera de foco).
-- [ ] El consecutivo de `numero_venta` se calcula sin bloqueo — riesgo de colisión en concurrencia.
+- [x] **`Repository`/`Service` propios de `ventas` (06-08, pedido explícito de César)**: `apps/ventas/repositories.py`
+  y `apps/ventas/services.py` estaban vacíos (solo tenían `ComprobanteEmailService`) — toda la lógica vivía
+  suelta en `views.py` (1016 líneas). Se extrajo siguiendo el mismo patrón Model → Repository → Service →
+  View ya usado en `clientes`/`inventario`:
+  - `VentaRepository` (nuevo): centraliza todas las consultas ORM del módulo — `Venta`/`DetalleVenta`/
+    `DetallePago` propias, y también las consultas auxiliares del POS sobre modelos de otras apps
+    (`AperturaCaja`, `MetodoPago`, `Categoria`, `ConfiguracionTributaria`, `TipoMovimientoInventario`,
+    `DatosEmpresa`, `Producto`, `Cliente`) que antes se repetían sueltas en cada vista.
+  - `VentaService` (nuevo) + `VentaValidationError` (nueva excepción propia): la validación/cálculo del
+    carrito, cobrar, pausar, anular y la búsqueda de clientes del POS quedaron en el servicio, que no
+    depende de `HttpRequest`/`JsonResponse` — lanza `VentaValidationError` con el mismo mensaje que antes
+    y la vista la traduce a `JsonResponse`/`messages.error` según corresponda. `procesar_venta()` pasó de
+    ~440 líneas monolíticas a orquestar llamadas a `VentaService.resolver_cliente()` →
+    `validar_y_calcular_lineas()` → `calcular_totales()` → `pausar()`/`validar_pagos()`+`cobrar()`,
+    preservando exactamente el mismo orden de validación, los mismos mensajes de error y el mismo
+    mecanismo de rollback (`transaction.set_rollback(True)` sigue disparándose dentro del
+    `@transaction.atomic` de la vista aunque ahora se invoque desde dentro del servicio).
+  - Verificado que el contrato JSON no cambió: `venta_pos.js` sigue leyendo `data.ok`/`data.exacto`/
+    `data.resultados`/`data.numero_venta`/`data.redirect_url` exactamente igual (confirmado por grep
+    cruzado contra el nuevo `views.py`), ninguna URL/nombre de vista cambió, `py_compile` limpio en los 3
+    archivos.
+  - Auditoría (`registrar_log`, equivalente a `AuditMixin` en vistas basadas en función): ya estaba
+    presente en `procesar_venta` (cobrar/pausar), `eliminar_venta_pendiente`, `anular_venta` y
+    `enviar_comprobante_email`; se agregó también en `retomar_venta` (antes no dejaba rastro de qué venta
+    pendiente se retomó).
+- [x] ~~El consecutivo de `numero_venta` se calcula sin bloqueo~~ — corrección al checklist (05-08):
+  `generar_numero_venta()` ya usa `select_for_update()` dentro de `transaction.atomic()`, confirmado leyendo
+  `apps/ventas/utils.py`. Esta entrada estaba obsoleta.
 - [ ] Revisar si algún flujo sigue registrando `MovimientoCaja` con tipo `"ANULACION"` (no está en `TIPOS_MOVIMIENTO` de `caja/models.py`).
 
 ---
@@ -402,11 +604,20 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 ## RF-014 — Apertura de caja
 **Completado**
 - [x] `caja.AperturaCaja` + vista `abrir_caja`, valida que no exista una apertura activa previa.
+- [x] **CSRF corregido (05-08)**: `activar_caja`/`desactivar_caja` mutaban en GET sin exigir POST — ver
+  detalle en la sección de hallazgos de seguridad al inicio de este documento.
+- [x] **Bug real corregido (06-08, encontrado en la segunda auditoría)**: `desactivar_caja` nunca detectaba
+  una apertura activa por un `hasattr()` sobre un atributo que no existe en ese contexto — se podía
+  desactivar una caja con una apertura abierta. Ver detalle en la sección de segunda auditoría al inicio de
+  este documento.
 
 **Pendiente**
 - [ ] Campo `turno` no existe ni en el modelo ni en el DDL (sí es parte del texto del RF).
 - [ ] `Repository`/`Service` vacíos; validación con `if/else` en vez de `ValidationError`.
 - [ ] Permisos verificados con función propia `es_administrador()` en vez de `PermissionRequiredMixin` (duplica lógica ya centralizada en `security`).
+- [ ] 🟡 (hallazgo dev/UX, 05-08) `crear_caja()` tiene una validación redundante: llama a `es_administrador()`
+  Y además ya está protegida por `@permiso_requerido` — no es un bug (ambas coinciden), pero es lógica
+  duplicada que conviene limpiar cuando se toque este archivo de nuevo.
 
 ---
 
@@ -436,13 +647,28 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   de compra (`DEVOLUCION_COMPRA`) — la recomendación de mayor beneficio de la auditoría, aplicada.
 - [x] Comando `seed_tipos_movimiento` para sembrar el catálogo de 8 tipos de movimiento que necesita el
   Service (idempotente, no toca datos existentes).
+- [x] **Permisos corregidos (05-08)**: `lista_inventario`/`detalle_inventario`/`editar_inventario` no tenían
+  ningún control de sesión/permisos — ver detalle en la sección de hallazgos de seguridad al inicio de este
+  documento. Requiere volver a correr `seed_permisos_modulos` para garantizar el permiso `MODIFICAR`.
 
 **Pendiente**
-- [ ] **Ejecutar `python manage.py seed_tipos_movimiento` en tu base de datos real** antes de probar ventas o
-  compras — si el catálogo no tiene esas filas, `crear_venta`/`crear_compra` muestran un mensaje de error
-  claro (no un `FieldError` críptico) pero no van a completar la operación.
-- [ ] RF-017/RF-018 (mermas, ajustes) todavía no existen como modelo — cuando se implementen, deben conectarse
-  al mismo Service (tipos `AJUSTE_POSITIVO`/`AJUSTE_NEGATIVO`, ya contemplados).
+- [ ] **Ejecutar `python manage.py seed_tipos_movimiento` y `python manage.py seed_permisos_modulos` en tu
+  base de datos real** antes de probar ventas, compras o editar inventario — si el catálogo no tiene esas
+  filas, `crear_venta`/`crear_compra` muestran un mensaje de error claro (no un `FieldError` críptico) pero
+  no van a completar la operación, y `editar_inventario` bloquearía a todos si falta el permiso `MODIFICAR`.
+- [ ] RF-017/RF-018 (mermas, ajustes) ya existen como modelo y están conectados al mismo Service — este ítem
+  quedó resuelto por las secciones RF-017/RF-018 más abajo.
+- [x] 🔴 (DB, 05-08) **Corregido 06-08**: `apps/inventario/models.py` (`Inventario`, `MovimientoInventario`,
+  `TipoMovimientoInventario`) no declaraba `managed=False` y no tenía carpeta `migrations/` — riesgo real de
+  que `makemigrations`/`migrate` intentara crear estas tablas en un entorno nuevo (Database First). Se
+  agregó `managed = False` a las 3 clases `Meta`. No se generó ninguna migración (sería contradictorio con
+  `managed=False`); las tablas siguen viviendo únicamente en el DDL real de MySQL, igual que el resto del
+  proyecto.
+- [ ] 🟡 (DB, 05-08) Los FKs de `Inventario`/`MovimientoInventario` usan `on_delete=DO_NOTHING` — debería ser
+  `PROTECT` (evitar que la BD quede con referencias huérfanas si se borra un producto/sucursal con
+  movimientos asociados).
+- [ ] 🟡 (DB, 05-08) Falta un `UniqueConstraint(id_producto, id_sucursal)` en `Inventario` — hoy nada en el
+  modelo impide crear dos filas de inventario para el mismo producto+sucursal (duplicado silencioso).
 
 ---
 
@@ -637,6 +863,12 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 - [x] `Cliente(BaseModel)`, `ClienteRepository`, `ClienteService` con `ValidationError`.
 - [x] `validators.py` por tipo de identificación (cédula física, jurídica, DIMEX, pasaporte).
 - [x] Permisos y auditoría completos — la app mejor implementada del proyecto.
+- [x] **Seguridad corregida (05-08)**: `buscar_cliente_pos` (endpoint duplicado sin usar por el POS real) no
+  validaba sesión — ver detalle en la sección de hallazgos de seguridad al inicio de este documento.
+- [x] **Búsqueda de cliente en el POS rediseñada (05-08)** — aunque la vista real que usa el POS vive en
+  `apps/ventas/views.py::buscar_clientes_pos` (no en esta app), documentado aquí porque es la funcionalidad
+  de "encontrar un cliente" que pedía este RF: ahora prioriza cédula (única) con autoselección de un clic, ver
+  detalle en RF-012.
 
 **Pendiente**
 - [ ] Migración `0001_initial` desincronizada del modelo actual (faltan `tipo_cliente`/`tipo_identificacion`). Regenerar con `makemigrations`.
@@ -662,6 +894,18 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 - [ ] `Repository`/`Service` propios de `compras` vacíos; sin `PermissionRequiredMixin`/`AuditMixin` en las
   vistas (RF-004).
 - [ ] `HistorialPrecio` (documentada en Entregable #4) no implementada — decidir si se implementa o se retira del diseño.
+- [x] 🔴 (hallazgo agente dev/UX, 05-08) **Corregido 06-08**: el formset de líneas de compra usaba `extra=1`
+  sin JavaScript para agregar filas — en la práctica solo se podía registrar un producto por compra. Se
+  agregó un botón "+ Agregar línea" en `crear_compra.html` con JS que clona la fila oculta
+  `detalle_formset.empty_form` (mecanismo estándar de Django para formsets dinámicos) y reindexa los campos
+  (`name`/`id`/`for`) de todas las filas visibles en cada agregar/quitar, actualizando `TOTAL_FORMS` del
+  management form para que `crear_compra()` (sin cambios) procese N líneas exactamente igual que antes
+  procesaba 1. No se migró a JSON/AJAX como Ventas: a diferencia del POS, este formulario no tiene
+  recálculo de precios en tiempo real, bloqueo de inventario a medio armar, ni pausar/reanudar — es un
+  formulario de una sola pasada, el caso donde un formset de Django bien implementado es apropiado y seguro.
+- [ ] 🟡 (DB, 05-08) `DetalleCompra.compra` usa `on_delete=CASCADE` — debería ser `PROTECT` (una compra con
+  detalle no debería poder arrastrar el borrado del encabezado); mismo caso que `DetalleVenta`/`DetallePago`
+  en RF-012.
 
 ---
 
@@ -710,11 +954,54 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 
 ## Deuda técnica transversal (no es un RF, pero bloquea "cerrar" varios)
 
-- [ ] Migrar `Producto`, `Categoria`, `Proveedor`, `MetodoPago` a `BaseModel`.
+- [ ] Migrar `Producto`, `Categoria`, `Proveedor` a `BaseModel`. (Corrección 06-08: `MetodoPago` ya no
+  pertenece a esta lista — ya hereda `BaseModel`, confirmado en `apps/configuracion/models.py` y documentado
+  en RF-013 más arriba; se había quedado repetido aquí por error.)
 - [ ] Reemplazar `ValueError` por `ValidationError` en los Service existentes (security, ayuda).
-- [ ] Retirar `print()` de depuración en `security/views.py`.
+- [x] ~~Retirar `print()` de depuración en `security/views.py`~~ — corrección 06-08: se revisó el archivo
+  completo y no queda ningún `print()` de depuración. Parece que ya se limpió en algún punto sin actualizar
+  este ítem; se marca como resuelto.
 - [ ] Decidir si `django-allauth` y `security/decorators.py::login_required` se usan o se retiran (hoy están sin uso).
 - [ ] `proveedores` e `inventario` no declaran `managed=False` y no tienen `migrations/` — documentar o generar migraciones antes de un entorno nuevo.
 - [ ] Actualizar Entregable #4 (estructura de BD y diccionario de datos) con el esquema real de 26 tablas.
 - [x] `Venta.fecha_creacion`/`fecha_actualizacion` sin asignar en `crear_venta()` (mismo patrón de riesgo que
   el ya conocido en `RolPermiso.fecha_creacion`) — corregido el 04-08 al mismo tiempo que RF-012.
+
+### Hallazgos del agente de arquitectura de BD (05-08, alcance: los 12 RF de César)
+
+- [ ] `on_delete=CASCADE` en `DetalleVenta.venta`/`DetallePago.venta` (`apps/ventas/models.py`) y
+  `DetalleCompra.compra` (`apps/compras/models.py`) — debería ser `PROTECT`: borrar un encabezado de
+  venta/compra no debería poder arrastrar silenciosamente sus líneas de detalle en cascada.
+- [ ] `apps/clientes/migrations/0001_initial.py` desincronizada del modelo actual (mismo hallazgo que ya tenía
+  RF-029 más arriba, confirmado de nuevo por este agente de forma independiente).
+- [ ] `Caja.nombre` sin `unique=True` — nada impide dos cajas con el mismo nombre.
+- [ ] `CierreCaja.apertura` es `OneToOneField` en el modelo pero no hay evidencia de una restricción `UNIQUE`
+  real respaldándolo en la BD — confirmar en el DDL real.
+- [ ] `Categoria`, `Producto`, `Cliente` no declaran `managed=False` explícitamente pese a ser tablas
+  Database First — no rompe nada hoy (Django infiere el comportamiento correcto igual), pero es inconsistente
+  con el resto del proyecto y puede confundir a quien no conozca la convención.
+- [ ] Ver también los hallazgos específicos de `Inventario` en la sección RF-016 y de `DetalleCompra` en RF-030.
+
+### Hallazgos del agente de UX/UI (05-08, alcance: los 12 RF de César)
+
+- [ ] **DataTables roto en 5 módulos**: `categorias/lista.html`, `productos/lista.html`,
+  `compras/lista_compras.html`, `proveedores/lista.html`, `ventas/lista_ventas.html` usan
+  `{% block extra_js %}`/`{% block extra_css %}`, pero `base.html` define `{% block js %}`/`{% block css %}`
+  — el JS/CSS de esas 5 tablas nunca se carga. Solo `caja/lista_cajas.html` y
+  `caja/administrar_caja.html` usan los nombres de bloque correctos y funcionan. Fix mecánico (renombrar los
+  bloques) pero afecta 5 pantallas de uso diario.
+- [ ] Font Awesome (`fas fa-*`) se usa en ~6 apps pero `base.html` solo carga Bootstrap Icons — esos íconos no
+  se muestran.
+- [ ] Botones de acciones diarias en Mermas/Ajustes/Gastos Operativos y en activar/desactivar caja son
+  pequeños (`btn-sm`) sin `btn-lg`/`py-3` — poco cómodos para uso táctil frecuente, a diferencia del POS que sí
+  se diseñó grande a propósito.
+- [ ] Tres librerías de tabla conviven sin criterio único: Tabulator.js (confiable, Clientes/Configuración),
+  DataTables (rota en 5/6 intentos, ver arriba), HTML plano (Inventario/Mermas/Ajustes/Gastos). Considerar
+  estandarizar en Tabulator.js, que es el que sí funciona de forma consistente.
+- [ ] Tres patrones de confirmación distintos coexisten: mensajes Django estilizados, `confirm()`/`alert()`
+  nativos del navegador (Tabulator `postAction()`, Gastos Operativos), y páginas de confirmación dedicadas
+  (Categorías). El fix de caja (05-08) agregó un cuarto caso más de `confirm()` nativo por consistencia con
+  el patrón ya usado en Tabulator — no se introdujo una quinta variante.
+- [ ] Bootstrap 4/AdminLTE3 (`mr-`/`ml-`/`form-group`/`card-outline`) mezclado con Bootstrap 5
+  (`me-`/`gap-`/`d-flex`) dentro de las mismas apps: Categorías, Productos, Proveedores.
+- [ ] Breadcrumbs presentes en solo 4 de 11 módulos revisados.

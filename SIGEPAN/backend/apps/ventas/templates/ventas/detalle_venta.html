@@ -9,16 +9,35 @@
             <h2 class="fw-bold mb-1">
                 Venta / Cotización: <span class="text-primary">{{ venta.numero_venta }}</span>
             </h2>
-            <p class="text-muted mb-0">Consulta de venta en estado de pausa o pendiente.</p>
+            {% if es_pendiente %}
+                <p class="text-muted mb-0">Consulta de venta en estado de pausa o pendiente.</p>
+            {% else %}
+                <p class="text-muted mb-0">Venta finalizada.</p>
+            {% endif %}
         </div>
         <div class="d-flex flex-wrap gap-2">
-            <!-- Botón clave para reanudar la venta en el POS -->
+            {% if es_pendiente %}
+            <!-- Botón clave para reanudar la venta en el POS: solo tiene
+                 sentido si la venta sigue pendiente/pausada. -->
             <a href="{% url 'ventas:reanudar_venta' venta.pk %}" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1 px-3">
                 <i class="bi bi-play-circle"></i> Reanudar en POS y Continuar
             </a>
-            <a href="{% url 'ventas:lista_ventas_pausadas' %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3">
-                <i class="bi bi-arrow-left"></i> Volver
-            </a>
+            {% endif %}
+            {% if es_pendiente %}
+                <a href="{% url 'ventas:lista_ventas_pausadas' %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            {% else %}
+                {% comment %}
+                    Venta finalizada: "Volver" no tenía sentido (llevaba siempre
+                    a la lista de pendientes/pausadas, incluso para ventas ya
+                    cobradas) — para una venta terminada el botón cierra el
+                    flujo y regresa al listado de ventas del día.
+                {% endcomment %}
+                <a href="{% url 'ventas:lista_ventas' %}" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1 px-3">
+                    <i class="bi bi-check-circle"></i> Terminar
+                </a>
+            {% endif %}
         </div>
     </div>
 
@@ -130,12 +149,21 @@
 
     <!-- Opciones Secundarias -->
     <div class="d-flex flex-wrap gap-2 mb-5">
-        <a href="#" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 px-3">
+        <a href="{% url 'ventas:comprobante_venta' venta.pk %}" target="_blank" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 px-3">
             <i class="bi bi-printer"></i> Imprimir comprobante
         </a>
-        <a href="#" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 px-3">
-            <i class="bi bi-envelope"></i> Enviar por correo
-        </a>
+        {% if venta.cliente.correo %}
+            <form method="post" action="{% url 'ventas:enviar_comprobante_email' venta.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 px-3">
+                    <i class="bi bi-envelope"></i> Enviar por correo
+                </button>
+            </form>
+        {% else %}
+            <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 px-3" disabled title="Este cliente no tiene correo registrado">
+                <i class="bi bi-envelope"></i> Enviar por correo
+            </button>
+        {% endif %}
     </div>
 
 </div>

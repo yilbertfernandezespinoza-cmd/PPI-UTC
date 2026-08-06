@@ -328,6 +328,15 @@ def editar_caja(request, id_caja):
 @transaction.atomic
 def activar_caja(request, id_caja):
 
+    # Hallazgo de auditoría de seguridad (04-08-2026): esta vista mutaba
+    # estado en una petición GET (se disparaba desde un <a href> en
+    # lista_cajas.html), sin exigir POST ni CSRF — activar/desactivar una
+    # caja bastaba con precargar el link. Se exige POST explícitamente;
+    # el template ahora envía un <form method="post"> con {% csrf_token %}.
+    if request.method != "POST":
+        return redirect(
+            "caja:lista_cajas"
+        )
 
     caja = get_object_or_404(
 
@@ -378,6 +387,12 @@ def activar_caja(request, id_caja):
 @transaction.atomic
 def desactivar_caja(request, id_caja):
 
+    # Mismo hallazgo/fix que activar_caja: exigir POST + CSRF real en
+    # vez de mutar en GET.
+    if request.method != "POST":
+        return redirect(
+            "caja:lista_cajas"
+        )
 
     caja = get_object_or_404(
 
@@ -392,7 +407,18 @@ def desactivar_caja(request, id_caja):
     # VALIDAR APERTURA ACTIVA
     # =========================================
 
-    if hasattr(caja, "apertura_activa") and caja.apertura_activa:
+    # Bug real encontrado en auditoría (06-08): `hasattr(caja, "apertura_activa")`
+    # nunca es verdadero aquí. Ese atributo solo se asigna dinámicamente en
+    # lista_cajas() (fuera de este objeto), pero `caja` se acaba de obtener
+    # con un get_object_or_404 nuevo que jamás lo tiene — el hasattr() daba
+    # siempre False y esta validación nunca se ejecutaba: se podía
+    # desactivar una caja con una apertura activa pese al mensaje de error
+    # que la función muestra. Se reemplaza por una consulta real.
+    tiene_apertura_activa = AperturaCaja.objects.filter(
+        caja=caja, estado=True
+    ).exists()
+
+    if tiene_apertura_activa:
 
         messages.error(
 

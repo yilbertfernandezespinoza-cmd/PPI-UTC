@@ -1,6 +1,30 @@
+from datetime import datetime, timedelta
+
 from django.db.models import F, Sum
+from django.utils import timezone
+
 from apps.ventas.models import Venta, DetalleVenta
 from apps.inventario.models import Inventario
+
+
+def _limite_inferior(fecha):
+    """
+    Medianoche local (aware) del día `fecha`.
+
+    Se usa en vez de filtrar con `fecha__date=`/`fecha__date__gte=` sobre un
+    DateTimeField: con USE_TZ=True, ese lookup le pide a MySQL convertir el
+    valor guardado (UTC) a la zona horaria activa vía CONVERT_TZ(), función
+    que devuelve NULL en silencio (sin error) si las tablas de zonas
+    horarias de MySQL no están cargadas (`mysql_tzinfo_to_sql`) — el filtro
+    entonces no encuentra nada, sin avisar por qué. Calculando el límite del
+    día en Python y comparando con >=/< se evita depender de CONVERT_TZ.
+    """
+    return timezone.make_aware(datetime.combine(fecha, datetime.min.time()))
+
+
+def _limite_superior(fecha):
+    """Medianoche local (aware) del día siguiente a `fecha` (límite exclusivo)."""
+    return _limite_inferior(fecha) + timedelta(days=1)
 
 
 class ReporteRepository:
@@ -12,10 +36,10 @@ class ReporteRepository:
         )
 
         if fecha_inicio:
-            queryset = queryset.filter(fecha__date__gte=fecha_inicio)
+            queryset = queryset.filter(fecha__gte=_limite_inferior(fecha_inicio))
 
         if fecha_fin:
-            queryset = queryset.filter(fecha__date__lte=fecha_fin)
+            queryset = queryset.filter(fecha__lt=_limite_superior(fecha_fin))
 
         if sucursal_id:
             queryset = queryset.filter(caja__sucursal_id=sucursal_id)
@@ -44,10 +68,10 @@ class ReporteRepository:
         queryset = Venta.objects.filter(estado=True)
 
         if fecha_inicio:
-            queryset = queryset.filter(fecha__date__gte=fecha_inicio)
+            queryset = queryset.filter(fecha__gte=_limite_inferior(fecha_inicio))
 
         if fecha_fin:
-            queryset = queryset.filter(fecha__date__lte=fecha_fin)
+            queryset = queryset.filter(fecha__lt=_limite_superior(fecha_fin))
 
         return list(
             queryset.values("metodo_pago__nombre")
@@ -60,10 +84,10 @@ class ReporteRepository:
         queryset = DetalleVenta.objects.filter(venta__estado=True)
 
         if fecha_inicio:
-            queryset = queryset.filter(venta__fecha__date__gte=fecha_inicio)
+            queryset = queryset.filter(venta__fecha__gte=_limite_inferior(fecha_inicio))
 
         if fecha_fin:
-            queryset = queryset.filter(venta__fecha__date__lte=fecha_fin)
+            queryset = queryset.filter(venta__fecha__lt=_limite_superior(fecha_fin))
 
         total = queryset.aggregate(
             costo=Sum(F("cantidad") * F("producto__precio_compra"))

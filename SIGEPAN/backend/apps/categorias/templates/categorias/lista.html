@@ -42,7 +42,11 @@
                                 {{ categoria.nombre }}
                             </td>
                             <td>
-                                {{ categoria.descripcion|default:"<span class='text-muted fst-italic'>Sin descripción</span>"|safe }}
+                                {% if categoria.descripcion %}
+                                    {{ categoria.descripcion }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">Sin descripción</span>
+                                {% endif %}
                             </td>
                             <td class="text-center">
                                 {% if categoria.estado %}

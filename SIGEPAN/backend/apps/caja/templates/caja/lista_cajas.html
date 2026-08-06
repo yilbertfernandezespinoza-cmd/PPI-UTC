@@ -155,22 +155,34 @@
 
                                     <!-- DESACTIVAR -->
                                     {% if caja.estado %}
-                                        <a href="{% url 'caja:desactivar_caja' caja.id_caja %}"
-                                           class="btn btn-outline-warning btn-sm"
-                                           data-bs-toggle="tooltip"
-                                           title="Desactivar caja">
-                                            <i class="bi bi-x-circle"></i>
-                                        </a>
+                                        <form method="post"
+                                              action="{% url 'caja:desactivar_caja' caja.id_caja %}"
+                                              class="d-inline"
+                                              onsubmit="return confirm('¿Desactivar esta caja?');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-outline-warning btn-sm"
+                                                    data-bs-toggle="tooltip"
+                                                    title="Desactivar caja">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
                                     {% endif %}
 
                                     <!-- ACTIVAR -->
                                     {% if not caja.estado %}
-                                        <a href="{% url 'caja:activar_caja' caja.id_caja %}"
-                                           class="btn btn-outline-success btn-sm"
-                                           data-bs-toggle="tooltip"
-                                           title="Activar caja">
-                                            <i class="bi bi-check-circle"></i>
-                                        </a>
+                                        <form method="post"
+                                              action="{% url 'caja:activar_caja' caja.id_caja %}"
+                                              class="d-inline"
+                                              onsubmit="return confirm('¿Activar esta caja?');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-outline-success btn-sm"
+                                                    data-bs-toggle="tooltip"
+                                                    title="Activar caja">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
                                     {% endif %}
                                 </div>
                             </td>

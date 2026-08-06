@@ -35,7 +35,11 @@
                     <i class="fas fa-plus"></i> Nueva venta
                 </a>
                 {% if apertura %}
-                    <a href="{% url 'caja:administrar_caja' apertura.id_apertura %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3 shadow-sm">
+                    {% comment %}
+                        Bug corregido (05-08): usaba apertura.id_apertura (PK de AperturaCaja) en vez del
+                        id_caja real, así que el link caía sobre un id_caja que casi nunca existía.
+                    {% endcomment %}
+                    <a href="{% url 'caja:administrar_caja' apertura.caja_id %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3 shadow-sm">
                         <i class="fas fa-arrow-left"></i> Volver a Caja
                     </a>
                 {% else %}

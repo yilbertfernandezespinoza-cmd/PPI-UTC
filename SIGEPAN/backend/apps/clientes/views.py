@@ -206,6 +206,18 @@ def buscar_cliente_pos(request):
     Búsqueda rápida de clientes para el POS.
     Permite buscar por nombre, apellidos o identificación.
     """
+    # Hallazgo de auditoría de seguridad (04-08-2026): este endpoint no
+    # validaba sesión y exponía nombre + identificación (cédula/DIMEX) de
+    # cualquier cliente sin autenticarse. No se usa @login_required (que
+    # redirige a /security/login/, rompiendo el fetch con HTML en vez de
+    # JSON) — se valida la sesión a mano y se responde 401 en JSON, mismo
+    # patrón ya usado en ventas.buscar_clientes_pos / productos_disponibles_ajuste.
+    if not request.session.get("usuario_id"):
+        return JsonResponse(
+            {"error": "No autenticado."},
+            status=401
+        )
+
     texto = request.GET.get(
         "q",
         ""

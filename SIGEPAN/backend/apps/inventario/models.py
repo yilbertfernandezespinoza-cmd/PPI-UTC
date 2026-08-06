@@ -15,14 +15,14 @@ class Inventario(BaseModel):
 
     id_producto = models.ForeignKey(
         "productos.Producto",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         db_column="id_producto",
         verbose_name="Producto",
     )
 
     id_sucursal = models.ForeignKey(
         "configuracion.Sucursal",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         db_column="id_sucursal",
         verbose_name="Sucursal",
     )
@@ -67,6 +67,12 @@ class Inventario(BaseModel):
         verbose_name_plural = "Inventarios"
         ordering = [
             "id_producto",
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["id_producto", "id_sucursal"],
+                name="uq_inventario_producto_sucursal",
+            ),
         ]
 
     def __str__(self):
@@ -124,21 +130,21 @@ class MovimientoInventario(BaseModel):
 
     id_inventario = models.ForeignKey(
         Inventario,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         db_column="id_inventario",
         verbose_name="Inventario",
     )
 
     id_tipo_movimiento_inventario = models.ForeignKey(
         TipoMovimientoInventario,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         db_column="id_tipo_movimiento_inventario",
         verbose_name="Tipo de movimiento",
     )
 
     id_usuario = models.ForeignKey(
         "security.Usuario",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         db_column="id_usuario",
         verbose_name="Usuario",
     )

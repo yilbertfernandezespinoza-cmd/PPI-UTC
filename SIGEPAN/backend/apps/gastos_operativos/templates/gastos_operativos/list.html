@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load ayuda_tags %}
+{% load static %}
 
 {% block content %}
 
@@ -72,6 +73,7 @@
                         <th>Categoría</th>
                         <th>Descripción</th>
                         <th>Monto</th>
+                        <th>Comprobante</th>
                         <th>Caja</th>
                         <th>Usuario</th>
                         <th>Estado</th>
@@ -86,6 +88,15 @@
                         <td>{{ gasto.categoria }}</td>
                         <td>{{ gasto.descripcion }}</td>
                         <td>₡{{ gasto.monto }}</td>
+                        <td>
+                            {% if gasto.comprobante %}
+                            <a href="{% get_media_prefix %}{{ gasto.comprobante }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-paperclip"></i> Ver
+                            </a>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if gasto.caja %}
                             <span class="badge bg-info bg-opacity-10 text-info">{{ gasto.caja.nombre }}</span>
@@ -115,7 +126,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">No hay gastos operativos registrados.</td>
+                        <td colspan="10" class="text-center text-muted py-4">No hay gastos operativos registrados.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

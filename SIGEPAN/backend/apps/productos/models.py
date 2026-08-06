@@ -1,7 +1,8 @@
 from django.db import models
 from apps.categorias.models import Categoria
+from apps.core.base_models import BaseModel
 
-class Producto(models.Model):
+class Producto(BaseModel):
 
     # Unidades de medida disponibles para un producto de panadería.
     # RF-011: el <select> de unidad_medida estaba vacío porque el campo era
@@ -54,11 +55,28 @@ class Producto(models.Model):
     )
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     imagen = models.CharField(max_length=255, blank=True, null=True)
-    estado = models.BooleanField(default=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    # estado, fecha_creacion y fecha_actualizacion ahora vienen de BaseModel
+    # (apps.core.base_models): la tabla `producto` ya tenía exactamente estas
+    # tres columnas con estos mismos tipos/defaults (BooleanField default=True,
+    # DateTimeField auto_now_add=True/auto_now=True, mismos nombres de columna
+    # por defecto), así que heredar no cambia el esquema real, solo evita
+    # duplicar la declaración — mismo patrón que GastoOperativo
+    # (apps/gastos_operativos/models.py).
 
     class Meta:
+        # managed=False (06-08): la tabla `producto` ya existe en la BD
+        # real (Database First), igual que el resto del proyecto. Antes
+        # esta app usaba migraciones reales de Django (0001_initial.py +
+        # 0002_alter_producto_unidad_medida.py) como excepción al resto
+        # del sistema — inconsistencia detectada el 06-08. Con
+        # managed=False, Django deja de intentar reconciliar el modelo
+        # contra ese historial de migraciones, así que ya no hace falta
+        # correr `migrate productos` para nada (ni siquiera para la
+        # migración 0002, que solo cambiaba metadata de `choices`, sin
+        # tocar la columna real). Las migraciones existentes se dejan
+        # tal cual (borrarlas es riesgoso) pero quedan inertes — mismo
+        # tratamiento ya aplicado a `ayuda.Ayuda` y `cliente.Cliente`.
+        managed = False
         db_table = "producto"
         verbose_name = "Producto"
         verbose_name_plural = "Productos"

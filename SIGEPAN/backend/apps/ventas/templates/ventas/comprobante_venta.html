@@ -58,7 +58,9 @@
 
         <!-- Barra de acciones: no aparece en la impresión -->
         <div class="comprobante-hoja d-flex justify-content-between align-items-center mb-3 no-imprimir">
-            <a href="{% url 'ventas:detalle_venta' venta.pk %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1">
+            <a href="{% url 'ventas:detalle_venta' venta.pk %}"
+               onclick="cerrarComprobante(this.href); return false;"
+               class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
             <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" onclick="window.print()">
@@ -208,6 +210,21 @@
 
         </div>
     </div>
+
+    <script>
+        // "Volver" abre en una pestaña nueva (ver detalle_venta.html), así
+        // que en vez de navegar aquí mismo (lo que dejaba pestañas
+        // acumuladas cada vez que se imprimía otro comprobante), primero
+        // se intenta cerrar esta pestaña. Si el navegador no lo permite
+        // (por ejemplo, si esta página se abrió directamente y no tiene
+        // pestaña de origen), se navega de vuelta como respaldo.
+        function cerrarComprobante(urlVolver) {
+            window.close();
+            setTimeout(function () {
+                window.location.href = urlVolver;
+            }, 300);
+        }
+    </script>
 </body>
 
 </html>

@@ -62,6 +62,17 @@ class GastoOperativoForm(forms.Form):
         label="Observaciones",
     )
 
+    # Agregado 06-08 (RF-026): comprobante como archivo real (foto/PDF),
+    # opcional. Mismo patrón que `AyudaForm.imagen`: ImageField/FileField
+    # en el form aunque la columna real (`comprobante`) sea un varchar con
+    # la ruta — la conversión la hace `_resolver_ruta_comprobante` en
+    # views.py, no el form.
+    comprobante = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control"}),
+        label="Comprobante (foto o PDF)",
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

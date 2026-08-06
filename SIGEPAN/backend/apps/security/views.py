@@ -845,7 +845,7 @@ def cambiar_usuario_view(request):
             request=request,
             usuario=usuario,
             modulo="Seguridad",
-            tipo_accion="LOGOUT",
+            tipo_accion="CAMBIAR_USUARIO",
             descripcion=f"Cambio de usuario: {usuario.username} cerró sesión para permitir el ingreso de otro usuario.",
         )
 

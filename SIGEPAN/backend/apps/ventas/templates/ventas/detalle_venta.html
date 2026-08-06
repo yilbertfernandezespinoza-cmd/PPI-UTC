@@ -149,7 +149,9 @@
 
     <!-- Opciones Secundarias -->
     <div class="d-flex flex-wrap gap-2 mb-5">
-        <a href="{% url 'ventas:comprobante_venta' venta.pk %}" target="_blank" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 px-3">
+        <a href="{% url 'ventas:comprobante_venta' venta.pk %}" target="_blank"
+           onclick="window.open(this.href, '_blank'); return false;"
+           class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 px-3">
             <i class="bi bi-printer"></i> Imprimir comprobante
         </a>
         {% if venta.cliente.correo %}

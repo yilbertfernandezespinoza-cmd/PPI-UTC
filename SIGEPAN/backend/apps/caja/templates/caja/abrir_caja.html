@@ -62,6 +62,46 @@
                     </div>
                 </div>
 
+                <div class="row">
+                    <!-- TURNO -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-dark">Turno <span class="text-danger">*</span></label>
+                        {{ form.turno }}
+                        {% if form.turno.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.turno.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- USUARIO -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-muted">Usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control bg-light" value="{{ request.usuario }}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- SUCURSAL -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-muted">Sucursal</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-shop"></i></span>
+                            <input type="text" class="form-control bg-light" value="{{ request.usuario.id_sucursal }}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- FECHA -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-muted">Fecha</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                            <input type="text" class="form-control bg-light" value="{% now 'd/m/Y H:i' %}" readonly>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- OBSERVACIONES -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-dark">Observaciones</label>
@@ -125,6 +165,11 @@
         if (obsInput && !obsInput.classList.contains('form-control')) {
             obsInput.classList.add('form-control');
             obsInput.rows = 3;
+        }
+
+        const turnoInput = document.querySelector("#id_turno");
+        if (turnoInput && !turnoInput.classList.contains('form-select')) {
+            turnoInput.classList.add('form-select');
         }
 
         // Inicializar Tooltips de Bootstrap

@@ -89,6 +89,19 @@ class Cliente(BaseModel):
     )
 
     class Meta:
+        # managed=False (06-08): la tabla `cliente` ya existe en la BD real
+        # (Database First), igual que el resto de tablas del proyecto. La
+        # migración 0001_initial.py quedó desincronizada del modelo actual
+        # (le faltan tipo_cliente/tipo_identificacion y difiere en varios
+        # null/blank) porque el modelo se amplió después de generarla, pero
+        # nunca se corrió una migración nueva contra la BD real. En vez de
+        # adivinar y regenerar esa migración (arriesgando un ALTER TABLE
+        # sobre columnas que ya existen), se marca managed=False: Django dej
+        # de intentar reconciliar el modelo contra ese historial desactualiz
+        # ado, igual que ya se hizo con `ayuda.Ayuda` en la Auditoría 3.0.
+        # La carpeta migrations/ se deja tal cual (borrar migraciones ya
+        # aplicadas es riesgoso), pero queda inerte.
+        managed = False
         db_table = "cliente"
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"

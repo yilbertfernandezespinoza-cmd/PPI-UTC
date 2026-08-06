@@ -8,7 +8,7 @@
         <h1>Gestión de Categorías</h1>
       </div>
       <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
+        <ol class="breadcrumb float-end">
           <li class="breadcrumb-item"><a href="{% url 'categorias:lista_categorias' %}">Categorías</a></li>
           <li class="breadcrumb-item active">Cambiar Estado</li>
         </ol>
@@ -27,9 +27,9 @@
           <div class="card-header">
             <h3 class="card-title">
               {% if categoria.estado %}
-                <i class="fas fa-exclamation-triangle mr-1 text-danger"></i> Desactivar Categoría
+                <i class="fas fa-exclamation-triangle me-1 text-danger"></i> Desactivar Categoría
               {% else %}
-                <i class="fas fa-question-circle mr-1 text-success"></i> Activar Categoría
+                <i class="fas fa-question-circle me-1 text-success"></i> Activar Categoría
               {% endif %}
             </h3>
           </div>
@@ -66,16 +66,16 @@
               <div class="btn-group">
                 {% if categoria.estado %}
                   <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-ban mr-1"></i> Sí, Desactivar
+                    <i class="fas fa-ban me-1"></i> Sí, Desactivar
                   </button>
                 {% else %}
                   <button type="submit" class="btn btn-success">
-                    <i class="fas fa-check mr-1"></i> Sí, Activar
+                    <i class="fas fa-check me-1"></i> Sí, Activar
                   </button>
                 {% endif %}
-                
+
                 <a href="{% url 'categorias:lista_categorias' %}" class="btn btn-secondary">
-                  <i class="fas fa-arrow-left mr-1"></i> Cancelar
+                  <i class="fas fa-arrow-left me-1"></i> Cancelar
                 </a>
               </div>
             </form>

@@ -93,7 +93,7 @@ class DetalleCompra(models.Model):
 
     compra = models.ForeignKey(
         Compra,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         db_column="id_compra"
     )
 

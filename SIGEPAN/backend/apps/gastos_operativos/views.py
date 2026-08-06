@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import UploadedFile
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import FormView, ListView, View
@@ -13,6 +15,25 @@ from apps.security.permissions import PermissionRequiredMixin
 from .forms import CATEGORIAS_SUGERIDAS, GastoOperativoForm
 from .models import GastoOperativo
 from .services import GastoOperativoService
+
+
+def _resolver_ruta_comprobante(form):
+    """
+    Resuelve qué guardar en la columna `comprobante` (varchar con la
+    ruta, no un FileField real) a partir de form.cleaned_data
+    ["comprobante"] — mismo patrón que `_resolver_ruta_imagen` en
+    `apps/ayuda/views.py`. Como este formulario es solo de creación (no
+    hay edición de un gasto ya registrado), no hace falta el caso
+    "conservar la ruta actual" que sí necesita Ayuda: si no se sube
+    archivo, simplemente no hay comprobante (None).
+    """
+
+    archivo = form.cleaned_data.get("comprobante")
+
+    if isinstance(archivo, UploadedFile):
+        return default_storage.save(f"gastos_operativos/{archivo.name}", archivo)
+
+    return None
 
 
 class GastoOperativoListView(
@@ -70,6 +91,15 @@ class GastoOperativoCreateView(
     template_name = "gastos_operativos/form.html"
     success_url = reverse_lazy("gastos_operativos:listar")
 
+    def get_form_kwargs(self):
+        # FormView por defecto solo pasa request.POST al form, no
+        # request.FILES — necesario para que el campo `comprobante`
+        # (FileField) reciba el archivo subido. El template ya tiene
+        # enctype="multipart/form-data" (ver form.html).
+        kwargs = super().get_form_kwargs()
+        kwargs["files"] = self.request.FILES
+        return kwargs
+
     def form_valid(self, form):
         try:
             gasto = GastoOperativoService.registrar(
@@ -79,6 +109,7 @@ class GastoOperativoCreateView(
                 monto=form.cleaned_data["monto"],
                 fecha_gasto=form.cleaned_data["fecha_gasto"],
                 observaciones=form.cleaned_data.get("observaciones"),
+                comprobante=_resolver_ruta_comprobante(form),
             )
         except ValidationError as error:
             messages.error(

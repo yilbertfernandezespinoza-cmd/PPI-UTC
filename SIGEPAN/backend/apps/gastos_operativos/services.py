@@ -38,7 +38,15 @@ class GastoOperativoService:
 
     @staticmethod
     @transaction.atomic
-    def registrar(usuario, descripcion, categoria, monto, fecha_gasto, observaciones=None):
+    def registrar(
+        usuario,
+        descripcion,
+        categoria,
+        monto,
+        fecha_gasto,
+        observaciones=None,
+        comprobante=None,
+    ):
         if monto is None or monto <= 0:
             raise ValidationError("El monto del gasto debe ser mayor a cero.")
 
@@ -64,6 +72,11 @@ class GastoOperativoService:
             monto=monto,
             fecha_gasto=fecha_gasto,
             observaciones=observaciones,
+            # `comprobante` ya viene resuelto como ruta (string) o None
+            # desde la vista (ver _resolver_ruta_comprobante) — el Service
+            # no maneja archivos directamente, igual que el resto del
+            # patrón de Ayuda/Productos.
+            comprobante=comprobante,
         )
 
         if apertura:

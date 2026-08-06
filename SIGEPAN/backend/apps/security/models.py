@@ -185,7 +185,8 @@ class RolPermiso(models.Model):
     )
 
     fecha_creacion = models.DateTimeField(
-        db_column="fecha_creacion"
+        db_column="fecha_creacion",
+        auto_now_add=True,
     )
 
     class Meta:
@@ -228,6 +229,12 @@ class LogAcciones(models.Model):
         ("ACCESO_DENEGADO","ACCESO DENEGADO"),
         ("RECUPERAR_PASSWORD","RECUPERAR CONTRASEÑA"),
         ("CAMBIAR_PASSWORD","CAMBIAR CONTRASEÑA"),
+        # Agregado 06-08 (RF-034): antes se reutilizaba "LOGOUT" para
+        # registrar un cambio de usuario, lo cual mezclaba en la bitácora
+        # un cierre de sesión real con un cambio de usuario. Requiere
+        # correr el ALTER TABLE de log_acciones (ver nota técnica) antes
+        # de usar este valor contra la BD real.
+        ("CAMBIAR_USUARIO","CAMBIAR USUARIO"),
     ]
 
     tipo_accion = models.CharField(

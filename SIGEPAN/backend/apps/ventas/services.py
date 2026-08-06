@@ -22,6 +22,7 @@ from django.utils import timezone
 from apps.inventario.repositories import InventarioRepository
 from apps.inventario.services import MovimientoInventarioService
 
+from .exports import generar_comprobante_pdf
 from .models import DetallePago, DetalleVenta
 from .repositories import VentaRepository
 from .utils import (
@@ -526,6 +527,20 @@ class ComprobanteEmailService:
         )
 
         correo.attach(logo)
+
+        # Agregado 06-08: además del HTML del cuerpo, se adjunta el
+        # comprobante como PDF real (ver apps/ventas/exports.py). Antes
+        # el correo solo llevaba el HTML como cuerpo — varios clientes de
+        # correo (Outlook confirmado) lo mostraban como texto plano sin
+        # formato y sin ningún archivo adjunto.
+        pdf_comprobante = generar_comprobante_pdf(
+            venta, detalles, pagos, datos_empresa
+        )
+        correo.attach(
+            f"comprobante_{venta.numero_venta}.pdf",
+            pdf_comprobante,
+            "application/pdf",
+        )
 
         correo.send()
 

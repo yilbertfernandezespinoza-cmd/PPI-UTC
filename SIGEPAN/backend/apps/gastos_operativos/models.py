@@ -80,6 +80,22 @@ class GastoOperativo(BaseModel):
         verbose_name="Observaciones",
     )
 
+    # Agregado 06-08 (RF-026): antes el "comprobante" del gasto era solo
+    # el texto libre de `observaciones`. Se decidió que necesitaba ser un
+    # archivo real (foto/PDF de la factura o recibo), así que se agrega
+    # esta columna nueva siguiendo el mismo patrón que `Ayuda.imagen`:
+    # varchar con la ruta al archivo en `media/`, no un FileField real,
+    # porque la columna en la tabla real es un varchar (ver
+    # `_resolver_ruta_comprobante` en views.py). Requiere correr el
+    # ALTER TABLE de la nota técnica antes de usarse contra la BD real.
+    comprobante = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_column="comprobante",
+        verbose_name="Comprobante",
+    )
+
     class Meta:
         managed = False
         db_table = "gasto_operativo"

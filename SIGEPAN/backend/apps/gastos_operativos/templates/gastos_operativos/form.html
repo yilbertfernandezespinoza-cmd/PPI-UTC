@@ -26,7 +26,7 @@
                 <div>Si tienes una caja abierta a tu nombre, este gasto se descontará automáticamente del saldo de esa caja.</div>
             </div>
 
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 <div class="mb-3">
@@ -56,6 +56,13 @@
                 <div class="mb-3">
                     <label class="form-label">{{ form.observaciones.label }}</label>
                     {{ form.observaciones }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.comprobante.label }}</label>
+                    {{ form.comprobante }}
+                    <div class="form-text">Foto o PDF de la factura/recibo (opcional).</div>
+                    {% if form.comprobante.errors %}<div class="text-danger small">{{ form.comprobante.errors }}</div>{% endif %}
                 </div>
 
                 <button type="submit" class="btn btn-secondary">

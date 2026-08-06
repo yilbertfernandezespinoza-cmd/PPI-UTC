@@ -74,6 +74,7 @@ class AperturaCajaForm(forms.ModelForm):
         fields = [
 
             "monto_inicial",
+            "turno",
             "observaciones"
 
         ]
@@ -86,6 +87,13 @@ class AperturaCajaForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "placeholder": "Ingrese monto inicial"
+                }
+            ),
+
+
+            "turno": forms.Select(
+                attrs={
+                    "class": "form-select"
                 }
             ),
 
@@ -128,6 +136,27 @@ class AperturaCajaForm(forms.ModelForm):
 
 
         return monto
+
+
+    # =========================================
+    # VALIDAR TURNO
+    # =========================================
+
+    def clean_turno(self):
+
+        turno = self.cleaned_data.get(
+            "turno"
+        )
+
+
+        if not turno:
+
+            raise forms.ValidationError(
+                "Debe seleccionar el turno."
+            )
+
+
+        return turno
 
 
 

@@ -62,6 +62,10 @@ class ReporteVentasView(SessionRequiredMixin, PermissionRequiredMixin, View):
                     return redirect(url_hoja)
                 except ValidationError as error:
                     messages.error(request, str(error))
+                    registrar_log(
+                        request, request.usuario, "Reportes", "ERROR",
+                        f"Falló la exportación del reporte de ventas a Google Sheets: {error}"
+                    )
                     return redirect("reportes:ventas")
 
             registrar_log(
@@ -128,6 +132,10 @@ class ReporteInventarioView(SessionRequiredMixin, PermissionRequiredMixin, View)
                     return redirect(url_hoja)
                 except ValidationError as error:
                     messages.error(request, str(error))
+                    registrar_log(
+                        request, request.usuario, "Reportes", "ERROR",
+                        f"Falló la exportación del reporte de inventario a Google Sheets: {error}"
+                    )
                     return redirect("reportes:inventario")
 
             registrar_log(
@@ -180,6 +188,10 @@ class ReporteTributarioView(SessionRequiredMixin, PermissionRequiredMixin, View)
                     return redirect(url_hoja)
                 except ValidationError as error:
                     messages.error(request, str(error))
+                    registrar_log(
+                        request, request.usuario, "Reportes", "ERROR",
+                        f"Falló la exportación del reporte tributario a Google Sheets: {error}"
+                    )
                     return redirect("reportes:tributario")
 
             registrar_log(
@@ -231,6 +243,10 @@ class ReporteUtilidadView(SessionRequiredMixin, PermissionRequiredMixin, View):
                     return redirect(url_hoja)
                 except ValidationError as error:
                     messages.error(request, str(error))
+                    registrar_log(
+                        request, request.usuario, "Reportes", "ERROR",
+                        f"Falló la exportación del reporte de utilidad a Google Sheets: {error}"
+                    )
                     return redirect("reportes:utilidad")
 
             registrar_log(

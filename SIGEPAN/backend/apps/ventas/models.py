@@ -117,7 +117,7 @@ class DetalleVenta(models.Model):
 
     venta = models.ForeignKey(
         Venta,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         db_column="id_venta"
     )
 
@@ -161,7 +161,7 @@ class DetallePago(models.Model):
 
     venta = models.ForeignKey(
         Venta,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         db_column="id_venta"
     )
 

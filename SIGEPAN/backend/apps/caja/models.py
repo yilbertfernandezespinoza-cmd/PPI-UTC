@@ -185,6 +185,26 @@ class AperturaCaja(models.Model):
     )
 
 
+    # Agregado 06-08 (RF-014/015): el RF pide un campo "turno" que no
+    # existía ni en el modelo ni en la tabla real. Se agrega como columna
+    # nueva (ver ALTER TABLE en la nota técnica) — no rompe nada existente,
+    # solo suma un dato descriptivo a la apertura de caja.
+    TURNOS = [
+        ("MANANA", "Mañana"),
+        ("TARDE", "Tarde"),
+        ("NOCHE", "Noche"),
+    ]
+
+    turno = models.CharField(
+        max_length=20,
+        choices=TURNOS,
+        null=True,
+        blank=True,
+        db_column="turno",
+        verbose_name="Turno",
+    )
+
+
     observaciones = models.CharField(
         max_length=255,
         null=True,

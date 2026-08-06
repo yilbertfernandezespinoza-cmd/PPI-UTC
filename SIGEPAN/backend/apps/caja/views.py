@@ -3,9 +3,11 @@ from urllib import request
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
 from .utils import (calcular_saldo_sistema, calcular_saldo_movimientos)
+from .services import CierreCajaService
 from decimal import Decimal
 
 from .models import (
@@ -51,18 +53,9 @@ def obtener_usuario(request):
 
 
 
-def es_administrador(usuario):
-
-    if not usuario:
-
-        return False
-
-
-    return (
-        usuario.id_rol.nombre.upper()
-        ==
-        "ADMINISTRADOR"
-    )
+# (06-08) Se eliminó `es_administrador()`: era una verificación de rol
+# manual y duplicada frente al sistema de permisos real
+# (`@permiso_requerido`), su único uso (en `crear_caja`) ya se retiró.
 
 # =====================================================
 # LISTAR CAJAS
@@ -124,19 +117,12 @@ def crear_caja(request):
     # =========================================
     # VALIDAR PERMISOS
     # =========================================
-
-    if not es_administrador(usuario):
-
-
-        messages.error(
-            request,
-            "No tiene permisos para crear cajas."
-        )
-
-
-        return redirect(
-            "caja:lista_cajas"
-        )
+    # (06-08) Se retiró la verificación manual `es_administrador()` que
+    # vivía aquí: era una comprobación de rol duplicada e independiente
+    # del sistema de permisos real. El decorador `@permiso_requerido(
+    # "Caja", "CREAR")` de arriba ya cubre exactamente este caso —
+    # cualquier rol sin el permiso CREAR sobre "Caja" nunca llega a
+    # ejecutar el cuerpo de esta vista.
 
 
 
@@ -1171,6 +1157,11 @@ def crear_arqueo(request, id_apertura):
 @transaction.atomic
 def cerrar_caja(request, id_apertura):
 
+    # (06-08) Las 3 validaciones que antes vivían aquí a mano (if/else +
+    # messages.error + redirect) se movieron a
+    # `CierreCajaService.validar_puede_cerrar`, que levanta
+    # `ValidationError` — mismo patrón que `GastoOperativoService`. El
+    # texto de cada mensaje de error es idéntico al que ya se mostraba.
 
     apertura = get_object_or_404(
 
@@ -1180,75 +1171,20 @@ def cerrar_caja(request, id_apertura):
 
     )
 
-
-    # =========================================
-    # VALIDAR APERTURA ACTIVA
-    # =========================================
-
-    if not apertura.estado:
-
-        messages.error(
-
-            request,
-
-            "La caja ya se encuentra cerrada."
-
-        )
-
-        return redirect(
-
-            "caja:administrar_caja",
-
-            id_caja=apertura.caja.id_caja
-
-        )
-
-    # =========================================
-    # VALIDAR CIERRE EXISTENTE
-    # =========================================
-
-    if CierreCaja.objects.filter(apertura=apertura).exists():
-
-        messages.error(
-
-            request,
-
-            "La apertura ya posee un cierre registrado."
-
-        )
-
-        return redirect(
-
-            "caja:administrar_caja",
-
-            id_caja=apertura.caja.id_caja
-
-        )
-
-    # =========================================
-    # VALIDAR ARQUEO PREVIO
-    # =========================================
-
-    existe_arqueo = ArqueoCaja.objects.filter(
-        apertura=apertura
-    ).exists()
-
-
-    if not existe_arqueo:
-
+    try:
+        CierreCajaService.validar_puede_cerrar(apertura)
+    except ValidationError as error:
         messages.error(
             request,
-            "Debe realizar al menos un arqueo antes de cerrar la caja."
+            "; ".join(error.messages) if hasattr(error, "messages") else str(error),
         )
-
-
         return redirect(
             "caja:administrar_caja",
             id_caja=apertura.caja.id_caja
         )
 
     # =====================================
-    # CALCULAR SALDO DEL SISTEMA
+    # CALCULAR SALDO DEL SISTEMA (para mostrarlo en el formulario)
     # =====================================
 
     saldo_sistema = calcular_saldo_sistema(
@@ -1278,60 +1214,22 @@ def cerrar_caja(request, id_apertura):
 
         if form.is_valid():
 
-            cierre = form.save(
-                commit=False
-            )
-
-            # =====================================
-            # DATOS DEL CIERRE
-            # =====================================
-
-            cierre.apertura = apertura
-
-            cierre.fecha_cierre = timezone.now()
-
-            cierre.monto_inicial = apertura.monto_inicial
-
-            # =====================================
-            # CALCULAR DIFERENCIA
-            # =====================================
-
-            cierre.diferencia = (
-
-                cierre.monto_final
-
-                -
-
-                saldo_sistema
-
-            )
-
-            # =========================================
-            # USUARIO RESPONSABLE
-            # =========================================
-
-            cierre.usuario = request.usuario
-
-
-            cierre.save()
-
-            # =========================================
-            # ACTUALIZAR SALDO DE LA CAJA
-            # =========================================
-
-            apertura.caja.saldo_actual = cierre.monto_final
-
-            apertura.caja.save()
-
-            # =========================================
-            # CERRAR APERTURA
-            # =========================================
-
-            apertura.estado = False
-
-            apertura.save()
-
-
+            try:
+                CierreCajaService.cerrar(
+                    apertura=apertura,
+                    usuario=request.usuario,
+                    monto_final=form.cleaned_data["monto_final"],
+                    observaciones=form.cleaned_data.get("observaciones"),
+                )
+            except ValidationError as error:
+                messages.error(
+                    request,
+                    "; ".join(error.messages) if hasattr(error, "messages") else str(error),
+                )
+                return redirect(
+                    "caja:administrar_caja",
+                    id_caja=apertura.caja.id_caja
+                )
 
             messages.success(
                 request,

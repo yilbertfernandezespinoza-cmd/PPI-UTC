@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Categoria
 from .forms import CategoriaForm
+from .services import CategoriaService
 from apps.security.decorators import login_required, permiso_requerido
 from apps.security.services import registrar_log
 
@@ -8,7 +9,7 @@ from apps.security.services import registrar_log
 @login_required
 @permiso_requerido("Categorías", "CONSULTAR")
 def lista_categorias(request):
-    categorias = Categoria.objects.all()
+    categorias = CategoriaService.listar()
     return render(request, 'categorias/lista.html', {'categorias': categorias})
 
 
@@ -18,7 +19,10 @@ def nueva_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
         if form.is_valid():
-            categoria = form.save()
+            categoria = CategoriaService.crear(
+                nombre=form.cleaned_data['nombre'],
+                descripcion=form.cleaned_data.get('descripcion'),
+            )
             registrar_log(
                 request=request,
                 usuario=request.usuario,
@@ -39,7 +43,11 @@ def editar_categoria(request, pk):
     if request.method == 'POST':
         form = CategoriaForm(request.POST, instance=categoria)
         if form.is_valid():
-            categoria = form.save()
+            categoria = CategoriaService.actualizar(
+                id_categoria=categoria.pk,
+                nombre=form.cleaned_data['nombre'],
+                descripcion=form.cleaned_data.get('descripcion'),
+            )
             registrar_log(
                 request=request,
                 usuario=request.usuario,
@@ -59,8 +67,7 @@ def cambiar_estado_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)
 
     if request.method == "POST":
-        categoria.estado = not categoria.estado
-        categoria.save()
+        categoria = CategoriaService.cambiar_estado(categoria.pk)
         registrar_log(
             request=request,
             usuario=request.usuario,

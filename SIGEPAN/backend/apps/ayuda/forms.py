@@ -9,6 +9,18 @@ class AyudaForm(forms.ModelForm):
     Formulario para el mantenimiento de ayudas.
     """
 
+    # Se redeclara como ImageField real (el campo del modelo es un
+    # CharField que solo guarda la ruta) — mismo patrón ya usado en
+    # ProductoForm para subir imágenes sin depender de un FileField/
+    # ImageField real de Django en el modelo (Database First: la columna
+    # `imagen` de la tabla real es un varchar con la ruta, no un BLOB).
+    imagen = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            "class": "form-control",
+        }),
+    )
+
     class Meta:
         model = Ayuda
 
@@ -18,6 +30,7 @@ class AyudaForm(forms.ModelForm):
             "titulo",
             "contenido",
             "icono",
+            "imagen",
             "orden",
         ]
 

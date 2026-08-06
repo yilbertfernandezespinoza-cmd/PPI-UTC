@@ -2,7 +2,7 @@
 
 ## Versión
 
-2.0 — actualizado 2026-08-04 (43 tablas, esquema real)
+2.1 — actualizado 2026-08-04 (44 tablas, esquema real; se agregó `detalle_pago`)
 
 ## Motor
 

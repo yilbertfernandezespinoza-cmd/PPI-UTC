@@ -34,7 +34,10 @@ class DashboardService:
                     "titulo": opcion["titulo"],
                     "icono": opcion["icono"],
                     "color": opcion.get("color", "primary"),
-                    "url": opcion["url"],
+                    # Si la opción define "url_dashboard" (caso de Ventas:
+                    # la tarjeta debe abrir una venta nueva, no el reporte
+                    # de ventas diarias), se usa esa; si no, la url normal.
+                    "url": opcion.get("url_dashboard", opcion["url"]),
                 })
 
         kpis = []

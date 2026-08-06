@@ -59,8 +59,8 @@
                             
                             <!-- Imagen -->
                             <td class="text-center align-middle">
-                                {% if producto.imagen and producto.imagen.name %}
-                                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="rounded-circle shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% if producto.imagen %}
+                                    <img src="{% get_media_prefix %}{{ producto.imagen }}" alt="{{ producto.nombre }}" class="rounded-circle shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
                                 {% else %}
                                     <div class="bg-light border rounded-circle d-inline-flex align-items-center justify-content-center text-secondary shadow-sm" style="width: 40px; height: 40px;" title="Sin imagen">
                                         <i class="fas fa-image"></i>

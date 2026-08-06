@@ -49,6 +49,7 @@ class Modulo(BaseModel):
     )
 
     class Meta:
+        managed = False
         db_table = "modulo"
         ordering = ["orden_menu"]
         verbose_name = "Módulo"
@@ -94,6 +95,7 @@ class Sucursal(BaseModel):
     )
 
     class Meta:
+        managed = False
         db_table = "sucursal"
         verbose_name = "Sucursal"
         verbose_name_plural = "Sucursales"
@@ -191,6 +193,7 @@ class ConfiguracionTributaria(BaseModel):
     )
 
     class Meta:
+        managed = False
         db_table = "configuracion_tributaria"
         verbose_name = "Configuración tributaria"
         verbose_name_plural = "Configuraciones tributarias"

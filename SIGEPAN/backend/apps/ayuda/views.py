@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import UploadedFile
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View
 from django.shortcuts import redirect
@@ -10,6 +12,34 @@ from apps.ayuda.services import AyudaService
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.permissions import PermissionRequiredMixin
 from apps.security.audit import AuditMixin
+
+
+def _resolver_ruta_imagen(form, ruta_actual=None):
+    """
+    Resuelve qué guardar en la columna `imagen` (varchar con la ruta, no
+    un ImageField real) a partir de form.cleaned_data["imagen"]:
+
+    - Un archivo nuevo subido (UploadedFile): se guarda en media/ayuda/ y
+      se devuelve su ruta.
+    - `False` (checkbox "Clear" del ClearableFileInput marcado): se quita
+      la imagen (None).
+    - Cualquier otro valor (típicamente el string de la ruta ya existente,
+      que es lo que Django devuelve cuando no se toca el campo al editar):
+      se conserva `ruta_actual` sin cambios. No se puede tratar ese string
+      como si fuera un archivo nuevo (no tiene `.name` ni contenido que
+      guardar) — de ahí la validación explícita con `UploadedFile` en vez
+      de un simple `if archivo:` como en `productos/views.py`.
+    """
+
+    archivo = form.cleaned_data.get("imagen")
+
+    if isinstance(archivo, UploadedFile):
+        return default_storage.save(f"ayuda/{archivo.name}", archivo)
+
+    if archivo is False:
+        return None
+
+    return ruta_actual
 
 
 class AyudaListView(
@@ -58,6 +88,7 @@ class AyudaCreateView(
                 titulo=form.cleaned_data["titulo"],
                 contenido=form.cleaned_data["contenido"],
                 icono=form.cleaned_data["icono"],
+                imagen=_resolver_ruta_imagen(form),
                 orden=form.cleaned_data["orden"],
             )
 
@@ -113,6 +144,7 @@ class AyudaUpdateView(
                 titulo=form.cleaned_data["titulo"],
                 contenido=form.cleaned_data["contenido"],
                 icono=form.cleaned_data["icono"],
+                imagen=_resolver_ruta_imagen(form, ruta_actual=self.object.imagen),
                 orden=form.cleaned_data["orden"],
             )
 

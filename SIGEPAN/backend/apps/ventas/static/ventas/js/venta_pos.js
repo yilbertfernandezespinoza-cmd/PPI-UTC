@@ -34,6 +34,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const urlBuscarCliente = configPos.dataset.urlBuscarCliente;
     const urlBuscarProducto = configPos.dataset.urlBuscarProducto;
     const urlProcesarVenta = configPos.dataset.urlProcesarVenta;
+    // Tasa de IVA real (viene de ConfiguracionTributaria vía el backend),
+    // no un 13% fijo — si no hay ninguna tasa activa configurada, cae a 0.
+    const tasaIva = parseFloat(configPos.dataset.tasaIva) || 0;
 
     const carritoTbody = document.getElementById("carrito_productos");
     const buscarProductoInput = document.getElementById("buscar_producto");
@@ -205,14 +208,15 @@ document.addEventListener("DOMContentLoaded", function () {
     // =====================================================
     // El total real (incluyendo impuesto, que depende de la configuración
     // tributaria activa) siempre lo calcula el servidor en procesar_venta.
-    // Aquí se usa una tasa de IVA fija (13%) únicamente para que el cajero
-    // vea un estimado mientras arma el carrito.
+    // Aquí se usa la tasa de IVA real (tasaIva, inyectada desde
+    // ConfiguracionTributaria) únicamente para que el cajero vea un
+    // estimado mientras arma el carrito.
     window.recalcularTotales = function () {
         const subtotal = carrito.reduce(function (acumulado, linea) {
             return acumulado + (linea.precio * linea.cantidad);
         }, 0);
 
-        const iva = subtotal * 0.13;
+        const iva = subtotal * (tasaIva / 100);
         const descuento = 0;
         const total = subtotal + iva - descuento;
 

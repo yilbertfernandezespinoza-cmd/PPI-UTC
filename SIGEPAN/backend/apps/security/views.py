@@ -40,7 +40,6 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         ).order_by("nombre")
     
     def get_context_data(self, **kwargs):
-        print(">>> Entró a get_context_data")
         context = super().get_context_data(**kwargs)
 
         # Todos los roles
@@ -971,7 +970,6 @@ class PerfilView(TemplateView):
             password_nueva=request.POST.get("password_nueva"),
             password_confirmacion=request.POST.get("password_confirmacion"),
         )
-        print(resultado)
         if resultado["success"]:
             messages.success(request, resultado["message"])
         else:

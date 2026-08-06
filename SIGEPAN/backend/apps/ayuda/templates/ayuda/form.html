@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block content %}
 
 <div class="container">
@@ -22,7 +24,7 @@
 
         <div class="card-body">
 
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
 
                 {% csrf_token %}
 
@@ -87,6 +89,32 @@
                     </label>
 
                     {{ form.icono }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Imagen
+                    </label>
+
+                    {% if object and object.imagen %}
+                        <div class="mb-2">
+                            <img
+                                src="{% get_media_prefix %}{{ object.imagen }}"
+                                alt="Imagen actual"
+                                style="max-height: 120px;"
+                                class="d-block rounded border mb-1"
+                            >
+                            <small class="text-muted">Imagen actual. Suba un archivo nuevo para reemplazarla, o marque "Clear" para quitarla.</small>
+                        </div>
+                    {% endif %}
+
+                    {{ form.imagen }}
+
+                    {% if form.imagen.errors %}
+                        <div class="text-danger small">{{ form.imagen.errors }}</div>
+                    {% endif %}
 
                 </div>
 

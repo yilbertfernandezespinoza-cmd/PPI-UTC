@@ -56,7 +56,7 @@
                             </td>
                             <td class="text-center">
                                 <span class="badge bg-secondary bg-opacity-10 text-dark px-2 py-1">
-                                    {{ venta.detalles.count|default:"0" }}
+                                    {{ venta.detalleventa_set.count|default:"0" }}
                                 </span>
                             </td>
                             <td class="text-end fw-bold text-success">
@@ -70,9 +70,12 @@
                                     </a>
 
                                     <!-- BOTÓN ELIMINAR VENTA PENDIENTE -->
-                                    <a href="{% url 'ventas:eliminar_venta_pendiente' venta.id_venta %}" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 px-2 py-1" onclick="return confirm('¿Estás seguro de eliminar permanentemente esta venta pendiente?');" title="Eliminar definitivamente">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                    <form method="post" action="{% url 'ventas:eliminar_venta_pendiente' venta.id_venta %}" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar permanentemente esta venta pendiente?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 px-2 py-1" title="Eliminar definitivamente">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

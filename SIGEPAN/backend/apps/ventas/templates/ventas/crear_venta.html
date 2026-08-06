@@ -92,11 +92,12 @@
                             <label for="buscar_cliente" class="form-label fw-bold small text-uppercase text-secondary">Buscar cliente</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-secondary-subtle"><i class="bi bi-search"></i></span>
-                                <input type="text" id="buscar_cliente" class="form-control pos-search" placeholder="Nombre o identificación" autocomplete="off">
+                                <input type="text" id="buscar_cliente" class="form-control pos-search" placeholder="Cédula (recomendado) o nombre del cliente" autocomplete="off">
                                 <button type="button" id="btn_buscar_cliente" class="btn btn-outline-secondary pos-search-button">
                                     Buscar
                                 </button>
                             </div>
+                            <small class="text-muted">Tip: buscar por cédula selecciona al cliente automáticamente.</small>
                             <div id="lista_clientes_pos" class="list-group position-absolute w-100 shadow-sm mt-1" style="z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
                         </div>
                         <div class="col-md-4">
@@ -113,6 +114,9 @@
                         <strong class="me-2 text-secondary">Cliente seleccionado:</strong>
                         <span id="cliente_seleccionado" class="text-primary fw-bold">Público General</span>
                         <input type="hidden" id="cliente_id" value="">
+                        <button type="button" id="btn_cambiar_cliente" class="btn btn-link btn-sm text-secondary ms-2 p-0" title="Quitar cliente seleccionado">
+                            <i class="bi bi-arrow-repeat"></i> Cambiar cliente
+                        </button>
                     </div>
                 </div>
             </div>
@@ -314,7 +318,7 @@
 
 <script type="application/json" id="cliente-activo-reanudado">
 {% if venta_activa and venta_activa.cliente %}
-{"id": {{ venta_activa.cliente.id_cliente|default_if_none:"null" }}, "nombre": "{{ venta_activa.cliente.nombre|escapejs }}"}
+{"id": {{ venta_activa.cliente.id_cliente|default_if_none:"null" }}, "nombre": "{{ venta_activa.cliente.nombre_completo|escapejs }}"}
 {% else %}
 null
 {% endif %}

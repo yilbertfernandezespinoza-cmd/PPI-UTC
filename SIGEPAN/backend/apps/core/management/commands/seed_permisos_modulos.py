@@ -21,13 +21,23 @@ class Command(BaseCommand):
     No borra ni modifica módulos/permisos/roles existentes — solo agrega
     lo que falte, con get_or_create.
 
+    También incluye "Inventario", que ya existe como módulo (lo usan
+    EntradaInventarioView/MovimientosInventarioListView con las acciones
+    CONSULTAR/CREAR desde antes) — se agrega aquí únicamente para
+    garantizar que exista el permiso MODIFICAR, requerido por el fix de
+    seguridad de editar_inventario (auditoría 04-08-2026: esa vista no
+    tenía ningún control de permisos). Como todo se hace con
+    get_or_create, correr este comando NO toca ni duplica los permisos
+    CONSULTAR/CREAR de Inventario que ya existían.
+
     Uso:
         python manage.py seed_permisos_modulos
     """
 
     help = (
         "Crea los módulos, permisos y asignaciones de rol para Mermas, "
-        "Ajustes y Gastos Operativos, si todavía no existen."
+        "Ajustes, Gastos Operativos e Inventario (permiso MODIFICAR), "
+        "si todavía no existen."
     )
 
     # Acciones que cada módulo realmente usa en sus vistas — no se crean
@@ -49,6 +59,15 @@ class Command(BaseCommand):
             "descripcion": "Registro de gastos operativos del negocio (RF-026)",
             "icono": "bi-cash-coin",
             "acciones": ["CONSULTAR", "CREAR", "ELIMINAR"],
+        },
+        "Inventario": {
+            "descripcion": "Existencias de productos por sucursal (RF-016)",
+            "icono": "bi-box-seam",
+            # CONSULTAR y CREAR ya existían (usados por las vistas basadas
+            # en clase de este módulo) y get_or_create simplemente las
+            # va a encontrar sin tocarlas. MODIFICAR es la que falta y la
+            # que necesita editar_inventario tras el fix de seguridad.
+            "acciones": ["CONSULTAR", "CREAR", "MODIFICAR"],
         },
     }
 

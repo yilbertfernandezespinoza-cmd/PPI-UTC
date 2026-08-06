@@ -88,6 +88,24 @@ urlpatterns = [
     ),
 
     # ==========================================
+    # COMPROBANTE DE VENTA (IMPRIMIBLE)
+    # ==========================================
+    path(
+        "<int:id_venta>/comprobante/",
+        views.comprobante_venta,
+        name="comprobante_venta"
+    ),
+
+    # ==========================================
+    # ENVIAR COMPROBANTE POR CORREO
+    # ==========================================
+    path(
+        "<int:id_venta>/enviar-correo/",
+        views.enviar_comprobante_email,
+        name="enviar_comprobante_email"
+    ),
+
+    # ==========================================
     # ANULAR VENTA
     # ==========================================
     path(

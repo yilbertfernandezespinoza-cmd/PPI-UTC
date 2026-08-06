@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const listaClientesPos = document.getElementById("lista_clientes_pos");
     const clienteIdInput = document.getElementById("cliente_id");
     const clienteSeleccionadoSpan = document.getElementById("cliente_seleccionado");
+    const btnCambiarCliente = document.getElementById("btn_cambiar_cliente");
 
     const btnCobrar = document.getElementById("btn_cobrar");
     const btnGuardarPendiente = document.getElementById("btn_guardar_pendiente");
@@ -376,7 +377,34 @@ document.addEventListener("DOMContentLoaded", function () {
     // =====================================================
     // 8. BÚSQUEDA Y SELECCIÓN DE CLIENTES (AJAX)
     // =====================================================
+    // Diseño tipo POS real: la cédula es el identificador único del
+    // cliente (Cliente.identificacion es unique=True en la BD), el nombre
+    // no lo es — puede haber muchas personas con el mismo nombre. Por eso
+    // el backend (buscar_clientes_pos) prioriza la cédula y, si el texto
+    // ingresado calza exacto con una cédula, responde con "exacto": true
+    // para autoseleccionar al cliente sin que el cajero tenga que elegir
+    // de una lista, igual que haría un lector de código de barras/cédula.
     let timeoutBusquedaCliente = null;
+
+    function seleccionarCliente(id, nombre) {
+        clienteIdInput.value = id;
+        clienteSeleccionadoSpan.textContent = nombre;
+        listaClientesPos.innerHTML = "";
+        listaClientesPos.classList.add("d-none");
+        buscarClienteInput.value = "";
+    }
+
+    function confirmarClienteCargado(nombre) {
+        // Confirmación visual breve reutilizando el mismo mecanismo de
+        // alertas que ya usa el resto del POS (mostrarAlerta), en vez de
+        // inventar un sistema de notificaciones nuevo.
+        mostrarAlerta(`Cliente cargado: <strong>${nombre}</strong>`, "success");
+
+        clienteSeleccionadoSpan.classList.add("border", "border-success", "rounded", "px-2");
+        setTimeout(function () {
+            clienteSeleccionadoSpan.classList.remove("border", "border-success", "rounded", "px-2");
+        }, 2000);
+    }
 
     function realizarBusquedaCliente(query) {
         if (!query || query.trim().length === 0) {
@@ -388,19 +416,30 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(`${urlBuscarCliente}?q=${encodeURIComponent(query)}`)
             .then(function (respuesta) { return respuesta.json(); })
             .then(function (data) {
+                const resultados = data.resultados || [];
+
+                // Match exacto de cédula: autoselección inmediata, sin
+                // requerir click del cajero.
+                if (data.exacto && resultados.length > 0) {
+                    const cliente = resultados[0];
+                    seleccionarCliente(cliente.id, cliente.nombre);
+                    confirmarClienteCargado(cliente.nombre);
+                    return;
+                }
+
                 listaClientesPos.innerHTML = "";
 
-                if (data.length > 0) {
-                    data.forEach(function (cliente) {
+                if (resultados.length > 0) {
+                    resultados.forEach(function (cliente) {
                         const item = document.createElement("a");
                         item.href = "#";
                         item.className = "list-group-item list-group-item-action cliente-opcion py-2";
                         item.dataset.id = cliente.id;
                         item.dataset.nombre = cliente.nombre;
                         item.innerHTML = `
-                            <div class="d-flex justify-content-between">
-                                <span class="fw-bold">${cliente.nombre}</span>
-                                <small class="text-muted">ID: ${cliente.identificacion || "N/A"}</small>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-secondary-subtle text-dark border font-monospace">${cliente.identificacion || "Sin cédula"}</span>
+                                <span class="text-truncate ms-2">${cliente.nombre}</span>
                             </div>
                         `;
                         listaClientesPos.appendChild(item);
@@ -440,11 +479,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!opcion) return;
 
             e.preventDefault();
-            clienteIdInput.value = opcion.dataset.id;
-            clienteSeleccionadoSpan.textContent = opcion.dataset.nombre;
-            listaClientesPos.innerHTML = "";
-            listaClientesPos.classList.add("d-none");
-            buscarClienteInput.value = "";
+            seleccionarCliente(opcion.dataset.id, opcion.dataset.nombre);
         });
 
         document.addEventListener("click", function (e) {
@@ -457,6 +492,16 @@ document.addEventListener("DOMContentLoaded", function () {
     function limpiarCliente() {
         clienteIdInput.value = "";
         clienteSeleccionadoSpan.textContent = "Público General";
+    }
+
+    if (btnCambiarCliente) {
+        btnCambiarCliente.addEventListener("click", function () {
+            limpiarCliente();
+            if (buscarClienteInput) {
+                buscarClienteInput.value = "";
+                buscarClienteInput.focus();
+            }
+        });
     }
 
     // =====================================================

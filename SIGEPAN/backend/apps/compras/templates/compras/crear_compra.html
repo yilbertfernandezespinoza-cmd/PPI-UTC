@@ -66,23 +66,21 @@
             </div>
             <div class="card-body p-0">
                 {{ detalle_formset.management_form }}
-                
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-3" style="width: 50%;">Producto</th>
-                                <th style="width: 20%;">Cantidad</th>
-                                <th style="width: 25%;">Precio Unitario (₡)</th>
-                                <th class="text-center" style="width: 5%;">Acción</th>
+                                <th class="ps-3" style="width: 45%;">Producto</th>
+                                <th style="width: 18%;">Cantidad</th>
+                                <th style="width: 22%;">Precio Unitario (₡)</th>
+                                <th class="text-center" style="width: 15%;">Acción</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tabla-detalle-compra-body" data-prefix="{{ detalle_formset.prefix }}">
                             {% for form in detalle_formset %}
-                            <tr>
+                            <tr class="fila-detalle-compra">
                                 <td class="ps-3">
-                                    <!-- Ocultar campos de ID u ocultos del formset si existen -->
-                                    {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
                                     {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
                                     {{ form.producto }}
                                     {% for error in form.producto.errors %}
@@ -102,16 +100,39 @@
                                     {% endfor %}
                                 </td>
                                 <td class="text-center">
-                                    {% if form.can_delete %}
-                                        {{ form.DELETE }}
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarFilaCompra(this)" title="Quitar producto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
+
+                            <!-- Plantilla oculta (fix RF-030, 06-08): extra=1 en el formset solo renderiza UNA
+                                 fila al cargar la página, así que sin esto solo se podía registrar un producto
+                                 por compra. Esta fila usa detalle_formset.empty_form (que Django genera con
+                                 "__prefix__" en vez de un índice real en cada name/id) como plantilla para
+                                 clonar filas nuevas por JS — nunca se envía tal cual, solo se clona. -->
+                            <tr id="fila-vacia-compra" class="fila-detalle-compra d-none">
+                                <td class="ps-3">
+                                    {% for hidden in detalle_formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    {{ detalle_formset.empty_form.producto }}
+                                </td>
+                                <td>{{ detalle_formset.empty_form.cantidad }}</td>
+                                <td>{{ detalle_formset.empty_form.precio_unitario }}</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarFilaCompra(this)" title="Quitar producto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div class="p-3 border-top">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarFilaCompra()">
+                        <i class="fas fa-plus me-1"></i> Agregar línea
+                    </button>
                 </div>
             </div>
         </div>
@@ -131,10 +152,12 @@
 
 <!-- Script rápido opcional para asegurar que los inputs de Django usen clases Bootstrap -->
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Añade clases de Bootstrap a todos los inputs generados por Django que no las tengan
-        const inputs = document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea');
-        inputs.forEach(input => {
+    function aplicarClasesBootstrap(alcance) {
+        // Añade clases de Bootstrap a los inputs generados por Django que no las
+        // tengan, dentro de "alcance" (todo el documento en la carga inicial, o
+        // solo la fila nueva cuando se agrega dinámicamente).
+        const inputs = alcance.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea');
+        inputs.forEach(function (input) {
             if (!input.classList.contains('form-control') && !input.classList.contains('form-select')) {
                 if (input.tagName === 'SELECT') {
                     input.classList.add('form-select');
@@ -143,6 +166,86 @@
                 }
             }
         });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        aplicarClasesBootstrap(document);
     });
+
+    // =====================================================
+    // FIX RF-030 (06-08): agregar/quitar líneas de compra
+    // =====================================================
+    //
+    // El formset de detalle de compra usa extra=1 (apps/compras/forms.py)
+    // y no tenía forma de agregar más filas desde la interfaz — solo se
+    // podía registrar un producto por compra. Esto agrega/quita filas en
+    // el navegador y reindexa los campos del formset (name/id/for) para
+    // que Django los procese exactamente igual que si hubieran venido
+    // renderizados desde el servidor. No se tocó la vista crear_compra ni
+    // el formset en sí: ambos ya procesaban correctamente N líneas,
+    // el único problema era que la plantilla solo mostraba 1.
+
+    function actualizarIndicesFormsetCompra() {
+        const cuerpo = document.getElementById('tabla-detalle-compra-body');
+        const prefijo = cuerpo.dataset.prefix;
+        const filas = cuerpo.querySelectorAll('tr.fila-detalle-compra:not(.d-none)');
+
+        filas.forEach(function (fila, indice) {
+            fila.querySelectorAll('input, select, textarea, label').forEach(function (el) {
+                ['name', 'id', 'for'].forEach(function (atributo) {
+                    if (el.hasAttribute(atributo)) {
+                        const valorActual = el.getAttribute(atributo);
+                        const patron = new RegExp(prefijo + '-(\\d+|__prefix__)-');
+                        if (patron.test(valorActual)) {
+                            el.setAttribute(
+                                atributo,
+                                valorActual.replace(patron, prefijo + '-' + indice + '-')
+                            );
+                        }
+                    }
+                });
+            });
+        });
+
+        const totalForms = document.getElementById('id_' + prefijo + '-TOTAL_FORMS');
+        if (totalForms) {
+            totalForms.value = filas.length;
+        }
+    }
+
+    function agregarFilaCompra() {
+        const filaVacia = document.getElementById('fila-vacia-compra');
+        const nuevaFila = filaVacia.cloneNode(true);
+
+        nuevaFila.removeAttribute('id');
+        nuevaFila.classList.remove('d-none');
+
+        // Limpiar cualquier valor que haya quedado en la plantilla oculta
+        // (no debería tener ninguno, es defensivo).
+        nuevaFila.querySelectorAll('input:not([type="checkbox"]), select').forEach(function (campo) {
+            if (campo.tagName === 'SELECT') {
+                campo.selectedIndex = 0;
+            } else {
+                campo.value = '';
+            }
+        });
+
+        filaVacia.parentNode.insertBefore(nuevaFila, filaVacia);
+
+        aplicarClasesBootstrap(nuevaFila);
+        actualizarIndicesFormsetCompra();
+    }
+
+    function quitarFilaCompra(boton) {
+        const filas = document.querySelectorAll('#tabla-detalle-compra-body tr.fila-detalle-compra:not(.d-none)');
+
+        if (filas.length <= 1) {
+            alert('La compra debe tener al menos un producto.');
+            return;
+        }
+
+        boton.closest('tr').remove();
+        actualizarIndicesFormsetCompra();
+    }
 </script>
 {% endblock %}

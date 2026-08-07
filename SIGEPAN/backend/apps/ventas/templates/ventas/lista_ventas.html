@@ -1,11 +1,5 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<!-- DataTables CSS Bootstrap 5 & Responsive -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-{% endblock %}
-
 {% load ayuda_tags %}
 
 {% block content %}
@@ -71,96 +65,80 @@
         </div>
     </div>
 
-    <!-- TABLA DE VENTAS CON DATATABLES -->
-    <div class="card shadow-sm border-0">
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
         <div class="card-body">
-            <div class="table-responsive">
-                <table id="tablaVentas" class="table table-hover align-middle sigepan-table mb-0 w-100">
-                    <thead class="table-dark">
-                        <tr>
-                            <th class="ps-3 py-3">Número</th>
-                            <th class="py-3">Cliente</th>
-                            <th class="py-3">Hora</th>
-                            <th class="py-3 text-end">Total</th>
-                            <th class="py-3 text-center">Estado</th>
-                            <th class="py-3 text-end pe-3" style="width: 140px;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for venta in ventas %}
-                            <tr>
-                                <td class="ps-3 py-3 fw-semibold">
-                                    {{ venta.numero_venta }}
-                                </td>
-                                <td class="py-3">
-                                    {% if venta.cliente %}
-                                        {{ venta.cliente }}
-                                    {% else %}
-                                        <span class="text-muted">Cliente general</span>
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 text-muted">
-                                    {{ venta.fecha|date:"H:i" }}
-                                </td>
-                                <td class="py-3 text-end fw-bold text-success">
-                                    ₡{{ venta.total|floatformat:2 }}
-                                </td>
-                                <td class="py-3 text-center">
-                                    {% if venta.estado %}
-                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>
-                                    {% else %}
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Anulada</span>
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 text-end pe-3">
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'ventas:detalle_venta' venta.id_venta %}" 
-                                           class="btn btn-outline-info btn-sm" 
-                                           title="Ver Detalle">
-                                            <i class="fas fa-eye"></i> Ver
-                                        </a>
-                                        {% if venta.estado %}
-                                        <a href="{% url 'ventas:anular_venta' venta.id_venta %}" 
-                                           class="btn btn-outline-danger btn-sm" 
-                                           title="Anular Venta">
-                                            <i class="fas fa-trash-alt"></i> Anular
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarVentas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por número o cliente...">
             </div>
+        </div>
+    </div>
+
+    <!-- TABLA DE VENTAS CON TABULATOR -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaVentas" class="w-100"></div>
         </div>
     </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ ventas_json|json_script:"ventas-data" }}
+
 {% endblock %}
 
-{% block extra_js %}
-<!-- jQuery, DataTables JS & Responsive Extension -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
-
+{% block js %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        $('#tablaVentas').DataTable({
-            language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+document.addEventListener("DOMContentLoaded", function () {
+    const ventasElement = document.getElementById("ventas-data");
+    const ventas = ventasElement ? JSON.parse(ventasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaVentas",
+        search: "#buscarVentas",
+        data: ventas,
+        columns: [
+            { title: "Número", field: "numero_venta", headerHozAlign: "left" },
+            { title: "Cliente", field: "cliente" },
+            { title: "Hora", field: "hora", hozAlign: "center" },
+            {
+                title: "Total",
+                field: "total",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-bold text-success">₡${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
             },
-            order: [[0, "desc"]],
-            pageLength: 10,
-            lengthMenu: [5, 10, 25, 50, 100],
-            responsive: true,
-            dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rt<"row mt-3"<"col-md-6"i><"col-md-6"p>>',
-        });
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Anulada</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="btn-group" role="group">';
+                    botones += `<a href="${data.detalle}" class="btn btn-outline-info btn-sm" title="Ver Detalle"><i class="fas fa-eye"></i> Ver</a>`;
+                    if (data.estado) {
+                        botones += `<a href="${data.anular}" class="btn btn-outline-danger btn-sm" title="Anular Venta"><i class="fas fa-trash-alt"></i> Anular</a>`;
+                    }
+                    botones += "</div>";
+                    return botones;
+                }
+            }
+        ]
     });
+});
 </script>
 {% endblock %}

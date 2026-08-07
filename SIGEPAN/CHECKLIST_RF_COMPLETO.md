@@ -1,6 +1,6 @@
 # Checklist de desarrollo — SIGEPAN (34 RF)
 
-> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**, y **una tercera ronda de verificación (06-08, 2 agentes de solo lectura) que confirmó el checklist contra el código real de las 13 RF de César: solo 2 discrepancias reales (auditoría de Categorías/Productos ya resuelta pero mal marcada, corregidas abajo) y 2 hallazgos menores nuevos (choices de unidad de medida desincronizadas en `ProductoForm`, desfase de redacción sobre `seed_metodos_pago`); las otras 11 secciones (RF-012 a RF-018, RF-026, RF-029, RF-030, RF-034) resultaron 100% fieles al código real, incluyendo el wiring general (`INSTALLED_APPS`, `urls.py`, menú, migraciones)**.
+> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**, y **una tercera ronda de verificación (06-08, 2 agentes de solo lectura) que confirmó el checklist contra el código real de las 13 RF de César: solo 2 discrepancias reales (auditoría de Categorías/Productos ya resuelta pero mal marcada, corregidas abajo) y 2 hallazgos menores nuevos (choices de unidad de medida desincronizadas en `ProductoForm`, desfase de redacción sobre `seed_metodos_pago`); las otras 11 secciones (RF-012 a RF-018, RF-026, RF-029, RF-030, RF-034) resultaron 100% fieles al código real, incluyendo el wiring general (`INSTALLED_APPS`, `urls.py`, menú, migraciones)**, y **una cuarta ronda (06-08, noche, post-merge con la rama de Yilbert) con 2 agentes que recalcularon el % real de las 13 RF de César contra el código actual: 8 de las 13 estaban subestimadas por el documento (el código avanzó desde el commit `f08cbba` sin que el checklist se actualizara), se corrigió la tabla resumen y se listó, RF por RF, qué falta exactamente para el 100% (ver sección "Tercera ronda de auditoría" más abajo) — incluyendo 2 hallazgos nuevos no documentados antes: un bug de DataTables en `lista_compras.html` (bloque `extra_js` que nunca se renderiza) y una migración de Django desincronizada en `LogAcciones` (RF-034)**.
 > Marca `[x]` cuando el ítem esté verificado en código (no solo "hecho de memoria"). Actualiza el `% avance` de la cabecera al cerrar ítems.
 
 ## 🔴 Segunda auditoría (06-08) — 4 agentes verificando lo del 05-08
@@ -39,6 +39,138 @@ pequeñas desincronizaciones del propio checklist:
   César quiera); el docstring de `apps/security/decorators.py::permiso_requerido` sigue diciendo "no se
   aplica todavía en caja/proveedores" cuando `caja` ya lo usa extensamente — comentario desactualizado,
   sin impacto real.
+
+## 🟢 Tercera ronda de auditoría (06-08, noche) — % real post-merge y gap a 100%
+
+Tras el merge de la rama de Yilbert (que trajo, entre otras cosas, `apps/ventas/exports.py` con generación
+del comprobante en PDF real vía `reportlab` + fuente DejaVu Sans para el símbolo ₡, ya integrado en
+`ComprobanteEmailService`), se pidieron 2 agentes de solo lectura para volver a confirmar el % real de cada
+RF de César contra el código actual y decir exactamente qué falta para el 100%. `compileall` sobre las 13
+apps de César: limpio, sin errores. Conclusión principal: **el código venía más adelantado de lo que decía
+el documento en 8 de las 13 RF** — el checklist no se había vuelto a pasar sobre esas secciones desde el
+commit `f08cbba` (que tocó RF-010,011,014,015,016,026,029,030,034,007,012,023 de una sola vez). Se
+actualizó la tabla resumen arriba con el % confirmado. Detalle y pendientes reales para el 100% por RF:
+
+- **RF-010 (95%)**: `Categoria` ya hereda `BaseModel`, `Repository`/`Service` ya no están vacíos, validación
+  de nombre duplicado ya vive en el Service. [x] Migración `AlterModelOptions(managed=False)` generada y
+  aplicada (07-08) — historial de Django sincronizado con `models.py`, `makemigrations --dry-run` confirma
+  "No changes detected". Falta: [ ] `tests.py` sigue vacío.
+- **RF-011 (90%)**: `Producto` ya hereda `BaseModel`, `Repository`/`Service` reales. [x] Misma migración
+  huérfana que RF-010, ya resuelta (07-08). Falta: [ ] en `apps/productos/forms.py`, `ProductoForm.unidad_medida`
+  sigue redeclarando su propia lista de 8 opciones en vez de usar `Producto.UNIDADES_MEDIDA` (10 opciones) —
+  le faltan "Libra" y "Bolsa" en el `<select>` real. Fix: `unidad_medida = forms.ChoiceField(choices=Producto.UNIDADES_MEDIDA, ...)`.
+  [ ] `tests.py` vacío.
+- **RF-012 (97%)**: sin cambios de fondo — el PDF del merge quedó bien integrado (campos, fuentes y logo
+  verificados, envuelto en `try/except` para no romper la vista si falla). Falta: [ ] prueba end-to-end
+  completa contra MySQL real (cobrar/pausar/retomar/anular).
+- **RF-013 (93%)**: sin discrepancia real. Falta: [ ] toggle rápido de activar/desactivar desde el listado
+  (hoy solo se cambia el estado reabriendo el formulario completo) — menor.
+- **RF-014 (88%)**: el campo `turno` ya existe en `AperturaCaja` y es obligatorio en el form; `es_administrador()`
+  duplicado ya se eliminó; el bug de `desactivar_caja` ya está corregido; auditoría ya presente en las 8
+  vistas. [x] `ALTER TABLE apertura_caja ADD COLUMN turno...` corrido en la BD real (07-08). Falta: [ ] extraer
+  `CajaRepository`/`AperturaCajaService` (hoy todas las consultas ORM viven directo en `views.py`, sin capa
+  Repository/Service como sí tiene Ventas/Inventario/Mermas/Ajustes).
+- **RF-015 (85%)**: `CierreCajaService` ya existe con `validar_puede_cerrar()` y `cerrar()` transaccional;
+  `cerrar_caja` ya llama a `registrar_log`. Falta: [ ] mismo hueco de Repository que RF-014 (`CierreCaja`/
+  `ArqueoCaja` sin capa dedicada); [ ] documentar/reforzar si un cierre debe exigir N arqueos previos (hoy
+  solo exige al menos uno).
+- **RF-016 (97%)**: los FK de `Inventario`/`MovimientoInventario` ya usan `PROTECT` (no `DO_NOTHING`); ya
+  existe el `UniqueConstraint` producto+sucursal. [x] `ALTER TABLE inventario ADD CONSTRAINT
+  uq_inventario_producto_sucursal...` corrido en la BD real (07-08). Falta: [ ]
+  `apps/inventario/views.py::editar_inventario` (function-based) no llama a `registrar_log` tras guardar —
+  agregar igual que en `EntradaInventarioView`.
+- **RF-017 (88%)**: sin discrepancia real. Falta: [ ] reporte dedicado de mermas (hoy solo hay listado con
+  filtros); [ ] confirmar `seed_tipos_movimiento`/`seed_permisos_modulos` corridos en tu máquina.
+- **RF-018 (88%)**: sin discrepancia real. Falta: [ ] folio/número de documento propio para el ajuste (hoy
+  se identifica solo por `id_ajuste`); [ ] confirmar seeds corridos en tu máquina.
+- **RF-026 (96%)**: el campo `comprobante` que el checklist marcaba como pendiente **ya está completo**
+  (modelo, `FileField` en el form, subida real a `media/gastos_operativos/`, mostrado en templates). [x]
+  `ALTER TABLE gasto_operativo ADD COLUMN comprobante...` corrido en la BD real (07-08); [x]
+  `seed_permisos_modulos` confirmado (07-08, permisos de Gastos Operativos ya existían). Falta: [ ] probar en
+  vivo la subida del comprobante.
+- **RF-029 (100% ✅)**: sin cambios, se reconfirma. La migración `clientes/0002_...` (con el
+  `SeparateDatabaseAndState` para `tipo_cliente`/`tipo_identificacion`) está aplicada y sincronizada
+  (`makemigrations --dry-run` → "No changes detected"). Sin pendientes bloqueantes.
+- **RF-030 (93%)**: `Repository`/`Service` de compras **ya no están vacíos** (`CompraService.crear_compra`/
+  `anular_compra`, transaccional, integrado con `MovimientoInventarioService`); `DetalleCompra.compra` ya usa
+  `PROTECT`. Falta: [ ] **bug de UI nuevo, no documentado antes**: `compras/templates/compras/lista_compras.html`
+  usa `{% block extra_js %}` pero `base.html` define `{% block js %}` — ese bloque nunca se renderiza, así
+  que DataTables (paginación/orden/búsqueda) nunca se activa en la tabla de compras. Fix: renombrar el bloque
+  a `{% block js %}`. [ ] decidir si se implementa `HistorialPrecio` o se retira del diseño; [ ] `tests.py`
+  vacío.
+- **RF-034 (93%)**: el tipo de evento propio `CAMBIAR_USUARIO` en `LogAcciones.tipo_accion` **ya existe y ya
+  se usa** en `cambiar_usuario_view` (ya no reutiliza `LOGOUT`); wiring completo (url, link en navbar). [x]
+  Migración `security/0003_alter_logacciones_tipo_accion_and_more.py` generada y aplicada (07-08) —
+  `makemigrations --dry-run` confirma "No changes detected". **Nota de diseño**: `security` es una app que
+  Django sí gestiona (a diferencia de la mayoría del proyecto, Database First); por eso se decidió que
+  `tipo_accion` quede como `VARCHAR(20)` controlado 100% por el `CharField(choices=...)` del modelo, en vez
+  de un `ENUM` de MySQL gestionado por fuera — así cada `choice` nuevo que se agregue a futuro solo necesita
+  `makemigrations`/`migrate`, sin volver a tocar la BD a mano. Falta: [ ] sin tests automatizados.
+
+**Wiring general post-merge**: `INSTALLED_APPS` (18 apps) coincide exactamente con las carpetas reales de
+`backend/apps/`; `config/urls.py` incluye las 18 `urls.py`; sin apps ni rutas huérfanas.
+
+### ✅ Fixes de código aplicados (07-08) sobre los hallazgos de esta ronda
+
+- [x] **RF-011**: `ProductoForm.unidad_medida` ya no redeclara su propia lista de 8 opciones — ahora reutiliza
+  `Producto.UNIDADES_MEDIDA` (10 opciones) como única fuente de verdad. "Libra" y "Bolsa" ya aparecen en el
+  `<select>` real.
+- [x] **RF-016**: `apps/inventario/views.py::editar_inventario` ahora llama a `registrar_log` tras guardar,
+  igual que el resto de vistas del módulo.
+- [x] **RF-014/015**: se extrajo la capa `Repository`/`Service` de Caja que faltaba —
+  `CajaRepository`/`AperturaCajaRepository`/`MovimientoCajaRepository`/`ArqueoCajaRepository`/
+  `HistorialCajaRepository` (repositories.py) y `CajaService`/`AperturaCajaService`/
+  `MovimientoCajaService`/`ArqueoCajaService` (services.py, junto al ya existente `CierreCajaService`).
+  `views.py` ya no consulta los modelos directo — mismos mensajes, redirects, permisos y textos de error que
+  antes, verificado línea por línea. `py_compile`/`compileall` sin errores.
+- [x] **Hallazgo nuevo y su fix, mismo bug repetido 5 veces**: `compras/templates/compras/lista_compras.html`
+  usaba `{% block extra_js %}` en vez de `{% block js %}` (que es el que define `base.html`) — DataTables
+  nunca se activaba. Al revisar si el mismo error se repetía en otros listados, se encontró **exactamente el
+  mismo bug en 4 templates más**: `ventas/lista_ventas.html` (RF-012), `categorias/lista.html` (RF-010),
+  `productos/lista.html` (RF-011) y `proveedores/lista.html`. Los 5 quedaron corregidos — confirmado que
+  `base.html` solo define `{% block js %}` (línea 84), sin bloque `extra_js` en ningún lado.
+
+RF-011 y RF-016 suben a **91%** y **98%** respectivamente con estos fixes. RF-014 sube a **90%** (ya no falta
+la capa Repository/Service). RF-030 y RF-012 no cambian de % (los templates rotos ya estaban contados como
+pendiente/no se habían marcado 100%), pero su bug de UI queda cerrado.
+
+### 🔴 Hallazgo mayor (07-08) y su resolución: el proyecto migró de jQuery DataTables a Tabulator.js, pero 8 templates se quedaron con el código viejo
+
+Al probar el fix de `lista_compras.html` en la máquina real, la tabla seguía sin buscador/paginación pese al
+fix del bloque. La causa real: `base.html` **ya no carga jQuery ni DataTables en ningún lado** — el proyecto
+migró a **Tabulator.js** con un helper propio `SIGEPAN.table.create()` (`static/js/table.js`), y Clientes
+(RF-029) ya es la implementación de referencia de ese patrón. Los 8 templates siguientes se habían quedado
+con el código viejo de jQuery DataTables, que ahora falla en silencio (`$ is not defined`) y por eso las
+tablas se veían como HTML plano sin buscador ni paginación, sin importar el nombre del bloque:
+
+- `categorias/lista.html` (RF-010)
+- `productos/lista.html` (RF-011)
+- `proveedores/lista.html`
+- `ventas/lista_ventas.html` (RF-012)
+- `compras/lista_compras.html` (RF-030)
+- `caja/lista_cajas.html` (RF-014/015) — con 9 cajas de prueba ya sin paginación real
+- `caja/administrar_caja.html` (RF-014/015) — tablas de "Últimos Movimientos" e "Historial de Arqueos"
+- `caja/detalle_caja.html` (RF-014/015) — listado completo (sin límite) de movimientos de una apertura
+
+Los 8 quedaron migrados al patrón Tabulator: la vista serializa los datos a JSON (`json_script`) y el
+template arma columnas/formatters/botones en JS con `SIGEPAN.table.create()`, igual que Clientes — búsqueda
+en vivo, paginación real (`Registros/Primera/Anterior/Siguiente/Última`), mismos badges/acciones que antes.
+En Cajas, los botones "Desactivar"/"Activar" que antes eran `<form method="post">` ahora usan
+`SIGEPAN.table.postAction()` (fetch + CSRF, mismo patrón que el toggle de estado de Clientes) — mismo
+comportamiento, sin recargar la página vía formulario tradicional.
+
+Verificado: `python3 -m compileall -q apps/ config/` limpio, y `grep -rn "\.DataTable(" apps/ --include="*.html"`
+y `grep -rn "jquery" apps/ --include="*.html"` no devuelven ningún resultado en todo el proyecto — cero
+código muerto de jQuery/DataTables restante.
+
+RF-010 sube a **95%**, RF-011 a **91%**, RF-012 a **98%**, RF-014/015 a **92%**, RF-030 a **95%** con este
+fix (antes contaban con tablas de listado sin buscador/paginación funcional pese a "verse" completas).
+
+**Noveno template migrado, `inventario/lista_inventario.html` (RF-016)**: este ni siquiera tenía DataTables
+— era una tabla Bootstrap plana sin buscador ni paginación desde el principio. Mismo motivo que Cajas: con
+cada producto/sucursal nuevos la lista crece sin control visual. Migrado al mismo patrón Tabulator
+(`SIGEPAN.table.create()`, buscador en vivo, paginación real, mismos badges de stock bajo mínimo/estado).
+RF-016 sube a **99%**.
 
 ## 🔴 Bugs reportados por César en pruebas reales (05-08, tarde) — corregidos
 
@@ -180,15 +312,15 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-007 | Roles y permisos | Yilbert | 100% |
 | RF-008 | Menú principal | Yilbert | 85% |
 | RF-009 | Gestión de sucursales | Yilbert | 100% |
-| RF-010 | Gestión de categorías | César | 68% |
-| RF-011 | Gestión de productos | César | 77% 🟡 (verificar en tu máquina) |
+| RF-010 | Gestión de categorías | César | 95% 🟡 (verificar en tu máquina) |
+| RF-011 | Gestión de productos | César | 91% 🟡 (verificar en tu máquina) |
 | RF-012 | Registro de ventas | César | 98% 🟡 (verificar en tu máquina) |
-| RF-013 | Métodos de pago | César | 90% 🟡 (verificar en tu máquina) |
-| RF-014 | Apertura de caja | César | 72% |
-| RF-015 | Cierre de caja | César | 60% |
-| RF-016 | Control de inventario | César/Yilbert | 90% 🟡 (verificar en tu máquina) |
-| RF-017 | Registro de mermas | César | 80% 🟡 (verificar en tu máquina) |
-| RF-018 | Anulación y ajustes | César | 75% 🟡 (verificar en tu máquina) |
+| RF-013 | Métodos de pago | César | 93% 🟡 (verificar en tu máquina) |
+| RF-014 | Apertura de caja | César | 92% |
+| RF-015 | Cierre de caja | César | 92% |
+| RF-016 | Control de inventario | César/Yilbert | 99% 🟡 (verificar en tu máquina) |
+| RF-017 | Registro de mermas | César | 88% 🟡 (verificar en tu máquina) |
+| RF-018 | Anulación y ajustes | César | 88% 🟡 (verificar en tu máquina) |
 | RF-019 | Reportes operativos | Yilbert | 80% |
 | RF-020 | Dashboard gerencial | Yilbert | 85% |
 | RF-021 | Bitácora de ingresos | Yilbert | 90% |
@@ -196,15 +328,15 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-023 | Vinculación Google | Yilbert | 55% |
 | RF-024 | Configuración tributaria | Yilbert | 80% |
 | RF-025 | Reporte tributario mensual | Yilbert | 85% |
-| RF-026 | Gastos operativos | César | 75% 🟡 (verificar en tu máquina) |
+| RF-026 | Gastos operativos | César | 93% 🟡 (verificar en tu máquina) |
 | RF-027 | Reporte de utilidad estimada | Yilbert | 85% |
 | RF-028 | Entrada de inventario | Yilbert (apoyo) | 85% |
 | RF-029 | Gestión de clientes | César | 100% ✅ |
-| RF-030 | Registro de compras | César | 90% 🟡 (verificar en tu máquina) |
+| RF-030 | Registro de compras | César | 95% 🟡 (verificar en tu máquina) |
 | RF-031 | Ayuda contextual | Yilbert | 85% |
 | RF-032 | Administración de ayudas | Yilbert | 70% |
 | RF-033 | Acerca de | Yilbert | 95% |
-| RF-034 | Cambio de usuario | César/Yilbert | 75% |
+| RF-034 | Cambio de usuario | César/Yilbert | 90% |
 
 ---
 

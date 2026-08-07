@@ -101,107 +101,15 @@
 
         </div>
 
-        <div class="card-body"> <!-- Se removió el p-0 para que DataTables gestione mejor los márgenes del buscador/paginación -->
+        <div class="card-body p-0">
 
-            <div class="table-responsive">
-
-                <!-- Se agregó el id="tablaMovimientos" para que funcione DataTables -->
-                <table id="tablaMovimientos" class="table table-hover align-middle mb-0 w-100">
-
-                    <thead class="table-light">
-
-                        <tr>
-
-                            <th>Tipo</th>
-                            <th>Descripción</th>
-                            <th class="text-end">Monto</th>
-                            <th>Fecha</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {% for movimiento in movimientos %}
-
-                        <tr>
-
-                            <td>
-
-                                {% if movimiento.tipo_movimiento == "INGRESO" %}
-
-                                    <span class="badge bg-success">
-                                        Ingreso
-                                    </span>
-
-                                {% elif movimiento.tipo_movimiento == "VENTA" %}
-
-                                    <span class="badge bg-primary">
-                                        Venta
-                                    </span>
-
-                                {% elif movimiento.tipo_movimiento == "RETIRO" %}
-
-                                    <span class="badge bg-danger">
-                                        Retiro
-                                    </span>
-
-                                {% elif movimiento.tipo_movimiento == "GASTO" %}
-
-                                    <span class="badge bg-danger">
-                                        Gasto
-                                    </span>
-
-                                {% elif movimiento.tipo_movimiento == "AJUSTE" %}
-
-                                    <span class="badge bg-warning text-dark">
-                                        Ajuste
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                            <td>
-                                {{ movimiento.descripcion }}
-                            </td>
-
-                            <td class="text-end fw-semibold">
-                                ₡ {{ movimiento.monto|floatformat:2 }}
-                            </td>
-
-                            <td class="text-muted small">
-                                {{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}
-                            </td>
-
-                        </tr>
-
-                        {% empty %}
-
-                        <!-- Nota: DataTables maneja su propio mensaje de "No data", pero dejamos el row por seguridad -->
-                        <tr>
-
-                            <td colspan="4" class="text-center text-muted py-4">
-
-                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                                No existen movimientos registrados.
-
-                            </td>
-
-                        </tr>
-
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
+            <div id="tablaMovimientosDetalle" class="w-100"></div>
 
         </div>
 
     </div>
+
+    {{ movimientos_json|json_script:"movimientos-detalle-data" }}
 
     <!-- ===================================== -->
     <!-- ACCIONES -->
@@ -241,41 +149,49 @@
 
 </div>
 
-<!-- Scripts de DataTables y Tooltips -->
+<!-- Corregido (07-08): la tabla migró de jQuery DataTables (ya no
+     funciona, base.html no carga jQuery desde que el proyecto adoptó
+     Tabulator.js) al mismo patrón que ya usa Clientes/Cajas. -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    // Inicializar DataTables en la tabla de movimientos
-    if (document.getElementById("tablaMovimientos")) {
-        $('#tablaMovimientos').DataTable({
-            "language": {
-                "decimal": "",
-                "emptyTable": "No hay información disponible en la tabla",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                "infoEmpty": "Mostrando 0 to 0 of 0 registros",
-                "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                "infoPostFix": "",
-                "thousands": ",",
-                "lengthMenu": "Mostrar _MENU_ registros",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscar:",
-                "zeroRecords": "No se encontraron resultados coincidentes",
-                "paginate": {
-                    "first": "Primero",
-                    "last": "Último",
-                    "next": "Siguiente",
-                    "previous": "Anterior"
-                },
-                "aria": {
-                    "sortAscending": ": activar para ordenar la columna ascendente",
-                    "sortDescending": ": activar para ordenar la columna descendente"
+    const badgeTipoMovimiento = {
+        INGRESO: '<span class="badge bg-success">Ingreso</span>',
+        VENTA: '<span class="badge bg-primary">Venta</span>',
+        RETIRO: '<span class="badge bg-danger">Retiro</span>',
+        GASTO: '<span class="badge bg-danger">Gasto</span>',
+        AJUSTE: '<span class="badge bg-warning text-dark">Ajuste</span>',
+    };
+
+    const movimientosElement = document.getElementById("movimientos-detalle-data");
+    const movimientos = movimientosElement ? JSON.parse(movimientosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaMovimientosDetalle",
+        data: movimientos,
+        placeholder: "No existen movimientos registrados.",
+        columns: [
+            {
+                title: "Tipo",
+                field: "tipo_movimiento",
+                width: 120,
+                formatter(cell) {
+                    const tipo = cell.getValue();
+                    return badgeTipoMovimiento[tipo] || tipo;
                 }
             },
-            "pageLength": 10,
-            "order": [[3, "desc"]] // Ordenar por defecto por la columna de fecha (la 4ta columna, índice 3) de manera descendiente
-        });
-    }
+            { title: "Descripción", field: "descripcion" },
+            {
+                title: "Monto",
+                field: "monto",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-semibold">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            { title: "Fecha", field: "fecha_movimiento" },
+        ]
+    });
 
     // Inicializar Tooltips de Bootstrap
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

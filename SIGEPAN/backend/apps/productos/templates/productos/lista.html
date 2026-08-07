@@ -23,101 +23,123 @@
         </div>
     </div>
 
-    <!-- Tabla con DataTable -->
-    <div class="card shadow-sm border-0">
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
         <div class="card-body">
-            <div class="table-responsive">
-                <table id="tabla-productos" class="table table-hover align-middle sigepan-table mb-0 w-100">
-                    <thead class="table-dark">
-                        <tr>
-                            <th class="ps-3">Código</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Precio Compra</th>
-                            <th>Precio Venta</th>
-                            <th>Utilidad</th>
-                            <th>Impuesto</th>
-                            <th>Unidad</th>
-                            <th>Categoría</th>
-                            <th class="text-center">Imagen</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-end pe-3">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for producto in productos %}
-                        <tr>
-                            <td class="ps-3"><code>{{ producto.codigo }}</code></td>
-                            <td class="fw-semibold">{{ producto.nombre }}</td>
-                            <td class="text-muted">{{ producto.descripcion|default:"-"|truncatechars:30 }}</td>
-                            <td>₡ {{ producto.precio_compra|floatformat:2 }}</td>
-                            <td class="text-success fw-bold">₡ {{ producto.precio_venta|floatformat:2 }}</td>
-                            <td>{{ producto.porcentaje_utilidad|floatformat:2 }}%</td>
-                            <td>{{ producto.porcentaje_impuesto|floatformat:2 }}%</td>
-                            <td><span class="text-dark fw-bold">{{ producto.unidad_medida }}</span></td>
-                            <td>{{ producto.id_categoria.nombre }}</td>
-                            
-                            <!-- Imagen -->
-                            <td class="text-center align-middle">
-                                {% if producto.imagen %}
-                                    <img src="{% get_media_prefix %}{{ producto.imagen }}" alt="{{ producto.nombre }}" class="rounded-circle shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
-                                {% else %}
-                                    <div class="bg-light border rounded-circle d-inline-flex align-items-center justify-content-center text-secondary shadow-sm" style="width: 40px; height: 40px;" title="Sin imagen">
-                                        <i class="fas fa-image"></i>
-                                    </div>
-                                {% endif %}
-                            </td>
-
-                            <!-- Estado -->
-                            <td class="text-center align-middle">
-                                {% if producto.estado %}
-                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activo</span>
-                                {% else %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactivo</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- Botones de Acción -->
-                            <td class="text-end pe-3 align-middle">
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'productos:editar_producto' producto.id_producto %}" 
-                                       class="btn btn-outline-info btn-sm" 
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
-                                    <a href="{% url 'productos:eliminar_producto' producto.id_producto %}" 
-                                       class="btn btn-outline-danger btn-sm" 
-                                       title="Eliminar">
-                                        <i class="fas fa-trash-alt"></i> Eliminar
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <!-- Nota: DataTables maneja las filas vacías automáticamente -->
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarProductos" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por código, nombre o categoría...">
             </div>
+        </div>
+    </div>
 
+    <!-- Tabla con Tabulator -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaProductos" class="w-100"></div>
         </div>
     </div>
 
 </div>
+
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ productos_json|json_script:"productos-data" }}
+
 {% endblock %}
 
-{% block extra_js %}
+{% block js %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        $('#tabla-productos').DataTable({
-            language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+document.addEventListener("DOMContentLoaded", function () {
+    const productosElement = document.getElementById("productos-data");
+    const productos = productosElement ? JSON.parse(productosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaProductos",
+        search: "#buscarProductos",
+        data: productos,
+        columns: [
+            {
+                title: "Código",
+                field: "codigo",
+                width: 100,
+                formatter(cell) {
+                    return `<code>${cell.getValue()}</code>`;
+                }
             },
-            order: [[0, "asc"]],
-            pageLength: 10,
-            responsive: true,
-            dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rt<"row mt-3"<"col-md-6"i><"col-md-6"p>>',
-        });
+            { title: "Nombre", field: "nombre" },
+            {
+                title: "Descripción",
+                field: "descripcion",
+                formatter(cell) {
+                    const valor = cell.getValue();
+                    return valor ? valor : '<span class="text-muted">-</span>';
+                }
+            },
+            {
+                title: "Precio Compra",
+                field: "precio_compra",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}`;
+                }
+            },
+            {
+                title: "Precio Venta",
+                field: "precio_venta",
+                hozAlign: "right",
+                formatter(cell) {
+                    const valor = cell.getValue();
+                    if (!valor) return "-";
+                    return `<span class="text-success fw-bold">₡ ${parseFloat(valor).toFixed(2)}</span>`;
+                }
+            },
+            {
+                title: "Unidad",
+                field: "unidad_medida",
+                formatter(cell) {
+                    return `<span class="text-dark fw-bold">${cell.getValue()}</span>`;
+                }
+            },
+            { title: "Categoría", field: "categoria" },
+            {
+                title: "Imagen",
+                field: "imagen",
+                hozAlign: "center",
+                width: 90,
+                formatter(cell) {
+                    const imagen = cell.getValue();
+                    if (imagen) {
+                        return `<img src="/media/${imagen}" class="rounded-circle shadow-sm" style="width:40px;height:40px;object-fit:cover;">`;
+                    }
+                    return '<div class="bg-light border rounded-circle d-inline-flex align-items-center justify-content-center text-secondary shadow-sm" style="width:40px;height:40px;" title="Sin imagen"><i class="fas fa-image"></i></div>';
+                }
+            },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activo</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactivo</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="btn-group" role="group">';
+                    botones += `<a href="${data.editar}" class="btn btn-outline-info btn-sm" title="Editar"><i class="fas fa-edit"></i> Editar</a>`;
+                    botones += `<a href="${data.eliminar}" class="btn btn-outline-danger btn-sm" title="Eliminar"><i class="fas fa-trash-alt"></i> Eliminar</a>`;
+                    botones += "</div>";
+                    return botones;
+                }
+            }
+        ]
     });
+});
 </script>
 {% endblock %}

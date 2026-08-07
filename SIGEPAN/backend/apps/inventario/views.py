@@ -3,6 +3,7 @@ from django.shortcuts import (
     redirect,
     get_object_or_404
 )
+from django.urls import reverse
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -12,6 +13,7 @@ from apps.security.audit import AuditMixin
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.permissions import PermissionRequiredMixin
 from apps.security.decorators import login_required, permiso_requerido
+from apps.security.services import registrar_log
 
 from .models import Inventario
 from .forms import InventarioForm, MovimientoInventarioForm
@@ -42,10 +44,34 @@ def lista_inventario(request):
         "id_producto__nombre"
     )
 
+    # Serialización a JSON (07-08): mismo patrón que Categorías/Productos/
+    # Proveedores/Ventas/Compras/Cajas — Tabulator.js (SIGEPAN.table.create())
+    # en vez de una tabla plana sin buscador ni paginación, para que la
+    # lista de inventario no crezca sin control visual a medida que se
+    # agregan productos/sucursales.
+    inventarios_json = [
+        {
+            "id_inventario": inventario.id_inventario,
+            "producto": inventario.id_producto.nombre,
+            "sucursal": inventario.id_sucursal.nombre,
+            "stock_actual": inventario.stock_actual,
+            "stock_minimo": inventario.stock_minimo,
+            "stock_maximo": inventario.stock_maximo,
+            "bajo_minimo": inventario.stock_actual <= inventario.stock_minimo,
+            "estado": inventario.estado,
+            "ver": reverse("inventario:detalle_inventario", args=[inventario.id_inventario]),
+            "editar": reverse("inventario:editar_inventario", args=[inventario.id_inventario]),
+        }
+        for inventario in inventarios
+    ]
+
     return render(
         request,
         "inventario/lista_inventario.html",
-        {"inventarios": inventarios}
+        {
+            "inventarios": inventarios,
+            "inventarios_json": inventarios_json,
+        }
     )
 
 
@@ -92,6 +118,24 @@ def editar_inventario(request, id_inventario):
         if form.is_valid():
 
             form.save()
+
+            # Corregido (07-08, hallazgo de auditoría): a diferencia de
+            # EntradaInventarioView (que sí usa AuditMixin), esta vista
+            # (function-based) no dejaba rastro en la bitácora al editar
+            # stock_minimo/stock_maximo/ubicacion/estado — el decorador
+            # @permiso_requerido solo audita el acceso denegado, no la
+            # mutación exitosa.
+            registrar_log(
+                request=request,
+                usuario=request.usuario,
+                modulo="Inventario",
+                tipo_accion="MODIFICAR",
+                descripcion=(
+                    f"Se actualizó el inventario de "
+                    f"{inventario.id_producto.nombre} en "
+                    f"{inventario.id_sucursal.nombre}"
+                ),
+            )
 
             messages.success(
                 request,

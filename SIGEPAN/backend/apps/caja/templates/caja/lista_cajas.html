@@ -2,14 +2,12 @@
 
 {% load ayuda_tags %}
 
-{% block css %}
-<!-- DataTables Bootstrap 5 CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-{% endblock %}
-
 {% block content %}
 
 {% boton_ayuda "Caja" "caja" %}
+
+<!-- Contenedor con el token CSRF para las acciones de activar/desactivar por AJAX -->
+<div id="caja-config" data-csrf="{{ csrf_token }}" class="d-none"></div>
 
 <div class="container-fluid mt-4">
 
@@ -78,153 +76,138 @@
     </div>
 
     <!-- ===================================== -->
-    <!-- TABLA DE CAJAS -->
+    <!-- BUSCADOR -->
     <!-- ===================================== -->
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm mb-3 border-0">
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tabla-cajas">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Sucursal</th>
-                            <th>Saldo Actual</th>
-                            <th>Estado</th>
-                            <th>Operación</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for caja in cajas %}
-                        <tr>
-                            <!-- NOMBRE -->
-                            <td class="fw-bold text-dark">
-                                <i class="bi bi-box-seam text-muted me-1"></i> {{ caja.nombre }}
-                            </td>
-
-                            <!-- SUCURSAL -->
-                            <td>
-                                {{ caja.sucursal }}
-                            </td>
-
-                            <!-- SALDO -->
-                            <td class="fw-semibold text-success">
-                                ₡ {{ caja.saldo_actual|floatformat:2 }}
-                            </td>
-
-                            <!-- ESTADO ADMINISTRATIVO -->
-                            <td>
-                                {% if caja.estado %}
-                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>
-                                {% else %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactiva</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- ESTADO OPERATIVO -->
-                            <td>
-                                {% if caja.apertura_activa %}
-                                    <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Abierta</span>
-                                {% else %}
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">Cerrada</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- ACCIONES -->
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-1">
-                                    <!-- ADMINISTRAR -->
-                                    {% if caja.estado %}
-                                        <a href="{% url 'caja:administrar_caja' caja.id_caja %}"
-                                           class="btn btn-outline-dark btn-sm"
-                                           data-bs-toggle="tooltip"
-                                           title="Administrar caja">
-                                            <i class="bi bi-gear"></i>
-                                        </a>
-                                    {% endif %}
-
-                                    <!-- ABRIR -->
-                                    {% if caja.estado and not caja.apertura_activa %}
-                                        <a href="{% url 'caja:abrir_caja' caja.id_caja %}"
-                                           class="btn btn-outline-success btn-sm"
-                                           data-bs-toggle="tooltip"
-                                           title="Abrir caja">
-                                            <i class="bi bi-unlock"></i>
-                                        </a>
-                                    {% endif %}
-
-                                    <!-- DESACTIVAR -->
-                                    {% if caja.estado %}
-                                        <form method="post"
-                                              action="{% url 'caja:desactivar_caja' caja.id_caja %}"
-                                              class="d-inline"
-                                              onsubmit="return confirm('¿Desactivar esta caja?');">
-                                            {% csrf_token %}
-                                            <button type="submit"
-                                                    class="btn btn-outline-warning btn-sm"
-                                                    data-bs-toggle="tooltip"
-                                                    title="Desactivar caja">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        </form>
-                                    {% endif %}
-
-                                    <!-- ACTIVAR -->
-                                    {% if not caja.estado %}
-                                        <form method="post"
-                                              action="{% url 'caja:activar_caja' caja.id_caja %}"
-                                              class="d-inline"
-                                              onsubmit="return confirm('¿Activar esta caja?');">
-                                            {% csrf_token %}
-                                            <button type="submit"
-                                                    class="btn btn-outline-success btn-sm"
-                                                    data-bs-toggle="tooltip"
-                                                    title="Activar caja">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-5">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                No existen cajas registradas en el sistema.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarCajas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por nombre o sucursal...">
             </div>
         </div>
     </div>
 
+    <!-- ===================================== -->
+    <!-- TABLA DE CAJAS -->
+    <!-- ===================================== -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaCajas" class="w-100"></div>
+        </div>
+    </div>
+
 </div>
+
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ cajas_json|json_script:"cajas-data" }}
+
 {% endblock %}
 
+<!-- Corregido (07-08): la tabla migra de jQuery DataTables (ya no
+     funciona, base.html no carga jQuery desde que el proyecto adoptó
+     Tabulator.js) al mismo patrón que ya usa Clientes. -->
 {% block js %}
-<!-- DataTables JS y Bootstrap 5 Integration -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Inicializar DataTable para la lista de cajas
-        $('#tabla-cajas').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-            },
-            order: [[0, 'asc']], // Ordenar por nombre por defecto
-            pageLength: 10,
-            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
-        });
+document.addEventListener("DOMContentLoaded", function () {
+    const configEl = document.getElementById("caja-config");
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
 
-        // Inicializar tooltips de Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
+    const cajasElement = document.getElementById("cajas-data");
+    const cajas = cajasElement ? JSON.parse(cajasElement.textContent) : [];
+    cajas.forEach(c => { c.csrfToken = csrfTokenGlobal; });
+
+    SIGEPAN.table.create({
+        selector: "#tablaCajas",
+        search: "#buscarCajas",
+        data: cajas,
+        placeholder: "No existen cajas registradas en el sistema.",
+        columns: [
+            {
+                title: "Nombre",
+                field: "nombre",
+                headerHozAlign: "left",
+                formatter(cell) {
+                    return `<i class="bi bi-box-seam text-muted me-1"></i> ${cell.getValue()}`;
+                }
+            },
+            { title: "Sucursal", field: "sucursal" },
+            {
+                title: "Saldo Actual",
+                field: "saldo_actual",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-semibold text-success">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactiva</span>';
+                }
+            },
+            {
+                title: "Operación",
+                field: "apertura_activa",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Abierta</span>'
+                        : '<span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">Cerrada</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="d-flex justify-content-center gap-1">';
+
+                    if (data.estado) {
+                        botones += `<a href="${data.administrar}" class="btn btn-outline-dark btn-sm" title="Administrar caja"><i class="bi bi-gear"></i></a>`;
+                    }
+
+                    if (data.estado && !data.apertura_activa) {
+                        botones += `<a href="${data.abrir}" class="btn btn-outline-success btn-sm" title="Abrir caja"><i class="bi bi-unlock"></i></a>`;
+                    }
+
+                    if (data.estado) {
+                        botones += `<button class="btn btn-outline-warning btn-sm btn-desactivar-caja" title="Desactivar caja"><i class="bi bi-x-circle"></i></button>`;
+                    } else {
+                        botones += `<button class="btn btn-outline-success btn-sm btn-activar-caja" title="Activar caja"><i class="bi bi-check-circle"></i></button>`;
+                    }
+
+                    botones += "</div>";
+                    return botones;
+                },
+                cellClick(e, cell) {
+                    const data = cell.getRow().getData();
+
+                    if (e.target.closest(".btn-desactivar-caja")) {
+                        SIGEPAN.table.postAction({
+                            url: data.desactivar,
+                            csrfToken: data.csrfToken,
+                            message: "¿Desactivar esta caja?",
+                        });
+                        return;
+                    }
+
+                    if (e.target.closest(".btn-activar-caja")) {
+                        SIGEPAN.table.postAction({
+                            url: data.activar,
+                            csrfToken: data.csrfToken,
+                            message: "¿Activar esta caja?",
+                        });
+                    }
+                }
+            }
+        ]
     });
+});
 </script>
 {% endblock %}

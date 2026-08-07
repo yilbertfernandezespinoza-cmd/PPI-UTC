@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from .models import Proveedor
 from .forms import ProveedorForm
 from apps.security.decorators import login_required, permiso_requerido
@@ -8,7 +9,30 @@ from apps.security.services import registrar_log
 @permiso_requerido("Proveedores", "CONSULTAR")
 def lista_proveedores(request):
     proveedores = Proveedor.objects.all()
-    return render(request, 'proveedores/lista.html', {'proveedores': proveedores})
+
+    # Serialización a JSON (07-08): mismo motivo que Categorías/Productos
+    # — la tabla migra de jQuery DataTables (ya no funciona) a
+    # Tabulator.js (SIGEPAN.table.create()), igual que Clientes.
+    proveedores_json = [
+        {
+            "id_proveedor": proveedor.id_proveedor,
+            "identificacion": proveedor.identificacion,
+            "nombre": proveedor.nombre,
+            "contacto": proveedor.contacto,
+            "telefono": proveedor.telefono,
+            "correo": proveedor.correo,
+            "direccion": proveedor.direccion,
+            "estado": proveedor.estado,
+            "editar": reverse("proveedores:editar_proveedor", args=[proveedor.id_proveedor]),
+            "eliminar": reverse("proveedores:eliminar_proveedor", args=[proveedor.id_proveedor]),
+        }
+        for proveedor in proveedores
+    ]
+
+    return render(request, 'proveedores/lista.html', {
+        'proveedores': proveedores,
+        'proveedores_json': proveedores_json,
+    })
 
 @login_required
 @permiso_requerido("Proveedores", "CREAR")

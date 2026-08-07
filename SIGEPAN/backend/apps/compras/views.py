@@ -6,6 +6,8 @@ from django.shortcuts import (
 
 from django.contrib import messages
 from django.db import transaction
+from django.urls import reverse
+from django.utils import timezone
 
 
 from .models import Compra
@@ -34,10 +36,29 @@ def lista_compras(request):
 
     compras = CompraRepository.listar()
 
+    # Serialización a JSON (07-08): la tabla migra de jQuery DataTables
+    # (ya no funciona, base.html no carga jQuery desde que el proyecto
+    # adoptó Tabulator.js) al mismo patrón que ya usa Clientes.
+    compras_json = [
+        {
+            "id_compra": compra.id_compra,
+            "proveedor": compra.proveedor.nombre if compra.proveedor else "-",
+            "fecha": timezone.localtime(compra.fecha).strftime("%d/%m/%Y %H:%M"),
+            "total": str(compra.total),
+            "estado": compra.estado,
+            "detalle": reverse("compras:detalle_compra", args=[compra.id_compra]),
+            "anular": reverse("compras:anular_compra", args=[compra.id_compra]),
+        }
+        for compra in compras
+    ]
+
     return render(
         request,
         "compras/lista_compras.html",
-        {"compras": compras}
+        {
+            "compras": compras,
+            "compras_json": compras_json,
+        }
     )
 
 

@@ -1,10 +1,5 @@
 {% extends "base.html" %}
 
-{% block css %}
-<!-- DataTables Bootstrap 5 CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid mt-4">
 
@@ -232,54 +227,12 @@
             <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-list-columns-reverse text-success me-2"></i> Últimos Movimientos</h5>
             <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">{{ total_movimientos }} registros</span>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tabla-movimientos">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="15%">Tipo</th>
-                            <th>Descripción</th>
-                            <th width="20%">Usuario</th>
-                            <th width="15%" class="text-end">Monto</th>
-                            <th width="20%">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for movimiento in movimientos %}
-                        <tr>
-                            <td>
-                                {% if movimiento.tipo_movimiento == "INGRESO" %}
-                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Ingreso</span>
-                                {% elif movimiento.tipo_movimiento == "RETIRO" %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Retiro</span>
-                                {% elif movimiento.tipo_movimiento == "GASTO" %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Gasto</span>
-                                {% elif movimiento.tipo_movimiento == "VENTA" %}
-                                    <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Venta</span>
-                                {% elif movimiento.tipo_movimiento == "AJUSTE" %}
-                                    <span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Ajuste</span>
-                                {% else %}
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">{{ movimiento.tipo_movimiento }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-dark">{{ movimiento.descripcion|default:"-" }}</td>
-                            <td class="text-muted">{{ movimiento.usuario }}</td>
-                            <td class="text-end fw-semibold text-success">₡ {{ movimiento.monto|floatformat:2 }}</td>
-                            <td class="text-muted small">{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                No existen movimientos registrados para esta apertura.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="card-body p-0">
+            <div id="tablaMovimientos" class="w-100"></div>
         </div>
     </div>
+
+    {{ movimientos_json|json_script:"movimientos-data" }}
 
     <!-- ===================================== -->
     <!-- RESUMEN DE ARQUEOS Y HISTORIAL -->
@@ -336,40 +289,8 @@
             <!-- TABLA DE HISTORIAL DE ARQUEOS -->
             {% if caja_abierta %}
                 {% if arqueos %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tabla-arqueos">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Usuario</th>
-                                <th class="text-end">Sistema</th>
-                                <th class="text-end">Contado</th>
-                                <th class="text-end">Diferencia</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for arqueo in arqueos %}
-                            <tr>
-                                <td class="text-muted small">{{ arqueo.fecha_arqueo|date:"d/m/Y H:i" }}</td>
-                                <td class="text-dark">{{ arqueo.usuario }}</td>
-                                <td class="text-end fw-semibold">₡ {{ arqueo.saldo_sistema|floatformat:2 }}</td>
-                                <td class="text-end fw-semibold">₡ {{ arqueo.saldo_contado|floatformat:2 }}</td>
-                                <td class="text-end">
-                                    {% if arqueo.diferencia == 0 %}
-                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Cuadrada (₡ 0.00)</span>
-                                    {% elif arqueo.diferencia > 0 %}
-                                        <span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Sobrante (+ ₡ {{ arqueo.diferencia|floatformat:2 }})</span>
-                                    {% else %}
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Faltante (₡ {{ arqueo.diferencia|cut:"-"|floatformat:2 }})</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-muted">{{ arqueo.observaciones|default:"-" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <div id="tablaArqueos" class="w-100"></div>
+                {{ arqueos_json|json_script:"arqueos-data" }}
                 {% else %}
                 <div class="alert alert-light border text-center text-muted mb-0 py-3">
                     No existen arqueos registrados para esta apertura actual.
@@ -386,39 +307,114 @@
 </div>
 {% endblock %}
 
+{# Corregido (07-08): ambas tablas migraron de jQuery DataTables (ya no #}
+{# funciona, base.html no carga jQuery desde que el proyecto adoptó #}
+{# Tabulator.js) al mismo patrón que ya usa Clientes/Cajas. #}
 {% block js %}
-<!-- DataTables JS y Bootstrap 5 Integration -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Inicializar DataTable para Movimientos
-        $('#tabla-movimientos').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+document.addEventListener("DOMContentLoaded", function () {
+    const badgeTipoMovimiento = {
+        INGRESO: '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Ingreso</span>',
+        RETIRO: '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Retiro</span>',
+        GASTO: '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Gasto</span>',
+        VENTA: '<span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Venta</span>',
+        AJUSTE: '<span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Ajuste</span>',
+    };
+
+    const movimientosElement = document.getElementById("movimientos-data");
+    const movimientos = movimientosElement ? JSON.parse(movimientosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaMovimientos",
+        data: movimientos,
+        placeholder: "No existen movimientos registrados para esta apertura.",
+        columns: [
+            {
+                title: "Tipo",
+                field: "tipo_movimiento",
+                width: 120,
+                formatter(cell) {
+                    const tipo = cell.getValue();
+                    return badgeTipoMovimiento[tipo] || `<span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">${tipo}</span>`;
+                }
             },
-            order: [[4, 'desc']], // Ordenar por fecha descendente
-            pageLength: 5,
-            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
-        });
-
-        // Inicializar DataTable para Arqueos (si existe la tabla)
-        if ($('#tabla-arqueos').length) {
-            $('#tabla-arqueos').DataTable({
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-                },
-                order: [[0, 'desc']],
-                pageLength: 5,
-                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
-            });
-        }
-
-        // Inicializar Tooltips de Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
+            {
+                title: "Descripción",
+                field: "descripcion",
+                formatter(cell) {
+                    return cell.getValue() || "-";
+                }
+            },
+            { title: "Usuario", field: "usuario" },
+            {
+                title: "Monto",
+                field: "monto",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-semibold text-success">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            { title: "Fecha", field: "fecha_movimiento" },
+        ]
     });
+
+    const arqueosElement = document.getElementById("arqueos-data");
+    if (arqueosElement) {
+        const arqueos = JSON.parse(arqueosElement.textContent);
+
+        SIGEPAN.table.create({
+            selector: "#tablaArqueos",
+            data: arqueos,
+            columns: [
+                { title: "Fecha", field: "fecha_arqueo" },
+                { title: "Usuario", field: "usuario" },
+                {
+                    title: "Sistema",
+                    field: "saldo_sistema",
+                    hozAlign: "right",
+                    formatter(cell) {
+                        return `₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}`;
+                    }
+                },
+                {
+                    title: "Contado",
+                    field: "saldo_contado",
+                    hozAlign: "right",
+                    formatter(cell) {
+                        return `₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}`;
+                    }
+                },
+                {
+                    title: "Diferencia",
+                    field: "diferencia",
+                    hozAlign: "right",
+                    formatter(cell) {
+                        const diferencia = parseFloat(cell.getValue() || 0);
+                        if (diferencia === 0) {
+                            return '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Cuadrada (₡ 0.00)</span>';
+                        }
+                        if (diferencia > 0) {
+                            return `<span class="badge bg-warning bg-opacity-10 text-warning text-dark px-2 py-1">Sobrante (+ ₡ ${diferencia.toFixed(2)})</span>`;
+                        }
+                        return `<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Faltante (₡ ${Math.abs(diferencia).toFixed(2)})</span>`;
+                    }
+                },
+                {
+                    title: "Observaciones",
+                    field: "observaciones",
+                    formatter(cell) {
+                        return cell.getValue() || "-";
+                    }
+                },
+            ]
+        });
+    }
+
+    // Inicializar Tooltips de Bootstrap (se usan en los botones del Panel de Acciones)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
 </script>
 {% endblock %}

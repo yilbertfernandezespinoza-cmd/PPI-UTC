@@ -2,22 +2,32 @@
 from urllib import request
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
 from .utils import (calcular_saldo_sistema, calcular_saldo_movimientos)
-from .services import CierreCajaService
+from .services import (
+    CajaService,
+    AperturaCajaService,
+    MovimientoCajaService,
+    ArqueoCajaService,
+    CierreCajaService,
+)
+from .repositories import (
+    CajaRepository,
+    AperturaCajaRepository,
+    MovimientoCajaRepository,
+    ArqueoCajaRepository,
+    HistorialCajaRepository,
+)
 from decimal import Decimal
 
-from .models import (
-    Caja,
-    HistorialCaja,
-    AperturaCaja,
-    MovimientoCaja,
-    ArqueoCaja,
-    CierreCaja
-)
+# (07-08) Los modelos de este módulo ya no se consultan directo aquí —
+# toda la lectura/escritura pasa por CajaRepository/AperturaCajaRepository/
+# MovimientoCajaRepository/ArqueoCajaRepository/HistorialCajaRepository
+# (repositories.py) y los Service correspondientes (services.py).
 
 from apps.security.models import Usuario
 from apps.security.decorators import login_required, permiso_requerido
@@ -65,19 +75,38 @@ def obtener_usuario(request):
 @permiso_requerido("Caja", "CONSULTAR")
 def lista_cajas(request):
 
-    cajas = Caja.objects.all()
+    cajas = CajaRepository.listar_todas()
 
     for caja in cajas:
-        caja.apertura_activa = AperturaCaja.objects.filter(
-            caja=caja,
-            estado=True
-        ).first()
+        caja.apertura_activa = CajaRepository.apertura_activa(caja)
+
+    # Serialización a JSON (07-08): la tabla migra de jQuery DataTables
+    # (ya no funciona, base.html no carga jQuery desde que el proyecto
+    # adoptó Tabulator.js) al mismo patrón que ya usa Clientes. Con 9
+    # cajas de prueba ya sin paginación real, esto además evita que la
+    # lista crezca sin control visual.
+    cajas_json = [
+        {
+            "id_caja": caja.id_caja,
+            "nombre": caja.nombre,
+            "sucursal": str(caja.sucursal),
+            "saldo_actual": str(caja.saldo_actual),
+            "estado": caja.estado,
+            "apertura_activa": caja.apertura_activa is not None,
+            "administrar": reverse("caja:administrar_caja", args=[caja.id_caja]),
+            "abrir": reverse("caja:abrir_caja", args=[caja.id_caja]),
+            "desactivar": reverse("caja:desactivar_caja", args=[caja.id_caja]),
+            "activar": reverse("caja:activar_caja", args=[caja.id_caja]),
+        }
+        for caja in cajas
+    ]
 
     return render(
         request,
         "caja/lista_cajas.html",
         {
-            "cajas": cajas
+            "cajas": cajas,
+            "cajas_json": cajas_json,
         }
     )
 
@@ -153,13 +182,11 @@ def crear_caja(request):
 
 
             # =========================================
-            # INICIALIZAR CAMPOS LEGACY
+            # GUARDAR (CajaService inicializa saldo_inicial/
+            # saldo_actual en 0, igual que antes)
             # =========================================
 
-            caja.saldo_inicial = Decimal("0.00")
-            caja.saldo_actual = Decimal("0.00")
-
-            caja.save()
+            caja = CajaService.crear(caja)
 
 
             messages.success(
@@ -209,10 +236,7 @@ def editar_caja(request, id_caja):
     # OBTENER CAJA
     # =========================================
 
-    caja = get_object_or_404(
-        Caja,
-        id_caja=id_caja
-    )
+    caja = CajaRepository.obtener(id_caja)
 
 
     if not caja.estado:
@@ -324,19 +348,9 @@ def activar_caja(request, id_caja):
             "caja:lista_cajas"
         )
 
-    caja = get_object_or_404(
+    caja = CajaRepository.obtener(id_caja)
 
-        Caja,
-
-        id_caja=id_caja
-
-    )
-
-
-    caja.estado = True
-
-
-    caja.save()
+    CajaService.activar(caja)
 
 
 
@@ -380,37 +394,30 @@ def desactivar_caja(request, id_caja):
             "caja:lista_cajas"
         )
 
-    caja = get_object_or_404(
-
-        Caja,
-
-        id_caja=id_caja
-
-    )
+    caja = CajaRepository.obtener(id_caja)
 
 
     # =========================================
-    # VALIDAR APERTURA ACTIVA
+    # VALIDAR APERTURA ACTIVA Y DESACTIVAR
     # =========================================
 
     # Bug real encontrado en auditoría (06-08): `hasattr(caja, "apertura_activa")`
-    # nunca es verdadero aquí. Ese atributo solo se asigna dinámicamente en
-    # lista_cajas() (fuera de este objeto), pero `caja` se acaba de obtener
-    # con un get_object_or_404 nuevo que jamás lo tiene — el hasattr() daba
-    # siempre False y esta validación nunca se ejecutaba: se podía
-    # desactivar una caja con una apertura activa pese al mensaje de error
-    # que la función muestra. Se reemplaza por una consulta real.
-    tiene_apertura_activa = AperturaCaja.objects.filter(
-        caja=caja, estado=True
-    ).exists()
-
-    if tiene_apertura_activa:
+    # nunca era verdadero aquí. Ese atributo solo se asigna dinámicamente en
+    # lista_cajas() (fuera de este objeto), pero `caja` se obtenía con un
+    # get_object_or_404 nuevo que jamás lo tenía — el hasattr() daba siempre
+    # False y esta validación nunca se ejecutaba: se podía desactivar una
+    # caja con una apertura activa pese al mensaje de error que la función
+    # muestra. Corregido con una consulta real, ahora centralizada en
+    # `CajaService.desactivar` (07-08).
+    try:
+        CajaService.desactivar(caja)
+    except ValidationError as error:
 
         messages.error(
 
             request,
 
-            "No se puede desactivar una caja con una apertura activa. Debe cerrar caja primero."
+            "; ".join(error.messages) if hasattr(error, "messages") else str(error)
 
         )
 
@@ -419,15 +426,6 @@ def desactivar_caja(request, id_caja):
             "caja:lista_cajas"
 
         )
-
-
-    # =========================================
-    # DESACTIVAR CAJA
-    # =========================================
-
-    caja.estado = False
-
-    caja.save()
 
 
     messages.success(
@@ -460,10 +458,7 @@ def desactivar_caja(request, id_caja):
 @permiso_requerido("Caja", "CREAR")
 @transaction.atomic
 def abrir_caja(request, id_caja):
-    caja = get_object_or_404(
-        Caja,
-        id_caja=id_caja
-    )
+    caja = CajaRepository.obtener(id_caja)
 
     if request.method == "POST":
 
@@ -478,52 +473,27 @@ def abrir_caja(request, id_caja):
 
             apertura = form.save(commit=False)
 
-            apertura.caja = caja
-
-
             # =========================================
-            # VALIDAR QUE NO EXISTA APERTURA ACTIVA
+            # VALIDAR QUE NO EXISTA APERTURA ACTIVA Y ABRIR
             # =========================================
 
-            existe = AperturaCaja.objects.filter(
-                caja=caja,
-                estado=True
-            ).exists()
-
-
-
-            if existe:
-
+            try:
+                apertura = AperturaCajaService.abrir(
+                    caja=caja,
+                    apertura_sin_guardar=apertura,
+                    usuario=request.usuario,
+                )
+            except ValidationError as error:
 
                 messages.error(
                     request,
-                    "La caja ya tiene una apertura activa."
+                    "; ".join(error.messages) if hasattr(error, "messages") else str(error)
                 )
-
 
                 return redirect(
                     "caja:abrir_caja",
                     id_caja=id_caja
                 )
-
-
-
-            # =========================================
-            # DATOS DEL SISTEMA
-            # =========================================
-
-            apertura.fecha_apertura = timezone.now()
-
-
-            apertura.estado = True
-
-
-            apertura.usuario = request.usuario
-
-
-            apertura.save()
-
-
 
             messages.success(
                 request,
@@ -573,10 +543,7 @@ def editar_apertura(request, id_apertura):
     # OBTENER APERTURA
     # =========================================
 
-    apertura = get_object_or_404(
-        AperturaCaja,
-        id_apertura=id_apertura
-    )
+    apertura = AperturaCajaRepository.obtener(id_apertura)
 
     # =========================================
     # VALIDAR APERTURA ACTIVA
@@ -613,29 +580,15 @@ def editar_apertura(request, id_apertura):
                 commit=False
             )
 
-            apertura.save()
-
             # =========================================
-            # REGISTRAR HISTORIAL
+            # GUARDAR Y REGISTRAR HISTORIAL SI CAMBIÓ EL MONTO
             # =========================================
 
-            if monto_anterior != apertura.monto_inicial:
-
-                HistorialCaja.objects.create(
-
-                    caja=apertura.caja,
-
-                    usuario=request.usuario,
-
-                    tipo_cambio="AJUSTE_APERTURA",
-
-                    valor_anterior=str(monto_anterior),
-
-                    valor_nuevo=str(apertura.monto_inicial),
-
-                    observacion="Modificación del monto inicial de la apertura."
-
-                )
+            apertura = AperturaCajaService.editar(
+                apertura_sin_guardar=apertura,
+                monto_anterior=monto_anterior,
+                usuario=request.usuario,
+            )
 
             messages.success(
                 request,
@@ -688,13 +641,7 @@ def editar_apertura(request, id_apertura):
 def movimiento_caja(request, id_apertura):
 
 
-    apertura = get_object_or_404(
-
-        AperturaCaja,
-
-        id_apertura=id_apertura
-
-    )
+    apertura = AperturaCajaRepository.obtener(id_apertura)
 
     usuario_actual = request.usuario
 
@@ -726,13 +673,11 @@ def movimiento_caja(request, id_apertura):
 
             movimiento = form.save(commit=False)
 
-            movimiento.apertura = apertura
-
-            movimiento.usuario = usuario_actual
-
-            movimiento.fecha_movimiento = timezone.now()
-
-            movimiento.save()
+            movimiento = MovimientoCajaService.registrar(
+                apertura=apertura,
+                movimiento_sin_guardar=movimiento,
+                usuario=usuario_actual,
+            )
 
 
             messages.success(
@@ -787,20 +732,14 @@ def administrar_caja(request, id_caja):
     # =========================================
 
     # 1. Obtener la caja seleccionada
-    caja = get_object_or_404(
-        Caja,
-        id_caja=id_caja
-    )
+    caja = CajaRepository.obtener(id_caja)
 
     # =========================================
     # BUSCAR APERTURA ACTIVA
     # =========================================
 
     # 2. Buscar si tiene una apertura activa
-    apertura = AperturaCaja.objects.filter(
-        caja=caja,
-        estado=True
-    ).first()
+    apertura = CajaRepository.apertura_activa(caja)
 
     # =========================================
     # ESTADO DE LA CAJA
@@ -814,15 +753,9 @@ def administrar_caja(request, id_caja):
 
     if caja_abierta:
 
-        consulta_movimientos = MovimientoCaja.objects.filter(
-            apertura=apertura
-        )
+        total_movimientos = MovimientoCajaRepository.contar(apertura)
 
-        total_movimientos = consulta_movimientos.count()
-
-        movimientos = consulta_movimientos.order_by(
-            "-fecha_movimiento"
-        )[:10]
+        movimientos = MovimientoCajaRepository.recientes(apertura, 10)
 
 
         # =========================================
@@ -861,11 +794,7 @@ def administrar_caja(request, id_caja):
 
     if apertura:
 
-        arqueos = ArqueoCaja.objects.filter(
-            apertura=apertura
-        ).order_by(
-            "-fecha_arqueo"
-        )
+        arqueos = ArqueoCajaRepository.listar_por_apertura(apertura)
 
         ultimo_arqueo = arqueos.first()
 
@@ -884,10 +813,41 @@ def administrar_caja(request, id_caja):
     # HISTORIAL ADMINISTRATIVO
     # =========================================
 
-    historial = HistorialCaja.objects.filter(
-        caja=caja
-    ).order_by("-fecha_creacion")
+    historial = HistorialCajaRepository.listar_por_caja(caja)
 
+
+    # =========================================
+    # SERIALIZACIÓN A JSON (07-08)
+    # =========================================
+    # Mismo motivo que lista_cajas: las tablas de "Últimos Movimientos" y
+    # "Historial de Arqueos" usaban jQuery DataTables, que ya no funciona
+    # (base.html no carga jQuery desde que el proyecto adoptó Tabulator.js).
+    # El listado de arqueos de una apertura larga puede crecer bastante
+    # dentro de un mismo turno, así que también le hace falta paginación
+    # real, no solo la de movimientos.
+
+    movimientos_json = [
+        {
+            "tipo_movimiento": m.tipo_movimiento,
+            "descripcion": m.descripcion or "",
+            "usuario": str(m.usuario),
+            "monto": str(m.monto),
+            "fecha_movimiento": timezone.localtime(m.fecha_movimiento).strftime("%d/%m/%Y %H:%M"),
+        }
+        for m in movimientos
+    ]
+
+    arqueos_json = [
+        {
+            "fecha_arqueo": timezone.localtime(a.fecha_arqueo).strftime("%d/%m/%Y %H:%M"),
+            "usuario": str(a.usuario),
+            "saldo_sistema": str(a.saldo_sistema),
+            "saldo_contado": str(a.saldo_contado),
+            "diferencia": str(a.diferencia),
+            "observaciones": a.observaciones or "",
+        }
+        for a in arqueos
+    ]
 
     # =========================================
     # CONTEXTO
@@ -903,6 +863,8 @@ def administrar_caja(request, id_caja):
 
         "movimientos": movimientos,
 
+        "movimientos_json": movimientos_json,
+
         "total_movimientos": total_movimientos,
 
         "saldo_caja": saldo_caja,
@@ -910,6 +872,8 @@ def administrar_caja(request, id_caja):
         "saldo_movimientos": saldo_movimientos,
 
         "arqueos": arqueos,
+
+        "arqueos_json": arqueos_json,
 
         "total_arqueos": total_arqueos,
 
@@ -938,24 +902,10 @@ def administrar_caja(request, id_caja):
 def detalle_caja(request, id_apertura):
 
 
-    apertura = get_object_or_404(
-
-        AperturaCaja,
-
-        id_apertura=id_apertura
-
-    )
+    apertura = AperturaCajaRepository.obtener(id_apertura)
 
 
-    movimientos = MovimientoCaja.objects.filter(
-
-        apertura=apertura
-
-    ).order_by(
-
-        "-fecha_movimiento"
-
-    )
+    movimientos = MovimientoCajaRepository.listar_por_apertura(apertura)
 
 
     saldo_sistema = calcular_saldo_sistema(
@@ -964,6 +914,20 @@ def detalle_caja(request, id_apertura):
 
     )
 
+    # Serialización a JSON (07-08): mismo motivo que administrar_caja —
+    # jQuery DataTables ya no funciona (base.html no carga jQuery desde
+    # que el proyecto adoptó Tabulator.js), y esta es la lista COMPLETA
+    # de movimientos de la apertura (sin límite de 10 como en
+    # "Administrar caja"), así que le hace más falta aún la paginación.
+    movimientos_json = [
+        {
+            "tipo_movimiento": m.tipo_movimiento,
+            "descripcion": m.descripcion or "",
+            "monto": str(m.monto),
+            "fecha_movimiento": timezone.localtime(m.fecha_movimiento).strftime("%d/%m/%Y %H:%M"),
+        }
+        for m in movimientos
+    ]
 
     return render(
 
@@ -976,6 +940,8 @@ def detalle_caja(request, id_apertura):
             "apertura": apertura,
 
             "movimientos": movimientos,
+
+            "movimientos_json": movimientos_json,
 
             "saldo_sistema": saldo_sistema
 
@@ -993,13 +959,7 @@ def detalle_caja(request, id_apertura):
 def crear_arqueo(request, id_apertura):
 
 
-    apertura = get_object_or_404(
-
-        AperturaCaja,
-
-        id_apertura=id_apertura
-
-    )
+    apertura = AperturaCajaRepository.obtener(id_apertura)
 
 
 
@@ -1061,39 +1021,12 @@ def crear_arqueo(request, id_apertura):
             )
 
 
-            arqueo.apertura = apertura
-
-
-
-            arqueo.saldo_sistema = saldo_sistema
-
-
-
-            arqueo.diferencia = (
-
-                arqueo.saldo_contado
-
-                -
-
-                saldo_sistema
-
+            arqueo = ArqueoCajaService.registrar(
+                apertura=apertura,
+                arqueo_sin_guardar=arqueo,
+                usuario=request.usuario,
+                saldo_sistema=saldo_sistema,
             )
-
-
-
-            arqueo.fecha_arqueo = timezone.now()
-
-
-
-            # =========================================
-            # USUARIO RESPONSABLE
-            # =========================================
-
-            arqueo.usuario = request.usuario
-
-
-
-            arqueo.save()
 
 
 
@@ -1163,13 +1096,7 @@ def cerrar_caja(request, id_apertura):
     # `ValidationError` — mismo patrón que `GastoOperativoService`. El
     # texto de cada mensaje de error es idéntico al que ya se mostraba.
 
-    apertura = get_object_or_404(
-
-        AperturaCaja,
-
-        id_apertura=id_apertura
-
-    )
+    apertura = AperturaCajaRepository.obtener(id_apertura)
 
     try:
         CierreCajaService.validar_puede_cerrar(apertura)
@@ -1196,11 +1123,7 @@ def cerrar_caja(request, id_apertura):
     # OBTENER ÚLTIMO ARQUEO
     # =====================================
 
-    ultimo_arqueo = ArqueoCaja.objects.filter(
-        apertura=apertura
-    ).order_by(
-        "-fecha_arqueo"
-    ).first()
+    ultimo_arqueo = ArqueoCajaRepository.ultimo(apertura)
 
     # =========================================
     # FORMULARIO

@@ -53,33 +53,53 @@
             </a>
         </div>
 
-        <table class="table table-sm table-hover">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Sucursal</th>
-                    <th class="text-end">Stock actual</th>
-                    <th class="text-end">Stock mínimo</th>
-                    <th class="text-end">Stock máximo</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for i in inventario %}
-                <tr class="{% if i.stock_actual <= i.stock_minimo %}table-warning{% endif %}">
-                    <td>{{ i.id_producto.nombre }}</td>
-                    <td>{{ i.id_sucursal.nombre }}</td>
-                    <td class="text-end">{{ i.stock_actual }}</td>
-                    <td class="text-end">{{ i.stock_minimo }}</td>
-                    <td class="text-end">{{ i.stock_maximo }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5" class="text-muted">No hay inventario registrado.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarInventario" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaInventario" class="w-100"></div>
+            </div>
+        </div>
 
     </div>
 
 </div>
 
+{{ inventario_json|json_script:"inventario-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const inventarioElement = document.getElementById("inventario-data");
+    const inventario = inventarioElement ? JSON.parse(inventarioElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaInventario",
+        search: "#buscarInventario",
+        data: inventario,
+        placeholder: "No hay inventario registrado.",
+        rowFormatter(row){
+            const data = row.getData();
+            if (data.bajo_minimo) {
+                row.getElement().classList.add("table-warning");
+            }
+        },
+        columns: [
+            { title: "Producto", field: "producto" },
+            { title: "Sucursal", field: "sucursal" },
+            { title: "Stock actual", field: "stock_actual", hozAlign: "right" },
+            { title: "Stock mínimo", field: "stock_minimo", hozAlign: "right" },
+            { title: "Stock máximo", field: "stock_maximo", hozAlign: "right" },
+        ]
+    });
+});
+</script>
 {% endblock %}

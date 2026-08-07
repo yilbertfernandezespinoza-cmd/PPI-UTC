@@ -6,121 +6,119 @@
 
 {% boton_ayuda "Configuración" "sucursales" %}
 
-<h2>Sucursales</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Sucursales</h2>
 
-<a href="{% url 'configuracion:sucursal_create' %}" class="btn btn-primary mb-3">
-    Nueva Sucursal
-</a>
+    <a href="{% url 'configuracion:sucursal_create' %}" class="btn btn-primary">
+        Nueva Sucursal
+    </a>
+</div>
 
-<div id="tablaSucursales"></div>
+<div class="card shadow-sm mb-3 border-0">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" id="buscarSucursales" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div id="tablaSucursales" class="w-100"></div>
+    </div>
+</div>
+
+{{ sucursales_json|json_script:"sucursales-data" }}
 
 {% endblock %}
 
 {% block js %}
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
 
-const sucursales = [
+    const dataElement = document.getElementById("sucursales-data");
+    const sucursales = dataElement ? JSON.parse(dataElement.textContent) : [];
 
-{% for sucursal in sucursales %}
+    SIGEPAN.table.create({
 
-{
-    id: {{ sucursal.id_sucursal }},
-    nombre: "{{ sucursal.nombre|escapejs }}",
-    direccion: "{{ sucursal.direccion|default:'-'|escapejs }}",
-    telefono: "{{ sucursal.telefono|default:'-'|escapejs }}",
-    encargado: "{{ sucursal.encargado|default:'-'|escapejs }}",
-    estado: {{ sucursal.estado|yesno:"true,false" }},
-    editar: "{% url 'configuracion:sucursal_update' sucursal.id_sucursal %}"
-}{% if not forloop.last %},{% endif %}
+        selector: "#tablaSucursales",
 
-{% endfor %}
+        search: "#buscarSucursales",
 
-];
+        data: sucursales,
 
-console.log("Sucursales:", sucursales);
+        placeholder: "No hay sucursales registradas.",
 
-const columns = [
+        columns: [
 
-    {
-        title: "ID",
-        field: "id",
-        hozAlign: "center",
-        width: 90
-    },
+            {
+                title: "Nombre",
+                field: "nombre",
+                headerHozAlign: "left"
+            },
 
-    {
-        title: "Nombre",
-        field: "nombre"
-    },
+            {
+                title: "Dirección",
+                field: "direccion"
+            },
 
-    {
-        title: "Dirección",
-        field: "direccion"
-    },
+            {
+                title: "Teléfono",
+                field: "telefono"
+            },
 
-    {
-        title: "Teléfono",
-        field: "telefono"
-    },
+            {
+                title: "Encargado",
+                field: "encargado"
+            },
 
-    {
-        title: "Encargado",
-        field: "encargado"
-    },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
 
-    {
-        title: "Estado",
-        field: "estado",
-        hozAlign: "center",
+                formatter(cell){
 
-        formatter(cell){
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactiva</span>';
 
-            return cell.getValue()
-                ? '<span class="badge bg-success">Activo</span>'
-                : '<span class="badge bg-danger">Inactivo</span>';
+                }
 
-        }
+            },
 
-    },
+            {
+                title: "Acciones",
+                hozAlign: "center",
 
-    {
-        title: "Acciones",
-        hozAlign: "center",
+                formatter(cell) {
 
-        formatter(cell) {
+                    const data = cell.getRow().getData();
 
-            const data = cell.getRow().getData();
+                    return `
+                        <div class="d-flex justify-content-center">
 
-            return `
-                <div class="d-flex justify-content-center">
+                            <a
+                                href="${data.editar}"
+                                class="btn btn-warning btn-sm"
+                            >
+                                Editar
+                            </a>
 
-                    <a
-                        href="${data.editar}"
-                        class="btn btn-warning btn-sm"
-                    >
-                        Editar
-                    </a>
+                        </div>
+                    `;
 
-                </div>
-           `;
+                }
 
-        }
+            }
 
-    }
+        ]
 
-];
-
-SIGEPAN.table.create({
-
-    selector: "#tablaSucursales",
-
-    data: sucursales,
-
-    columns
+    });
 
 });
-
 </script>
 
 {% endblock %}

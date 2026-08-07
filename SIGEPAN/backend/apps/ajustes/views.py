@@ -2,7 +2,8 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DetailView, ListView
 
 from apps.inventario.models import Inventario
@@ -45,6 +46,23 @@ class AjusteListView(
         context["filtro_tipo"] = self.request.GET.get("tipo", "")
         context["filtro_desde"] = self.request.GET.get("desde", "")
         context["filtro_hasta"] = self.request.GET.get("hasta", "")
+
+        # Serialización a JSON (07-08): mismo patrón Tabulator ya aplicado
+        # en el resto del sistema.
+        context["ajustes_json"] = [
+            {
+                "fecha": timezone.localtime(ajuste.fecha).strftime("%d/%m/%Y %H:%M"),
+                "producto": ajuste.producto.nombre,
+                "tipo": ajuste.tipo,
+                "tipo_display": ajuste.get_tipo_display(),
+                "cantidad": ajuste.cantidad,
+                "motivo": ajuste.motivo,
+                "usuario": str(ajuste.usuario),
+                "detalle": reverse("ajustes:detalle", args=[ajuste.id_ajuste]),
+            }
+            for ajuste in context["ajustes"]
+        ]
+
         return context
 
 

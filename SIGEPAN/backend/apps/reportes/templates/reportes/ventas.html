@@ -61,37 +61,49 @@
 
         <p><strong>Total del período: ₡{{ total|floatformat:2 }}</strong></p>
 
-        <table class="table table-sm table-hover">
-            <thead>
-                <tr>
-                    <th>N° Venta</th>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Usuario</th>
-                    <th>Sucursal</th>
-                    <th>Método de pago</th>
-                    <th class="text-end">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for v in ventas %}
-                <tr>
-                    <td>{{ v.numero_venta }}</td>
-                    <td>{{ v.fecha|date:"d/m/Y H:i" }}</td>
-                    <td>{{ v.cliente.nombre|default:"Consumidor final" }}</td>
-                    <td>{{ v.usuario.username }}</td>
-                    <td>{{ v.caja.sucursal.nombre|default:"-" }}</td>
-                    <td>{{ v.metodo_pago.nombre }}</td>
-                    <td class="text-end">₡{{ v.total|floatformat:2 }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="7" class="text-muted">No hay ventas registradas en este período.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarVentas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaVentas" class="w-100"></div>
+            </div>
+        </div>
 
     </div>
 
 </div>
 
+{{ ventas_json|json_script:"ventas-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ventasElement = document.getElementById("ventas-data");
+    const ventas = ventasElement ? JSON.parse(ventasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaVentas",
+        search: "#buscarVentas",
+        data: ventas,
+        placeholder: "No hay ventas registradas para el rango seleccionado.",
+        columns: [
+            { title: "N° Venta", field: "numero_venta" },
+            { title: "Fecha", field: "fecha" },
+            { title: "Cliente", field: "cliente" },
+            { title: "Usuario", field: "usuario" },
+            { title: "Sucursal", field: "sucursal" },
+            { title: "Método de pago", field: "metodo_pago" },
+            { title: "Total", field: "total", hozAlign: "right", formatter(cell){ return `₡${parseFloat(cell.getValue()||0).toFixed(2)}`; } },
+        ]
+    });
+});
+</script>
 {% endblock %}

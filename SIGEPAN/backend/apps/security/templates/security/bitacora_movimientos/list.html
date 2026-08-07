@@ -51,38 +51,59 @@
             </div>
         {% endif %}
 
-        <div id="tablaBitacora"></div>
+        <div class="mb-3">
+            <a href="{% url 'security:bitacora_movimientos_pdf' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="{% url 'security:bitacora_movimientos_excel' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="{% url 'security:bitacora_movimientos_sheets' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
+        </div>
+
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarBitacoraMovimientos" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaBitacoraMovimientos" class="w-100"></div>
+            </div>
+        </div>
 
     </div>
 
 </div>
+
+{{ bitacora_movimientos_json|json_script:"bitacora-movimientos-data" }}
 
 {% endblock %}
 
 {% block js %}
 
 <script>
-
-const registros = [
-    {% for registro in registros %}
-    {
-        usuario: "{{ registro.id_usuario.username|escapejs }}",
-        modulo: "{{ registro.id_modulo.nombre|escapejs }}",
-        accion: "{{ registro.tipo_accion|escapejs }}",
-        descripcion: "{{ registro.descripcion|escapejs }}",
-        ip: "{{ registro.ip_origen|default:'-'|escapejs }}",
-        fecha: "{{ registro.fecha_hora|date:'d/m/Y H:i:s' }}"
-    },
-    {% endfor %}
-];
-
 document.addEventListener("DOMContentLoaded", function () {
 
-    const tabla = SIGEPAN.table.create({
-        selector: "#tablaBitacora",
-        search: "#buscarBitacora",
+    const registrosElement = document.getElementById("bitacora-movimientos-data");
+    const registros = registrosElement ? JSON.parse(registrosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaBitacoraMovimientos",
+        search: "#buscarBitacoraMovimientos",
 
         data: registros,
+
+        placeholder: "No hay registros de movimientos para el rango seleccionado.",
 
         columns: [
             { title: "Usuario", field: "usuario" },
@@ -96,7 +117,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
-
 </script>
 
 {% endblock %}

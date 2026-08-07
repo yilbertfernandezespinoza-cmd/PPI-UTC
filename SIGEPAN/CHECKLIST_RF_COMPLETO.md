@@ -172,6 +172,37 @@ cada producto/sucursal nuevos la lista crece sin control visual. Migrado al mism
 (`SIGEPAN.table.create()`, buscador en vivo, paginación real, mismos badges de stock bajo mínimo/estado).
 RF-016 sube a **99%**.
 
+### 🔴 Bug real corregido (07-08): TypeError en los filtros de fecha de Mermas, Ajustes y Gastos Operativos
+
+Reportado por César probando en su máquina: `TypeError: combine() argument 1 must be datetime.date, not str`
+al aplicar cualquier filtro de fecha en `/mermas/`, `/ajustes/` o `/gastos-operativos/`. Causa: `_limite_inferior(fecha)`
+en los 3 `repositories.py` asumía que `fecha` ya era un objeto `date`, pero `views.py` le pasa el string crudo
+de `request.GET.get("desde")` (el `<input type="date">` del filtro) sin convertirlo — `datetime.combine()`
+exige un `date`, no un `str`. Corregido en los 3 archivos: `_limite_inferior` ahora convierte el string a
+`date` con `datetime.strptime(fecha, "%Y-%m-%d").date()` antes de combinar. **Se encontró el mismo patrón
+también en `apps/reportes/repositories.py`** (Yilbert, RF-019/025/027 — Reporte de Ventas, Reporte Tributario,
+Reporte de Utilidad) y se corrigió ahí también para no dejar la misma trampa activa fuera de las RF de César.
+
+RF-017 (Mermas) y RF-018 (Ajustes) suben a **92%**, RF-026 (Gastos Operativos) sube a **96%** — bug
+bloqueante cerrado.
+
+### ✅ Cuarta tanda de migración a Tabulator (07-08) + fix de íconos de Caja
+
+Se migraron 4 templates más al mismo patrón Tabulator: `inventario/lista_movimientos.html`,
+`mermas/list.html`, `ajustes/list.html`, `gastos_operativos/list.html` — los filtros por producto/tipo/fecha
+siguen resolviéndose en el servidor (GET, sin cambios), Tabulator solo agrega buscador y paginación sobre el
+resultado ya filtrado. En Gastos Operativos, el botón "Deshabilitar/Activar" pasó de `<form method="post">` a
+`SIGEPAN.table.postAction()` (mismo patrón que Cajas). Además, se corrigió el ícono de `lista_cajas.html`
+(nombre de cada caja y tarjeta "Total Cajas") y de `administrar_caja.html` (tarjeta "Caja") de `bi-box-seam`/
+`bi-wallet2` a `bi-cash-register` (caja registradora), como se pidió.
+
+**Nota de verificación**: el sandbox de shell de esta sesión se desconectó a mitad de los cambios anteriores.
+Se dispatcharon 2 agentes de verificación independientes (uno para mermas/ajustes/gastos_operativos, otro
+para inventario/reportes/caja) que corrieron `compileall`/`py_compile` reales sobre todo `apps/` y revisaron
+campos de modelo, nombres de URL y balance de llaves Django/JS — **compilación limpia confirmada, sin
+correcciones necesarias**. Se recomienda igual correr `python manage.py check` en tu máquina como validación
+final contra la BD real.
+
 ## 🔴 Bugs reportados por César en pruebas reales (05-08, tarde) — corregidos
 
 Encontrados probando en tu máquina, no por los agentes de auditoría — ambos eran bugs reales de código:
@@ -319,8 +350,8 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-014 | Apertura de caja | César | 92% |
 | RF-015 | Cierre de caja | César | 92% |
 | RF-016 | Control de inventario | César/Yilbert | 99% 🟡 (verificar en tu máquina) |
-| RF-017 | Registro de mermas | César | 88% 🟡 (verificar en tu máquina) |
-| RF-018 | Anulación y ajustes | César | 88% 🟡 (verificar en tu máquina) |
+| RF-017 | Registro de mermas | César | 92% 🟡 (verificar en tu máquina) |
+| RF-018 | Anulación y ajustes | César | 92% 🟡 (verificar en tu máquina) |
 | RF-019 | Reportes operativos | Yilbert | 80% |
 | RF-020 | Dashboard gerencial | Yilbert | 85% |
 | RF-021 | Bitácora de ingresos | Yilbert | 90% |
@@ -328,7 +359,7 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-023 | Vinculación Google | Yilbert | 55% |
 | RF-024 | Configuración tributaria | Yilbert | 80% |
 | RF-025 | Reporte tributario mensual | Yilbert | 85% |
-| RF-026 | Gastos operativos | César | 93% 🟡 (verificar en tu máquina) |
+| RF-026 | Gastos operativos | César | 96% 🟡 (verificar en tu máquina) |
 | RF-027 | Reporte de utilidad estimada | Yilbert | 85% |
 | RF-028 | Entrada de inventario | Yilbert (apoyo) | 85% |
 | RF-029 | Gestión de clientes | César | 100% ✅ |
@@ -872,9 +903,11 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 ## RF-019 — Reportes operativos
 **Completado**
 - [x] App `reportes/` construida completa: `repositories.py`, `services.py`, `exports.py` (PDF/Excel), `views.py`, `urls.py`, templates.
-- [x] Reporte de Ventas (filtros fecha/sucursal, exportar PDF/Excel) — verificado en navegador.
-- [x] Reporte de Inventario (filtro sucursal + "bajo mínimo", exportar PDF/Excel) — verificado en navegador.
+- [x] Reporte de Ventas (filtros fecha/sucursal, exportar PDF/Excel/Sheets) — verificado en navegador.
+- [x] Reporte de Inventario (filtro sucursal + "bajo mínimo", exportar PDF/Excel/Sheets) — verificado en navegador.
+- [x] Reporte Tributario Mensual — Tabulator aplicado (07-08).
 - [x] Módulo "Reportes" + permisos otorgados a Administrador/Supervisor, menú actualizado.
+- [x] (07-08) Ventas/Inventario/Tributario migrados a Tabulator.js en pantalla, preservando 100% los filtros server-side (fecha/sucursal/bajo_minimo) y los 3 botones de exportación (PDF/Excel/Sheets), que siguen usando la rama `formato=` sin tocar.
 
 **Pendiente**
 - [ ] Reporte por sucursal dedicado (hoy cubierto indirectamente por el Dashboard).
@@ -902,9 +935,8 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 - [x] `BitacoraIngresosListView` con filtros por usuario y rango de fechas.
 - [x] Exportación a PDF y Excel funcionando vía `security/exports.py`.
 - [x] Exportaciones registradas en la bitácora central (`registrar_log`, tipo `EXPORTAR`).
-
-**Pendiente**
-- [ ] Exportación a Google Sheets (depende del scope de RF-023, no habilitado).
+- [x] (07-08) Migrado a Tabulator.js (buscador + `json_script`, mismo patrón que Clientes).
+- [x] (07-08) Exportación a Google Sheets agregada: `BitacoraIngresosExportSheetsView`, reutilizando `apps/reportes/google_sheets.py::exportar_a_google_sheets` sin duplicar lógica. De paso se corrigió un bug preexistente en el template: los botones de PDF/Excel apuntaban por error a las URLs de la bitácora de movimientos (copy-paste).
 
 ---
 
@@ -912,9 +944,7 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 **Completado**
 - [x] `BitacoraMovimientosListView` con filtros (usuario/fecha) — antes no tenía.
 - [x] Exportación PDF/Excel funcionando (mismo módulo que RF-021).
-
-**Pendiente**
-- [ ] Exportación a Google Sheets (igual que RF-021).
+- [x] (07-08) Migrado a Tabulator.js. El template no tenía botones de exportación PDF/Excel en absoluto pese a que las vistas ya existían — se agregaron, junto con el nuevo botón de Google Sheets (`BitacoraMovimientosExportSheetsView`).
 
 ---
 
@@ -1136,6 +1166,49 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   Database First — no rompe nada hoy (Django infiere el comportamiento correcto igual), pero es inconsistente
   con el resto del proyecto y puede confundir a quien no conozca la convención.
 - [ ] Ver también los hallazgos específicos de `Inventario` en la sección RF-016 y de `DetalleCompra` en RF-030.
+
+### Ronda 5 de migración a Tabulator.js + export Google Sheets en Bitácoras (07-08)
+
+Se completó el resto del alcance pedido explícitamente por César, dispatchando 4 agentes en paralelo con
+límites de archivo estrictos por app (sin solapamiento, cero riesgo de colisión de edición concurrente):
+
+- **Reportes** (`apps/reportes/views.py` + `ventas.html`/`inventario.html`/`tributario.html`): migrados a
+  Tabulator preservando 100% los filtros server-side de fecha/sucursal y los 3 botones de exportación
+  (PDF/Excel/Sheets), que siguen usando exactamente la misma rama de código (`formato=`) sin tocar. De paso
+  se agregó resaltado visual de filas "bajo mínimo" en Inventario y de la fila de total general en Tributario
+  vía `rowFormatter` de Tabulator (antes con `class="table-warning"` inline).
+- **Configuración** (`apps/configuracion/views.py` + `sucursales/list.html`, `tributaria/list.html`,
+  `metodos_pago/list.html`): hallazgo importante — estos 3 templates **no** tenían DataTables/jQuery muerto
+  como se sospechaba, ya usaban Tabulator pero con el array JS armado por interpolación cruda de Django
+  (`{{ x|escapejs }}`) en vez del patrón canónico `json_script`. Se migraron al patrón estándar. Confirmado
+  que Sucursal/MetodoPago/ConfiguracionTributaria no tienen rutas de activar/desactivar, así que no se
+  agregó `SIGEPAN.table.postAction` (no aplica).
+- **Empleados** (`apps/empleados/views.py` + `cargos/list.html`, `empleados/list.html`): mismo hallazgo que
+  Configuración (ya usaban Tabulator con interpolación cruda, no DataTables). Migrados al patrón `json_script`.
+  Confirmado que `Empleado` no tiene campos `sucursal`/`usuario` (solo `id_cargo`, `identificacion`, `nombre`,
+  `apellido1`, `apellido2`, etc.) y que no existen rutas de deshabilitar, así que tampoco se agregó
+  `postAction`.
+- **Security — Usuario y Bitácoras** (`apps/security/views.py`, `urls.py` + `usuarios/list.html`,
+  `bitacora_ingresos/list.html`, `bitacora_movimientos/list.html`): Usuario migrado al patrón `json_script`
+  estándar (también ya usaba Tabulator con interpolación cruda). Ambas bitácoras usan el mismo modelo
+  `LogAcciones` (campo `fecha_hora`) vía `LogAccionesRepository`. Se agregaron `BitacoraIngresosExportSheetsView`
+  y `BitacoraMovimientosExportSheetsView`, con la misma base/permisos que sus hermanas PDF/Excel, reutilizando
+  `apps/reportes/google_sheets.py::exportar_a_google_sheets` sin duplicar lógica ni tocar ese archivo. Se
+  registran en la bitácora central vía `registrar_log(..., "Seguridad", "EXPORTAR"/"ERROR", ...)`, mismo
+  patrón que Reportes. **Bugs preexistentes corregidos de paso** (dentro del alcance de los archivos ya
+  tocados): `bitacora_ingresos/list.html` tenía los botones de PDF/Excel apuntando por error a las URLs de
+  la bitácora de movimientos (copy-paste); `bitacora_movimientos/list.html` no tenía botones de exportación
+  PDF/Excel en absoluto pese a que esas vistas ya existían en `views.py` — se agregaron junto con el nuevo
+  botón de Sheets.
+
+**Verificación:** `python3 -m compileall apps/reportes apps/configuracion apps/empleados apps/security` →
+limpio, sin errores, corrido directamente (sandbox estable). Revisión manual de balance de `{% %}`/`{{ }}`/JS
+en los 8 templates tocados, sin residuos de código muerto DataTables/jQuery en ninguno.
+
+**Pendiente de este alcance:** validación en runtime real (navegador + MySQL) de las 2 nuevas rutas de
+exportación a Google Sheets con un usuario que tenga `google_token` vinculado — no se pudo probar en el
+sandbox por no tener Django/MySQL corriendo ahí. Se recomienda una prueba manual rápida en el entorno de
+desarrollo.
 
 ### Hallazgos del agente de UX/UI (05-08, alcance: los 12 RF de César)
 

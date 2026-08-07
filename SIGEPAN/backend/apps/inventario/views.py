@@ -4,6 +4,7 @@ from django.shortcuts import (
     get_object_or_404
 )
 from django.urls import reverse
+from django.utils import timezone
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -246,8 +247,27 @@ class MovimientosInventarioListView(
     def get(self, request):
         movimientos = MovimientoInventarioRepository.listar()
 
+        # Serialización a JSON (07-08): mismo patrón Tabulator ya aplicado
+        # en el resto del sistema — esta tabla era HTML plano sin
+        # buscador ni paginación.
+        movimientos_json = [
+            {
+                "fecha_creacion": timezone.localtime(m.fecha_creacion).strftime("%d/%m/%Y %H:%M"),
+                "producto": m.id_inventario.id_producto.nombre,
+                "tipo_movimiento": m.id_tipo_movimiento_inventario.nombre,
+                "cantidad": m.cantidad,
+                "stock_anterior": m.stock_anterior,
+                "stock_nuevo": m.stock_nuevo,
+                "usuario": str(m.id_usuario),
+            }
+            for m in movimientos
+        ]
+
         return render(
             request,
             "inventario/lista_movimientos.html",
-            {"movimientos": movimientos}
+            {
+                "movimientos": movimientos,
+                "movimientos_json": movimientos_json,
+            }
         )

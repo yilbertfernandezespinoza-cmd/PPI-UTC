@@ -34,53 +34,43 @@ Métodos de Pago | SIGEPAN
         {% endif %}
     </div>
 
-    <div class="card">
-
+    <div class="card shadow-sm mb-3 border-0">
         <div class="card-body">
-
-            <div id="tablaMetodosPago"></div>
-
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" id="buscarMetodosPago" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+            </div>
         </div>
+    </div>
 
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaMetodosPago" class="w-100"></div>
+        </div>
     </div>
 
 </div>
+
+{{ metodos_pago_json|json_script:"metodos-pago-data" }}
 
 {% endblock %}
 
 {% block js %}
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
 
-const metodosPago = [
+    const dataElement = document.getElementById("metodos-pago-data");
+    const metodosPago = dataElement ? JSON.parse(dataElement.textContent) : [];
 
-{% for metodo in metodos_pago %}
+    const puedeModificar = {{ puede_modificar|yesno:"true,false" }};
 
-{
-    id: {{ metodo.id_metodo_pago }},
-    nombre: "{{ metodo.nombre|escapejs }}",
-    descripcion: "{{ metodo.descripcion|default:'-'|escapejs }}",
-    estado: {{ metodo.estado|yesno:"true,false" }},
-    editar: "{% url 'configuracion:metodo_pago_update' metodo.id_metodo_pago %}"
-}{% if not forloop.last %},{% endif %}
-
-{% endfor %}
-
-];
-
-console.log("Métodos de pago:", metodosPago);
-
-SIGEPAN.table.create({
-
-    selector: "#tablaMetodosPago",
-
-    data: metodosPago,
-
-    columns: [
+    const columns = [
 
         {
             title: "Nombre",
-            field: "nombre"
+            field: "nombre",
+            headerHozAlign: "left"
         },
 
         {
@@ -95,15 +85,16 @@ SIGEPAN.table.create({
 
             formatter(cell) {
                 return cell.getValue()
-                    ? '<span class="badge bg-success">Activo</span>'
-                    : '<span class="badge bg-danger">Inactivo</span>';
+                    ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activo</span>'
+                    : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactivo</span>';
             }
         }
 
-        {% if puede_modificar %}
+    ];
 
-        ,
-        {
+    if (puedeModificar) {
+
+        columns.push({
             title: "Acciones",
             hozAlign: "center",
 
@@ -126,14 +117,25 @@ SIGEPAN.table.create({
 
             }
 
-        }
+        });
 
-        {% endif %}
+    }
 
-    ]
+    SIGEPAN.table.create({
+
+        selector: "#tablaMetodosPago",
+
+        search: "#buscarMetodosPago",
+
+        data: metodosPago,
+
+        placeholder: "No hay métodos de pago registrados.",
+
+        columns
+
+    });
 
 });
-
 </script>
 
 {% endblock %}

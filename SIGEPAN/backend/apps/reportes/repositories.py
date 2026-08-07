@@ -18,7 +18,19 @@ def _limite_inferior(fecha):
     horarias de MySQL no están cargadas (`mysql_tzinfo_to_sql`) — el filtro
     entonces no encuentra nada, sin avisar por qué. Calculando el límite del
     día en Python y comparando con >=/< se evita depender de CONVERT_TZ.
+
+    Corregido (07-08): mismo bug encontrado y corregido en mermas/ajustes/
+    gastos_operativos — `fecha` llega como string crudo desde
+    `request.GET.get("fecha_inicio"/"fecha_fin")` (views.py de este mismo
+    módulo), nunca se convertía a `date` antes de llegar aquí, y
+    `datetime.combine()` exige un `date`, no un `str`. Afecta Reporte de
+    Ventas, Reporte Tributario y Reporte de Utilidad en cuanto se aplica
+    cualquier filtro de fecha — se corrige aquí también para no dejar la
+    misma trampa activa en un módulo de Yilbert.
     """
+    if isinstance(fecha, str):
+        fecha = datetime.strptime(fecha, "%Y-%m-%d").date()
+
     return timezone.make_aware(datetime.combine(fecha, datetime.min.time()))
 
 

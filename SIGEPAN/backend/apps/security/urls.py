@@ -17,8 +17,10 @@ from .views import (
     BitacoraMovimientosListView,
     BitacoraIngresosExportPdfView,
     BitacoraIngresosExportExcelView,
+    BitacoraIngresosExportSheetsView,
     BitacoraMovimientosExportPdfView,
     BitacoraMovimientosExportExcelView,
+    BitacoraMovimientosExportSheetsView,
 
     recuperar_password_view,
     restablecer_password_view,
@@ -123,6 +125,12 @@ urlpatterns = [
     ),
 
     path(
+        "bitacoras/ingresos/exportar/sheets/",
+        BitacoraIngresosExportSheetsView.as_view(),
+        name="bitacora_ingresos_sheets",
+    ),
+
+    path(
         "bitacoras/movimientos/exportar/pdf/",
         BitacoraMovimientosExportPdfView.as_view(),
         name="bitacora_movimientos_pdf",
@@ -132,6 +140,12 @@ urlpatterns = [
         "bitacoras/movimientos/exportar/excel/",
         BitacoraMovimientosExportExcelView.as_view(),
         name="bitacora_movimientos_excel",
+    ),
+
+    path(
+        "bitacoras/movimientos/exportar/sheets/",
+        BitacoraMovimientosExportSheetsView.as_view(),
+        name="bitacora_movimientos_sheets",
     ),
 
     path(

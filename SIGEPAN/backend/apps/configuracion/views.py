@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView
@@ -75,6 +75,27 @@ class SucursalListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     model = Sucursal
     template_name = "configuracion/sucursales/list.html"
     context_object_name = "sucursales"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["sucursales_json"] = [
+            {
+                "id_sucursal": s.id_sucursal,
+                "nombre": s.nombre,
+                "direccion": s.direccion,
+                "telefono": s.telefono,
+                "encargado": s.encargado,
+                "estado": s.estado,
+                "editar": reverse(
+                    "configuracion:sucursal_update",
+                    args=[s.id_sucursal],
+                ),
+            }
+            for s in context["sucursales"]
+        ]
+
+        return context
 
 
 class SucursalCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
@@ -154,6 +175,20 @@ class MetodoPagoListView(
             id_permiso__id_modulo__nombre="Configuración",
             id_permiso__accion="MODIFICAR",
         ).exists()
+
+        context["metodos_pago_json"] = [
+            {
+                "id_metodo_pago": m.id_metodo_pago,
+                "nombre": m.nombre,
+                "descripcion": m.descripcion,
+                "estado": m.estado,
+                "editar": reverse(
+                    "configuracion:metodo_pago_update",
+                    args=[m.id_metodo_pago],
+                ),
+            }
+            for m in context["metodos_pago"]
+        ]
 
         return context
 
@@ -255,6 +290,23 @@ class ConfiguracionTributariaListView(
             id_permiso__id_modulo__nombre="Configuración",
             id_permiso__accion="MODIFICAR",
         ).exists()
+
+        context["configuraciones_tributarias_json"] = [
+            {
+                "id_configuracion_tributaria": c.id_configuracion_tributaria,
+                "nombre": c.nombre,
+                "descripcion": c.descripcion,
+                "porcentaje": str(c.porcentaje),
+                "aplica_compras": c.aplica_compras,
+                "aplica_ventas": c.aplica_ventas,
+                "estado": c.estado,
+                "editar": reverse(
+                    "configuracion:tributaria_update",
+                    args=[c.id_configuracion_tributaria],
+                ),
+            }
+            for c in context["configuraciones_tributarias"]
+        ]
 
         return context
 

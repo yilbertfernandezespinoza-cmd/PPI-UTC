@@ -1,11 +1,12 @@
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View, TemplateView
 from django.contrib.auth.hashers import check_password, make_password
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 
@@ -20,6 +21,7 @@ from datetime import datetime, timedelta
 from apps.empleados.models import Empleado
 from apps.security.services import generar_url_google
 from .exports import exportar_bitacora_pdf, exportar_bitacora_excel
+from apps.reportes.google_sheets import exportar_a_google_sheets
 
 class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, ListView):
     model = RolPermiso
@@ -433,6 +435,28 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
             id_permiso__id_modulo__nombre="Seguridad",
             id_permiso__accion="ELIMINAR",
         ).exists()
+
+        context["usuarios_json"] = [
+            {
+                "id_usuario": u.id_usuario,
+                "username": u.username,
+                "empleado": (
+                    f"{u.id_empleado.nombre} {u.id_empleado.apellido1}"
+                    if u.id_empleado else "-"
+                ),
+                "rol": u.id_rol.nombre if u.id_rol else "-",
+                "sucursal": u.id_sucursal.nombre if u.id_sucursal else "",
+                "correo": (
+                    u.id_empleado.correo
+                    if u.id_empleado and u.id_empleado.correo
+                    else ""
+                ),
+                "estado": u.estado,
+                "editar_url": reverse("security:usuario_update", args=[u.id_usuario]),
+                "deshabilitar_url": reverse("security:usuario_disable", args=[u.id_usuario]),
+            }
+            for u in context["usuarios"]
+        ]
 
         return context
 
@@ -880,6 +904,18 @@ class BitacoraIngresosListView(SessionRequiredMixin, PermissionRequiredMixin, Li
         context["usuario"] = self.request.GET.get("usuario", "")
         context["fecha_inicio"] = self.request.GET.get("fecha_inicio", "")
         context["fecha_fin"] = self.request.GET.get("fecha_fin", "")
+
+        context["bitacora_ingresos_json"] = [
+            {
+                "usuario": registro.id_usuario.username if registro.id_usuario else "-",
+                "accion": registro.tipo_accion,
+                "descripcion": registro.descripcion,
+                "ip": registro.ip_origen or "-",
+                "fecha": timezone.localtime(registro.fecha_hora).strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            for registro in context["registros"]
+        ]
+
         return context
 
 
@@ -901,6 +937,19 @@ class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin,
         context["usuario"] = self.request.GET.get("usuario", "")
         context["fecha_inicio"] = self.request.GET.get("fecha_inicio", "")
         context["fecha_fin"] = self.request.GET.get("fecha_fin", "")
+
+        context["bitacora_movimientos_json"] = [
+            {
+                "usuario": registro.id_usuario.username if registro.id_usuario else "-",
+                "modulo": registro.id_modulo.nombre if registro.id_modulo else "-",
+                "accion": registro.tipo_accion,
+                "descripcion": registro.descripcion,
+                "ip": registro.ip_origen or "-",
+                "fecha": timezone.localtime(registro.fecha_hora).strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            for registro in context["registros"]
+        ]
+
         return context
 
 class BitacoraIngresosExportPdfView(SessionRequiredMixin, PermissionRequiredMixin, View):
@@ -931,6 +980,48 @@ class BitacoraIngresosExportExcelView(SessionRequiredMixin, PermissionRequiredMi
         return exportar_bitacora_excel(queryset, "Bitácora de Ingresos", "bitacora_ingresos")
 
 
+class BitacoraIngresosExportSheetsView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_ingresos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+
+        encabezados = ["Usuario", "Acción", "Módulo", "Descripción", "IP Origen", "Fecha y Hora"]
+        filas = [
+            [
+                registro.id_usuario.username if registro.id_usuario else "-",
+                registro.tipo_accion,
+                registro.id_modulo.nombre if registro.id_modulo else "-",
+                registro.descripcion or "-",
+                registro.ip_origen or "-",
+                registro.fecha_hora.strftime("%d/%m/%Y %H:%M:%S"),
+            ]
+            for registro in queryset
+        ]
+
+        try:
+            url_hoja = exportar_a_google_sheets(
+                request.usuario, "Bitácora de Ingresos", encabezados, filas
+            )
+            registrar_log(
+                request, request.usuario, "Seguridad", "EXPORTAR",
+                "Exportó bitácora de ingresos a Google Sheets"
+            )
+            return redirect(url_hoja)
+        except ValidationError as error:
+            messages.error(request, str(error))
+            registrar_log(
+                request, request.usuario, "Seguridad", "ERROR",
+                f"Falló la exportación de bitácora de ingresos a Google Sheets: {error}"
+            )
+            return redirect("security:bitacora_ingresos")
+
+
 class BitacoraMovimientosExportPdfView(SessionRequiredMixin, PermissionRequiredMixin, View):
     permission_module = "Seguridad"
     permission_action = "CONSULTAR"
@@ -957,6 +1048,48 @@ class BitacoraMovimientosExportExcelView(SessionRequiredMixin, PermissionRequire
         )
         registrar_log(request, request.usuario, "Seguridad", "EXPORTAR", "Exportó bitácora de movimientos a Excel")
         return exportar_bitacora_excel(queryset, "Bitácora de Movimientos", "bitacora_movimientos")
+
+
+class BitacoraMovimientosExportSheetsView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_movimientos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+
+        encabezados = ["Usuario", "Acción", "Módulo", "Descripción", "IP Origen", "Fecha y Hora"]
+        filas = [
+            [
+                registro.id_usuario.username if registro.id_usuario else "-",
+                registro.tipo_accion,
+                registro.id_modulo.nombre if registro.id_modulo else "-",
+                registro.descripcion or "-",
+                registro.ip_origen or "-",
+                registro.fecha_hora.strftime("%d/%m/%Y %H:%M:%S"),
+            ]
+            for registro in queryset
+        ]
+
+        try:
+            url_hoja = exportar_a_google_sheets(
+                request.usuario, "Bitácora de Movimientos", encabezados, filas
+            )
+            registrar_log(
+                request, request.usuario, "Seguridad", "EXPORTAR",
+                "Exportó bitácora de movimientos a Google Sheets"
+            )
+            return redirect(url_hoja)
+        except ValidationError as error:
+            messages.error(request, str(error))
+            registrar_log(
+                request, request.usuario, "Seguridad", "ERROR",
+                f"Falló la exportación de bitácora de movimientos a Google Sheets: {error}"
+            )
+            return redirect("security:bitacora_movimientos")
 
 class PerfilView(TemplateView):
     template_name = "security/perfil/perfil.html"    

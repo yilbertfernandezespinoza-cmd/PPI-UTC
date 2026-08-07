@@ -80,7 +80,11 @@ MENU = [
                 "modulo_permiso": "Productos",
                 "titulo": "Productos",
                 "url": "productos:lista_productos",
-                "icono": "bi-box",
+                # Marcador especial (mismo patrón que "Caja"): dibuja un
+                # SVG propio de canasta de productos en vez de un ícono de
+                # Bootstrap Icons — ver templates/includes/sidebar.html y
+                # apps/dashboard/templates/dashboard/partials/accesos.html.
+                "icono": "svg-canasta-productos",
 
                 "dashboard":True,
                 "color":"warning",
@@ -166,7 +170,12 @@ MENU = [
                 "modulo_permiso": "Caja",
                 "titulo": "Caja",
                 "url": "caja:lista_cajas",
-                "icono": "bi-safe2",
+                # Bootstrap Icons no tiene un glifo de "caja registradora"
+                # real (bi-cash-register no existe: se ve como un cuadro
+                # vacío). Este marcador especial le indica a sidebar.html
+                # que dibuje el SVG propio en vez de un <i class="bi ...">
+                # — ver templates/includes/sidebar.html.
+                "icono": "svg-caja-registradora",
 
                 "dashboard": True,
                 "color": "dark",

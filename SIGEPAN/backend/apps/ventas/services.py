@@ -27,6 +27,7 @@ from .models import DetallePago, DetalleVenta
 from .repositories import VentaRepository
 from .utils import (
     calcular_impuesto_ventas,
+    calcular_vuelto_venta,
     determinar_metodo_pago_venta,
     generar_numero_venta,
 )
@@ -494,11 +495,15 @@ class ComprobanteEmailService:
 
         destinatario = venta.cliente.correo
 
+        # El correo debe mostrar exactamente la misma información que la
+        # factura imprimible/detalle de venta: si hubo vuelto (pago en
+        # efectivo por encima del total), se refleja también aquí.
         contexto = {
             "venta": venta,
             "detalles": detalles,
             "pagos": pagos,
             "datos_empresa": datos_empresa,
+            "vuelto": calcular_vuelto_venta(venta, pagos),
         }
 
         html = render_to_string(

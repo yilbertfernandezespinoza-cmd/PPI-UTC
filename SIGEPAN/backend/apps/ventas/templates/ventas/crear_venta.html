@@ -241,18 +241,62 @@
                     <p class="text-muted small mb-3">Seleccione los métodos de pago aplicables:</p>
 
                     {% if metodos_pago_disponibles %}
-                    <div class="d-flex flex-column gap-2">
+                    <div class="d-flex flex-column gap-1" id="lista_metodos_pago">
                         {% for metodo in metodos_pago_disponibles %}
-                        <div class="form-check">
-                            <input
-                                class="form-check-input metodo-pago-checkbox"
-                                type="checkbox"
-                                id="pago_metodo_{{ metodo.id_metodo_pago }}"
-                                data-metodo="{{ metodo.id_metodo_pago }}"
-                            >
-                            <label class="form-check-label fw-medium" for="pago_metodo_{{ metodo.id_metodo_pago }}">
-                                <i class="bi bi-credit-card me-2 text-secondary"></i> {{ metodo.nombre }}
-                            </label>
+                        <div class="pos-payment-option border-0 border-bottom rounded-0 mb-0 py-2">
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input metodo-pago-checkbox"
+                                    type="checkbox"
+                                    id="pago_metodo_{{ metodo.id_metodo_pago }}"
+                                    data-metodo="{{ metodo.id_metodo_pago }}"
+                                    data-tipo="{{ metodo.tipo_pos }}"
+                                    data-nombre="{{ metodo.nombre|escapejs }}"
+                                >
+                                <label class="form-check-label fw-medium" for="pago_metodo_{{ metodo.id_metodo_pago }}">
+                                    <i class="bi bi-credit-card me-2 text-secondary"></i> {{ metodo.nombre }}
+                                </label>
+                            </div>
+
+                            <!-- Detalle del método (monto + vuelto/comprobante): oculto hasta que se marque el checkbox -->
+                            <div class="pos-pago-detalle d-none ms-4 mt-2" data-detalle-metodo="{{ metodo.id_metodo_pago }}">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-6">
+                                        <label class="form-label small text-muted mb-1">Monto</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">₡</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0.01"
+                                                class="form-control input-monto-pago"
+                                                data-metodo="{{ metodo.id_metodo_pago }}"
+                                            >
+                                        </div>
+                                    </div>
+
+                                    {% if metodo.tipo_pos == "efectivo" %}
+                                    <div class="col-6">
+                                        <label class="form-label small text-muted mb-1">Vuelto</label>
+                                        <div
+                                            class="form-control form-control-sm bg-light fw-bold text-success text-end pos-vuelto-display"
+                                            data-vuelto-metodo="{{ metodo.id_metodo_pago }}"
+                                        >₡0.00</div>
+                                    </div>
+                                    {% elif metodo.tipo_pos == "comprobante" %}
+                                    <div class="col-6">
+                                        <label class="form-label small text-muted mb-1">N.º de comprobante</label>
+                                        <input
+                                            type="text"
+                                            maxlength="100"
+                                            class="form-control form-control-sm input-referencia-pago"
+                                            data-metodo="{{ metodo.id_metodo_pago }}"
+                                            placeholder="N.º de transacción"
+                                        >
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>

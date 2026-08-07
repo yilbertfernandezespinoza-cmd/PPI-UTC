@@ -180,11 +180,16 @@
             <h6 class="fw-bold mb-2"><i class="bi bi-wallet2 me-1"></i> Pagos</h6>
             {% if pagos %}
             <table class="table table-sm mb-3">
+                <colgroup>
+                    <col style="width: 40%;">
+                    <col style="width: 25%;">
+                    <col style="width: 35%;">
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Método de pago</th>
                         <th class="text-end">Monto</th>
-                        <th>Referencia</th>
+                        <th class="text-center">Referencia</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -192,11 +197,17 @@
                     <tr>
                         <td>{{ pago.metodo_pago }}</td>
                         <td class="text-end">₡{{ pago.monto|floatformat:2 }}</td>
-                        <td>{{ pago.referencia|default:"—" }}</td>
+                        <td class="text-center">{{ pago.referencia|default:"—" }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            {% if vuelto > 0 %}
+            <div class="ms-auto d-flex justify-content-between fw-bold" style="max-width: 300px;">
+                <span>Vuelto entregado:</span>
+                <span>₡{{ vuelto|floatformat:2 }}</span>
+            </div>
+            {% endif %}
             {% else %}
             <p class="text-muted small">No hay pagos registrados para esta venta.</p>
             {% endif %}

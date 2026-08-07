@@ -507,17 +507,55 @@ document.addEventListener("DOMContentLoaded", function () {
     // =====================================================
     // 9. DISTRIBUCIÓN DE PAGOS (según checkboxes marcados)
     // =====================================================
-    // Reparte el total estimado entre los métodos de pago seleccionados en
-    // partes iguales (con la diferencia de céntimos absorbida por el
-    // último), igual que el flujo anterior. Es solo una propuesta inicial:
-    // el servidor únicamente exige que la SUMA de los pagos cubra el total
-    // real que él mismo calcula.
-    function construirPagosDesdeCheckboxes(totalEstimado) {
+    // Cada método de pago marcado muestra su propio bloque de detalle
+    // (ver crear_venta.html: .pos-pago-detalle) con un input de Monto
+    // editable, y además:
+    //   - si es de tipo "efectivo" (data-tipo, calculado en el servidor
+    //     por apps.ventas.utils.clasificar_metodo_pago): un recuadro de
+    //     Vuelto que se recalcula en vivo.
+    //   - si es de tipo "comprobante" (SINPE/transferencia/depósito): un
+    //     input de N.º de comprobante/referencia.
+    // El servidor solo exige que la SUMA de los pagos cubra el total real
+    // (VentaService.validar_pagos) — el reparto inicial en partes iguales
+    // es apenas una propuesta que el cajero puede editar libremente.
+
+    const listaMetodosPago = document.getElementById("lista_metodos_pago");
+
+    function obtenerTotalEstimado() {
+        const elTotal = document.getElementById("resumen_total");
+        const texto = elTotal ? elTotal.innerText : "0";
+        return parseFloat(texto.replace("₡", "").replace(/,/g, "")) || 0;
+    }
+
+    function bloqueDetalleDe(metodoId) {
+        return document.querySelector(`.pos-pago-detalle[data-detalle-metodo="${metodoId}"]`);
+    }
+
+    function inputMontoDe(metodoId) {
+        return document.querySelector(`.input-monto-pago[data-metodo="${metodoId}"]`);
+    }
+
+    function inputReferenciaDe(metodoId) {
+        return document.querySelector(`.input-referencia-pago[data-metodo="${metodoId}"]`);
+    }
+
+    function vueltoDisplayDe(metodoId) {
+        return document.querySelector(`.pos-vuelto-display[data-vuelto-metodo="${metodoId}"]`);
+    }
+
+    // Redistribuye el total estimado en partes iguales entre los checkboxes
+    // actualmente marcados. Se llama solo cuando cambia el conjunto de
+    // métodos marcados (no en cada tecleo), para no pisarle al cajero un
+    // monto que ya editó a mano.
+    function redistribuirMontos() {
         const checkboxes = document.querySelectorAll(".metodo-pago-checkbox:checked");
-        const pagos = [];
+        const totalEstimado = obtenerTotalEstimado();
         let acumulado = 0;
 
         checkboxes.forEach(function (checkbox, indice) {
+            const input = inputMontoDe(checkbox.dataset.metodo);
+            if (!input) return;
+
             let monto;
             if (indice === checkboxes.length - 1) {
                 monto = totalEstimado - acumulado;
@@ -526,20 +564,126 @@ document.addEventListener("DOMContentLoaded", function () {
                 acumulado += monto;
             }
 
-            pagos.push({
-                metodo_pago_id: parseInt(checkbox.dataset.metodo, 10),
-                monto: monto.toFixed(2),
-                referencia: "",
-            });
+            input.value = monto > 0 ? monto.toFixed(2) : "";
         });
 
-        return pagos;
+        recalcularVuelto();
     }
 
-    function obtenerTotalEstimado() {
-        const elTotal = document.getElementById("resumen_total");
-        const texto = elTotal ? elTotal.innerText : "0";
-        return parseFloat(texto.replace("₡", "").replace(/,/g, "")) || 0;
+    // Recalcula el vuelto de cada método "efectivo" marcado. Definición:
+    // el vuelto es el excedente entre la suma de TODOS los montos
+    // ingresados (efectivo + cualquier otro método marcado) y el total
+    // estimado de la venta — solo tiene sentido devolverlo en efectivo,
+    // así que se muestra junto al monto de efectivo aunque el excedente
+    // provenga de la combinación de varios métodos.
+    function recalcularVuelto() {
+        const totalEstimado = obtenerTotalEstimado();
+        const checkboxes = document.querySelectorAll(".metodo-pago-checkbox:checked");
+
+        let totalPagado = 0;
+        const metodosEfectivoMarcados = [];
+
+        checkboxes.forEach(function (checkbox) {
+            const input = inputMontoDe(checkbox.dataset.metodo);
+            const monto = input ? (parseFloat(input.value) || 0) : 0;
+            totalPagado += monto;
+
+            if (checkbox.dataset.tipo === "efectivo") {
+                metodosEfectivoMarcados.push(checkbox.dataset.metodo);
+            }
+        });
+
+        const vuelto = Math.max(0, totalPagado - totalEstimado);
+
+        // Todos los métodos "efectivo" sin marcar (o marcados, para
+        // limpiar el valor previo) muestran ₡0.00 por defecto.
+        document.querySelectorAll(".pos-vuelto-display").forEach(function (el) {
+            el.textContent = formatoMoneda(0);
+        });
+
+        metodosEfectivoMarcados.forEach(function (metodoId) {
+            const display = vueltoDisplayDe(metodoId);
+            if (display) display.textContent = formatoMoneda(vuelto);
+        });
+    }
+
+    if (listaMetodosPago) {
+        // Marcar/desmarcar un método: mostrar u ocultar su bloque de
+        // detalle, prellenar montos y limpiar los campos al desmarcar.
+        listaMetodosPago.addEventListener("change", function (e) {
+            if (e.target.classList.contains("metodo-pago-checkbox")) {
+                const metodoId = e.target.dataset.metodo;
+                const bloque = bloqueDetalleDe(metodoId);
+
+                if (e.target.checked) {
+                    if (bloque) bloque.classList.remove("d-none");
+                } else {
+                    if (bloque) bloque.classList.add("d-none");
+                    const inputMonto = inputMontoDe(metodoId);
+                    const inputReferencia = inputReferenciaDe(metodoId);
+                    if (inputMonto) inputMonto.value = "";
+                    if (inputReferencia) inputReferencia.value = "";
+                }
+
+                redistribuirMontos();
+                return;
+            }
+
+            if (e.target.classList.contains("input-monto-pago")) {
+                recalcularVuelto();
+            }
+        });
+
+        // input (no solo change) para que el vuelto se recalcule mientras
+        // el cajero está tecleando el monto recibido, no solo al perder el
+        // foco.
+        listaMetodosPago.addEventListener("input", function (e) {
+            if (e.target.classList.contains("input-monto-pago")) {
+                recalcularVuelto();
+            }
+        });
+    }
+
+    // Construye el array "pagos" del payload a partir de los valores reales
+    // que el cajero dejó en cada bloque de detalle (monto + referencia),
+    // no de un reparto automático fijo. Lanza un mensaje de validación
+    // (devuelve null) en vez de armar un payload incompleto si falta el
+    // monto de algún método marcado o el comprobante de un método que lo
+    // requiere — el servidor vuelve a validar todo esto de todas formas,
+    // pero avisar antes evita un viaje de red innecesario.
+    function construirPagosDesdeCheckboxes() {
+        const checkboxes = document.querySelectorAll(".metodo-pago-checkbox:checked");
+        const pagos = [];
+
+        for (const checkbox of checkboxes) {
+            const metodoId = checkbox.dataset.metodo;
+            const nombre = checkbox.dataset.nombre || "método de pago";
+            const inputMonto = inputMontoDe(metodoId);
+            const monto = inputMonto ? parseFloat(inputMonto.value) : NaN;
+
+            if (!monto || monto <= 0) {
+                mostrarAlerta(`Ingrese el monto pagado con ${nombre}.`);
+                return null;
+            }
+
+            let referencia = "";
+            if (checkbox.dataset.tipo === "comprobante") {
+                const inputReferencia = inputReferenciaDe(metodoId);
+                referencia = inputReferencia ? inputReferencia.value.trim() : "";
+                if (!referencia) {
+                    mostrarAlerta(`Ingrese el número de comprobante de la transacción de ${nombre}.`);
+                    return null;
+                }
+            }
+
+            pagos.push({
+                metodo_pago_id: parseInt(metodoId, 10),
+                monto: monto.toFixed(2),
+                referencia: referencia,
+            });
+        }
+
+        return pagos;
     }
 
     // =====================================================
@@ -569,7 +713,28 @@ document.addEventListener("DOMContentLoaded", function () {
                 mostrarAlerta("Debe seleccionar al menos un método de pago.");
                 return;
             }
-            payload.pagos = construirPagosDesdeCheckboxes(obtenerTotalEstimado());
+
+            const totalEstimado = obtenerTotalEstimado();
+            const pagos = construirPagosDesdeCheckboxes();
+            if (pagos === null) {
+                // construirPagosDesdeCheckboxes ya mostró el mensaje de
+                // validación correspondiente (monto o comprobante faltante).
+                return;
+            }
+
+            const totalPagado = pagos.reduce(function (acumulado, pago) {
+                return acumulado + (parseFloat(pago.monto) || 0);
+            }, 0);
+
+            if (totalPagado < totalEstimado - 0.01) {
+                mostrarAlerta(
+                    `El monto pagado (${formatoMoneda(totalPagado)}) es menor al total estimado ` +
+                    `(${formatoMoneda(totalEstimado)}).`
+                );
+                return;
+            }
+
+            payload.pagos = pagos;
         }
 
         const botones = [btnCobrar, btnGuardarPendiente].filter(Boolean);
@@ -635,6 +800,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 renderizarCarrito();
                 limpiarCliente();
                 document.querySelectorAll(".metodo-pago-checkbox").forEach(function (cb) { cb.checked = false; });
+                document.querySelectorAll(".pos-pago-detalle").forEach(function (bloque) { bloque.classList.add("d-none"); });
+                document.querySelectorAll(".input-monto-pago, .input-referencia-pago").forEach(function (input) { input.value = ""; });
+                document.querySelectorAll(".pos-vuelto-display").forEach(function (el) { el.textContent = formatoMoneda(0); });
                 limpiarAlertas();
             }
         });

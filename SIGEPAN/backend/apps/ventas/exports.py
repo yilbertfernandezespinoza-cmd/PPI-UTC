@@ -34,6 +34,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from .utils import calcular_vuelto_venta
+
 
 RUTA_FUENTE_REGULAR = Path(settings.BASE_DIR) / "static" / "fonts" / "DejaVuSans.ttf"
 RUTA_FUENTE_NEGRITA = Path(settings.BASE_DIR) / "static" / "fonts" / "DejaVuSans-Bold.ttf"
@@ -219,6 +221,24 @@ def generar_comprobante_pdf(venta, detalles, pagos, datos_empresa):
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]))
         elementos.append(tabla_pagos)
+
+        # ---------- Vuelto ----------
+        # Solo se imprime la línea si hubo excedente (pago en efectivo por
+        # encima del total) — ver calcular_vuelto_venta en utils.py.
+        vuelto = calcular_vuelto_venta(venta, pagos)
+        if vuelto > 0:
+            elementos.append(Spacer(1, 4))
+            tabla_vuelto = Table(
+                [["Vuelto entregado:", _colon(vuelto)]],
+                colWidths=[40 * mm, 40 * mm],
+                hAlign="RIGHT",
+            )
+            tabla_vuelto.setStyle(TableStyle([
+                ("FONTNAME", (0, 0), (-1, -1), "DejaVuSans-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
+            ]))
+            elementos.append(tabla_vuelto)
     else:
         elementos.append(Paragraph("No hay pagos registrados para esta venta.", estilo_normal))
 

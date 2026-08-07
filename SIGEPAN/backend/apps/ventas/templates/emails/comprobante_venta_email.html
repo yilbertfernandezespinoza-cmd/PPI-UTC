@@ -115,16 +115,26 @@
             <h3 style="margin:0 0 10px; font-size:16px; color:#0F172A;">Pagos</h3>
             <table width="100%" cellpadding="6" cellspacing="0" border="0" style="border-collapse:collapse; font-size:13px; margin-bottom:10px;">
                 <tr style="background:#F8FAFC;">
-                    <td style="border-bottom:1px solid #E2E8F0;"><strong>Método de pago</strong></td>
-                    <td align="right" style="border-bottom:1px solid #E2E8F0;"><strong>Monto</strong></td>
+                    <td width="40%" style="border-bottom:1px solid #E2E8F0;"><strong>Método de pago</strong></td>
+                    <td width="25%" align="right" style="border-bottom:1px solid #E2E8F0;"><strong>Monto</strong></td>
+                    <td width="35%" align="center" style="border-bottom:1px solid #E2E8F0;"><strong>N.º de Comprobante</strong></td>
                 </tr>
                 {% for pago in pagos %}
                 <tr>
                     <td style="border-bottom:1px solid #F1F5F9;">{{ pago.metodo_pago }}</td>
                     <td align="right" style="border-bottom:1px solid #F1F5F9;">₡{{ pago.monto|floatformat:2 }}</td>
+                    <td align="center" style="border-bottom:1px solid #F1F5F9;">{{ pago.referencia|default:"—" }}</td>
                 </tr>
                 {% endfor %}
             </table>
+            {% if vuelto > 0 %}
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="font-size:13px; margin-bottom:20px;">
+                <tr>
+                    <td align="right" width="80%"><strong>Vuelto entregado:</strong></td>
+                    <td align="right"><strong style="color:#198754;">₡{{ vuelto|floatformat:2 }}</strong></td>
+                </tr>
+            </table>
+            {% endif %}
             {% endif %}
 
         </td>

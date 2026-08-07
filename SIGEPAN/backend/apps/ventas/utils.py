@@ -73,6 +73,73 @@ def calcular_impuesto_ventas(subtotal):
     return impuesto.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+def clasificar_metodo_pago(nombre):
+    """
+    Clasifica un método de pago por su nombre para decidir qué campo
+    adicional mostrarle al cajero en el POS (crear_venta.html):
+
+    - "efectivo": el método permite calcular vuelto (monto recibido -
+      monto que cubre).
+    - "comprobante": el método requiere un número de comprobante/
+      referencia de la transacción (SINPE, transferencia, depósito) para
+      poder auditar el pago después, ya que no hay entrega física de
+      dinero que el cajero pueda verificar a simple vista.
+    - "otro": cualquier otro método (p. ej. Tarjeta) — solo pide el
+      monto, sin campos adicionales.
+
+    Se clasifica por nombre (no por un id fijo) para no depender de que
+    un método de pago específico exista siempre con el mismo
+    id_metodo_pago — el catálogo es editable desde Configuración >
+    Métodos de Pago, así que cualquier nombre que contenga alguna de
+    estas palabras clave (sin importar mayúsculas/acentos) cae en la
+    categoría correcta automáticamente.
+    """
+    import unicodedata
+
+    def _sin_acentos(texto):
+        normalizado = unicodedata.normalize("NFKD", texto)
+        return "".join(c for c in normalizado if not unicodedata.combining(c))
+
+    nombre_normalizado = _sin_acentos((nombre or "")).lower()
+
+    if "efectivo" in nombre_normalizado:
+        return "efectivo"
+
+    palabras_comprobante = ("sinpe", "transferencia", "deposito")
+    if any(palabra in nombre_normalizado for palabra in palabras_comprobante):
+        return "comprobante"
+
+    return "otro"
+
+
+def calcular_vuelto_venta(venta, pagos):
+    """
+    Calcula el vuelto/cambio entregado en una venta ya registrada, para
+    mostrarlo en detalle_venta.html, comprobante_venta.html y el PDF del
+    comprobante (apps/ventas/exports.py).
+
+    No existe una columna "vuelto" en la tabla venta ni en detalle_pago:
+    el vuelto es siempre la diferencia entre lo efectivamente pagado
+    (suma de DetallePago.monto, que el POS permite guardar por encima
+    del total cuando el cajero recibe más efectivo del necesario — ver
+    VentaService.validar_pagos, que solo exige total_pagado >= total) y
+    el total real de la venta. Se recalcula aquí en vez de guardarse
+    porque así siempre queda consistente con los pagos reales, sin
+    arrastrar una columna que podría desincronizarse si un pago se
+    corrige a mano en el futuro.
+
+    Devuelve Decimal("0.00") si no hay excedente (pago exacto) o si la
+    venta no tiene pagos asociados (por ejemplo, una venta pausada).
+    """
+    if not pagos:
+        return Decimal("0.00")
+
+    total_pagado = sum((pago.monto for pago in pagos), Decimal("0.00"))
+    excedente = total_pagado - (venta.total or Decimal("0.00"))
+
+    return excedente if excedente > 0 else Decimal("0.00")
+
+
 def determinar_metodo_pago_venta(pagos_temp):
     """
     Determina el método de pago "principal" de la venta (campo venta.metodo_pago)

@@ -127,10 +127,16 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-striped table-hover mb-0 align-middle">
+                    <colgroup>
+                        <col style="width: 40%;">
+                        <col style="width: 25%;">
+                        <col style="width: 35%;">
+                    </colgroup>
                     <thead class="table-light">
                         <tr>
                             <th class="py-3">Método de Pago</th>
                             <th class="py-3 text-end">Monto</th>
+                            <th class="py-3 text-center">N.º de Comprobante</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -138,9 +144,24 @@
                         <tr>
                             <td class="py-3">{{ pago.metodo_pago }}</td>
                             <td class="py-3 text-end fw-bold">₡{{ pago.monto|floatformat:2 }}</td>
+                            <td class="py-3 text-center">
+                                {% if pago.referencia %}
+                                    <span class="font-monospace">{{ pago.referencia }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    {% if vuelto > 0 %}
+                    <tfoot>
+                        <tr class="table-light">
+                            <td class="py-3 fw-bold text-end" colspan="2">Vuelto entregado:</td>
+                            <td class="py-3 fw-bold text-success text-center">₡{{ vuelto|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
                 </table>
             </div>
         </div>

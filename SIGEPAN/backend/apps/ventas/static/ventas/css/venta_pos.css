@@ -368,6 +368,16 @@ a.pos-btn{
 
 }
 
+/* Bloque de Monto/Vuelto/Comprobante de cada método de pago, visible solo
+   cuando su checkbox está marcado (ver venta_pos.js, sección 9). */
+.pos-pago-detalle{
+
+    border-left:3px solid #dee2e6;
+
+    padding-left:10px;
+
+}
+
 
 
 

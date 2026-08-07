@@ -15,6 +15,7 @@ from apps.security.services import registrar_log
 from .models import Venta
 from .repositories import VentaRepository
 from .services import ComprobanteEmailService, VentaService, VentaValidationError
+from .utils import calcular_vuelto_venta, clasificar_metodo_pago
 
 
 # =====================================================
@@ -139,7 +140,16 @@ def crear_venta(request):
     # Catálogo real de métodos de pago para los checkboxes del POS. Se excluye
     # "Pendiente" porque es un método interno usado solo por el flujo de
     # pausar, no una opción de cobro real.
-    metodos_pago_disponibles = VentaRepository.metodos_pago_pos()
+    metodos_pago_disponibles = list(VentaRepository.metodos_pago_pos())
+
+    # Clasificación de cada método (RF: vuelto en efectivo / comprobante
+    # de transacción en SINPE-transferencia-depósito). Se calcula una sola
+    # vez aquí en el servidor y se expone como atributo dinámico
+    # (tipo_pos) sobre cada instancia — el template y el JS del POS lo
+    # leen vía data-tipo="{{ metodo.tipo_pos }}" en vez de reimplementar
+    # la misma detección de palabras clave en JavaScript.
+    for metodo in metodos_pago_disponibles:
+        metodo.tipo_pos = clasificar_metodo_pago(metodo.nombre)
 
     # Tasa de IVA real (suma de las tasas activas con aplica_ventas=True),
     # para que el preview del carrito en el navegador use el mismo
@@ -476,6 +486,8 @@ def detalle_venta(request, id_venta):
     # única fuente de verdad de esta regla).
     es_pendiente = bool(venta.metodo_pago_id) and venta.metodo_pago.nombre.strip().lower() == "pendiente"
 
+    vuelto = calcular_vuelto_venta(venta, pagos)
+
     return render(
         request,
         "ventas/detalle_venta.html",
@@ -484,6 +496,7 @@ def detalle_venta(request, id_venta):
             "detalles": detalles,
             "pagos": pagos,
             "es_pendiente": es_pendiente,
+            "vuelto": vuelto,
         }
     )
 
@@ -505,6 +518,8 @@ def comprobante_venta(request, id_venta):
     pagos = VentaRepository.pagos_con_metodo(venta)
     datos_empresa = VentaRepository.datos_empresa()
 
+    vuelto = calcular_vuelto_venta(venta, pagos)
+
     return render(
         request,
         "ventas/comprobante_venta.html",
@@ -513,6 +528,7 @@ def comprobante_venta(request, id_venta):
             "detalles": detalles,
             "pagos": pagos,
             "datos_empresa": datos_empresa,
+            "vuelto": vuelto,
         }
     )
 

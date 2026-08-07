@@ -15,6 +15,9 @@ from apps.security.mixins import SessionRequiredMixin
 from apps.security.permissions import PermissionRequiredMixin
 from apps.security.decorators import login_required, permiso_requerido
 from apps.security.services import registrar_log
+from apps.reportes.exports import exportar_pdf, exportar_excel
+from apps.reportes.google_sheets import exportar_a_google_sheets
+from apps.productos.models import Producto
 
 from .models import Inventario
 from .forms import InventarioForm, MovimientoInventarioForm
@@ -245,7 +248,13 @@ class MovimientosInventarioListView(
     permission_action = "CONSULTAR"
 
     def get(self, request):
-        movimientos = MovimientoInventarioRepository.listar()
+        # Filtro por producto/rango de fechas (07-08), mismo criterio ya
+        # usado en Mermas/Ajustes/Gastos Operativos para sus listados.
+        movimientos = MovimientoInventarioRepository.filtrar(
+            id_producto=request.GET.get("producto") or None,
+            desde=request.GET.get("desde") or None,
+            hasta=request.GET.get("hasta") or None,
+        )
 
         # Serialización a JSON (07-08): mismo patrón Tabulator ya aplicado
         # en el resto del sistema — esta tabla era HTML plano sin
@@ -269,5 +278,124 @@ class MovimientosInventarioListView(
             {
                 "movimientos": movimientos,
                 "movimientos_json": movimientos_json,
+                "productos": Producto.objects.filter(estado=True).order_by("nombre"),
+                "filtro_producto": request.GET.get("producto", ""),
+                "filtro_desde": request.GET.get("desde", ""),
+                "filtro_hasta": request.GET.get("hasta", ""),
             }
         )
+
+
+# Encabezados/filas compartidos por las 3 vistas de exportación de abajo
+# (mismo criterio ya usado en Bitácora de Ingresos/Movimientos:
+# apps/security/views.py + apps/security/exports.py), para no repetir la
+# misma lista de columnas 3 veces.
+def _encabezados_movimientos():
+    return ["Fecha", "Producto", "Tipo", "Cantidad", "Stock anterior", "Stock nuevo", "Usuario"]
+
+
+def _filas_movimientos(movimientos):
+    return [
+        [
+            timezone.localtime(m.fecha_creacion).strftime("%d/%m/%Y %H:%M"),
+            m.id_inventario.id_producto.nombre,
+            m.id_tipo_movimiento_inventario.nombre,
+            m.cantidad,
+            m.stock_anterior,
+            m.stock_nuevo,
+            str(m.id_usuario),
+        ]
+        for m in movimientos
+    ]
+
+
+class MovimientosInventarioExportPdfView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    permission_module = "Inventario"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        movimientos = MovimientoInventarioRepository.filtrar(
+            id_producto=request.GET.get("producto") or None,
+            desde=request.GET.get("desde") or None,
+            hasta=request.GET.get("hasta") or None,
+        )
+
+        registrar_log(
+            request, request.usuario, "Inventario", "EXPORTAR",
+            "Exportó movimientos de inventario a PDF"
+        )
+
+        return exportar_pdf(
+            _encabezados_movimientos(),
+            _filas_movimientos(movimientos),
+            "Movimientos de Inventario",
+            "movimientos_inventario",
+        )
+
+
+class MovimientosInventarioExportExcelView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    permission_module = "Inventario"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        movimientos = MovimientoInventarioRepository.filtrar(
+            id_producto=request.GET.get("producto") or None,
+            desde=request.GET.get("desde") or None,
+            hasta=request.GET.get("hasta") or None,
+        )
+
+        registrar_log(
+            request, request.usuario, "Inventario", "EXPORTAR",
+            "Exportó movimientos de inventario a Excel"
+        )
+
+        return exportar_excel(
+            _encabezados_movimientos(),
+            _filas_movimientos(movimientos),
+            "Movimientos de Inventario",
+            "movimientos_inventario",
+        )
+
+
+class MovimientosInventarioExportSheetsView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    permission_module = "Inventario"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        movimientos = MovimientoInventarioRepository.filtrar(
+            id_producto=request.GET.get("producto") or None,
+            desde=request.GET.get("desde") or None,
+            hasta=request.GET.get("hasta") or None,
+        )
+
+        try:
+            url_hoja = exportar_a_google_sheets(
+                request.usuario,
+                "Movimientos de Inventario",
+                _encabezados_movimientos(),
+                _filas_movimientos(movimientos),
+            )
+            registrar_log(
+                request, request.usuario, "Inventario", "EXPORTAR",
+                "Exportó movimientos de inventario a Google Sheets"
+            )
+            return redirect(url_hoja)
+        except ValidationError as error:
+            messages.error(request, str(error))
+            registrar_log(
+                request, request.usuario, "Inventario", "ERROR",
+                f"Falló la exportación de movimientos de inventario a Google Sheets: {error}"
+            )
+            return redirect("inventario:lista_movimientos")

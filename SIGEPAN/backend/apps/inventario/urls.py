@@ -39,6 +39,28 @@ urlpatterns = [
     ),
 
     # =====================================================
+    # EXPORTAR MOVIMIENTOS DE INVENTARIO
+    # =====================================================
+
+    path(
+        "movimientos/exportar/pdf/",
+        views.MovimientosInventarioExportPdfView.as_view(),
+        name="lista_movimientos_pdf"
+    ),
+
+    path(
+        "movimientos/exportar/excel/",
+        views.MovimientosInventarioExportExcelView.as_view(),
+        name="lista_movimientos_excel"
+    ),
+
+    path(
+        "movimientos/exportar/sheets/",
+        views.MovimientosInventarioExportSheetsView.as_view(),
+        name="lista_movimientos_sheets"
+    ),
+
+    # =====================================================
     # DETALLE INVENTARIO
     # =====================================================
 

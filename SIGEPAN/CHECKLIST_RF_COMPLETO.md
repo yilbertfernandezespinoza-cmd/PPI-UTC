@@ -1,6 +1,6 @@
 # Checklist de desarrollo — SIGEPAN (34 RF)
 
-> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**.
+> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**, y **una tercera ronda de verificación (06-08, 2 agentes de solo lectura) que confirmó el checklist contra el código real de las 13 RF de César: solo 2 discrepancias reales (auditoría de Categorías/Productos ya resuelta pero mal marcada, corregidas abajo) y 2 hallazgos menores nuevos (choices de unidad de medida desincronizadas en `ProductoForm`, desfase de redacción sobre `seed_metodos_pago`); las otras 11 secciones (RF-012 a RF-018, RF-026, RF-029, RF-030, RF-034) resultaron 100% fieles al código real, incluyendo el wiring general (`INSTALLED_APPS`, `urls.py`, menú, migraciones)**.
 > Marca `[x]` cuando el ítem esté verificado en código (no solo "hecho de memoria"). Actualiza el `% avance` de la cabecera al cerrar ítems.
 
 ## 🔴 Segunda auditoría (06-08) — 4 agentes verificando lo del 05-08
@@ -180,8 +180,8 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-007 | Roles y permisos | Yilbert | 100% |
 | RF-008 | Menú principal | Yilbert | 85% |
 | RF-009 | Gestión de sucursales | Yilbert | 100% |
-| RF-010 | Gestión de categorías | César | 65% |
-| RF-011 | Gestión de productos | César | 75% 🟡 (verificar en tu máquina) |
+| RF-010 | Gestión de categorías | César | 68% |
+| RF-011 | Gestión de productos | César | 77% 🟡 (verificar en tu máquina) |
 | RF-012 | Registro de ventas | César | 98% 🟡 (verificar en tu máquina) |
 | RF-013 | Métodos de pago | César | 90% 🟡 (verificar en tu máquina) |
 | RF-014 | Apertura de caja | César | 72% |
@@ -199,7 +199,7 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-026 | Gastos operativos | César | 75% 🟡 (verificar en tu máquina) |
 | RF-027 | Reporte de utilidad estimada | Yilbert | 85% |
 | RF-028 | Entrada de inventario | Yilbert (apoyo) | 85% |
-| RF-029 | Gestión de clientes | César | 96% |
+| RF-029 | Gestión de clientes | César | 100% ✅ |
 | RF-030 | Registro de compras | César | 90% 🟡 (verificar en tu máquina) |
 | RF-031 | Ayuda contextual | Yilbert | 85% |
 | RF-032 | Administración de ayudas | Yilbert | 70% |
@@ -334,7 +334,10 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 **Pendiente**
 - [ ] `Categoria` no hereda `BaseModel` (campos `estado`/`fecha_creacion`/`fecha_actualizacion` redefinidos manualmente).
 - [ ] `repositories.py` y `services.py` vacíos (solo comentario de plantilla).
-- [ ] Sin auditoría (no registra en `log_acciones`).
+- [x] ~~Sin auditoría (no registra en `log_acciones`)~~ — corrección al checklist (06-08, auditoría de
+  verificación): `apps/categorias/views.py` sí llama a `registrar_log(...)` en `nueva_categoria`,
+  `editar_categoria` y `cambiar_estado_categoria` (las 3 vistas que mutan datos). Esta entrada estaba
+  obsoleta.
 - [ ] Validación de duplicados vive en `forms.ValidationError` en vez de en un Service.
 - [ ] 🟡 (UX/UI, 05-08) `lista.html` mezcla clases de Bootstrap 4/AdminLTE3 (`mr-`/`form-group`) con Bootstrap 5
   (`me-`/`d-flex`) — no rompe nada, pero es inconsistente con el resto del sistema.
@@ -363,8 +366,15 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   editar un producto para confirmar que el `<select>` de Unidad de medida ya tiene opciones y el formulario
   guarda.
 - [ ] `Repository`/`Service` vacíos salvo `ProductoService.calcular_precio_venta()`; `Producto` no hereda `BaseModel`.
-- [ ] Sin auditoría (no registra en `log_acciones`).
+- [x] ~~Sin auditoría (no registra en `log_acciones`)~~ — corrección al checklist (06-08, auditoría de
+  verificación): `apps/productos/views.py` sí llama a `registrar_log(...)` en `nuevo_producto`,
+  `editar_producto` y `eliminar_producto`. Esta entrada estaba obsoleta.
 - [ ] Sin campo `stock_minimo` en el modelo (vive en `Inventario`).
+- [ ] 🆕 (hallazgo 06-08) `ProductoForm.unidad_medida` (`apps/productos/forms.py`) redefine su propio
+  `ChoiceField` con una lista `UNIDADES_MEDIDA` de 8 opciones, distinta y más corta que las 10 `choices`
+  declaradas en el modelo (`apps/productos/models.py`) — le faltan "Libra" y "Bolsa". Como el campo del
+  form sobrescribe el del modelo, esas dos opciones nunca aparecen en el `<select>` real. No rompe nada
+  (`unidad_medida` sigue siendo `varchar(30)`), pero conviene unificar la lista en un solo lugar.
 
 ---
 
@@ -595,9 +605,10 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 - [ ] No se agregó vista de deshabilitar/activar independiente — el toggle de `estado` se hace desde el
   mismo formulario de edición (igual que Sucursal/Configuración Tributaria); si se necesita una acción
   rápida de un clic desde la lista, se puede agregar después sin romper nada de lo ya construido.
-- [ ] `managed=False` sigue sin documentar formalmente cómo se puebla/versiona la tabla `metodo_pago` (no
-  bloquea el CRUD, pero si faltan filas base tipo "Efectivo"/"Tarjeta" hay que crearlas manualmente o via
-  un futuro comando `seed_metodos_pago`).
+- [x] ~~`managed=False` sigue sin documentar formalmente cómo se puebla/versiona la tabla `metodo_pago`~~ —
+  corrección al checklist (06-08, auditoría de verificación): `apps/configuracion/management/commands/
+  seed_metodos_pago.py` **ya existe** (siembra Efectivo/Tarjeta/SINPE Móvil/Transferencia, idempotente) —
+  quedó un desfase de redacción entre secciones de este documento, no un pendiente real de código.
 
 ---
 
@@ -871,7 +882,19 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   detalle en RF-012.
 
 **Pendiente**
-- [ ] Migración `0001_initial` desincronizada del modelo actual (faltan `tipo_cliente`/`tipo_identificacion`). Regenerar con `makemigrations`.
+- [x] ~~Migración `0001_initial` desincronizada del modelo actual (faltan `tipo_cliente`/`tipo_identificacion`)~~ —
+  **resuelto en tu máquina (06-08)**: se generó `0002_alter_cliente_options_cliente_tipo_cliente_and_more.py`,
+  verificando antes con `DESCRIBE cliente;` real que `tipo_cliente`/`tipo_identificacion` ya existían en la BD
+  (como `ENUM`, agregadas fuera de Django) y que `identificacion`/`nombre` no tenían ninguna fila con `NULL`
+  (`SELECT COUNT(*)... FROM cliente` → 5 clientes, 0 vacíos) antes de aplicar el `ALTER TABLE` real. La
+  migración se editó a mano con `SeparateDatabaseAndState` para que las dos columnas que ya existían
+  **no** intentaran crearse de nuevo (solo se sincronizó el historial interno de Django, sin tocar la BD),
+  mientras que el resto de campos (`identificacion`/`nombre` a obligatorios, etc.) sí se aplicó de verdad —
+  confirmado con `migrate clientes` → OK. De paso se resolvió el mismo tipo de desincronización en `ayuda`,
+  `configuracion` (incluye registrar en el historial el modelo `DatosEmpresa`, ya creado por SQL en RF-024),
+  `empleados` (solo metadata) y `security` (`google_refresh_token`, ya existente en `usuario`, aplicado con
+  `migrate security 0002 --fake`). `makemigrations --dry-run -v 3` final → `No changes detected` en todo el
+  proyecto.
 
 ---
 

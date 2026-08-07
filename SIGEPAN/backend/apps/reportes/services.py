@@ -1,4 +1,7 @@
 from datetime import datetime
+
+from apps.mermas.repositories import MermaRepository
+
 from .repositories import ReporteRepository
 
 
@@ -46,3 +49,18 @@ class ReporteService:
         )
         utilidad = total_ventas - costos
         return total_ventas, costos, utilidad
+
+    @staticmethod
+    def reporte_mermas(fecha_inicio="", fecha_fin="", id_producto=""):
+        """
+        RF-017: reporte dedicado de mermas, reutilizando el mismo
+        `MermaRepository.filtrar()` que ya usa el listado del módulo
+        Mermas (ya corregido para recibir fechas como string "YYYY-MM-DD").
+        """
+        queryset = MermaRepository.filtrar(
+            id_producto=id_producto or None,
+            desde=fecha_inicio or None,
+            hasta=fecha_fin or None,
+        )
+        total_unidades = sum((m.cantidad for m in queryset), start=0)
+        return queryset, total_unidades

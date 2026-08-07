@@ -79,6 +79,15 @@ class Usuario(BaseModel):
     )
 
     class Meta:
+        # managed=False (07-08): apps.security se había quedado como la
+        # única excepción sin este flag, a pesar de que el resto del
+        # proyecto (categorías, productos, clientes, ayuda...) ya sigue
+        # el enfoque Database First — la tabla `usuario` ya existe en la
+        # BD real, Django no debe intentar migrarla nunca. Corregido
+        # después de agregar por error dos migraciones nuevas
+        # (0002/0003) que hubieran requerido correr `migrate`, algo que
+        # el equipo decidió evitar explícitamente.
+        managed = False
         db_table = "usuario"
         verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
@@ -112,6 +121,8 @@ class Rol(BaseModel):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "rol"
         verbose_name = "Rol"
         verbose_name_plural = "Roles"
@@ -152,6 +163,8 @@ class Permiso(BaseModel):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "permiso"
         verbose_name = "Permiso"
         verbose_name_plural = "Permisos"
@@ -190,6 +203,8 @@ class RolPermiso(models.Model):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "rol_permiso"
         verbose_name = "Rol - Permiso"
         verbose_name_plural = "Roles - Permisos"
@@ -268,6 +283,8 @@ class LogAcciones(models.Model):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "log_acciones"
         verbose_name = "Log de acciones"
-        verbose_name_plural = "Logs de acciones"    
+        verbose_name_plural = "Logs de acciones"

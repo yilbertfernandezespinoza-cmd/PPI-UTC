@@ -51,6 +51,7 @@ class AjusteListView(
         # en el resto del sistema.
         context["ajustes_json"] = [
             {
+                "folio": ajuste.folio or "—",
                 "fecha": timezone.localtime(ajuste.fecha).strftime("%d/%m/%Y %H:%M"),
                 "producto": ajuste.producto.nombre,
                 "tipo": ajuste.tipo,

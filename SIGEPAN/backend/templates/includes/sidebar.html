@@ -86,6 +86,22 @@
 
                 {% endfor %}
 
+                <!-- Acerca de: fijo al final del menú, fuera del árbol de
+                     módulos (07-08, RF-008) — visible para cualquier
+                     usuario, no depende de permisos. -->
+
+                <li class="nav-item mt-auto">
+
+                    <a href="{% url 'acerca_de' %}" class="nav-link">
+
+                        <i class="nav-icon bi bi-info-circle"></i>
+
+                        <p>Acerca de</p>
+
+                    </a>
+
+                </li>
+
             </ul>
 
         </nav>

@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS `ajuste`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ajuste` (
   `id_ajuste` int unsigned NOT NULL AUTO_INCREMENT,
+  `folio` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `id_producto` int unsigned NOT NULL,
   `id_usuario` int unsigned NOT NULL,
   `cantidad` int NOT NULL,
@@ -33,6 +34,7 @@ CREATE TABLE `ajuste` (
   `observaciones` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `fecha_creacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_ajuste`),
+  UNIQUE KEY `folio` (`folio`),
   KEY `fk_ajuste_producto` (`id_producto`),
   KEY `fk_ajuste_usuario` (`id_usuario`),
   CONSTRAINT `fk_ajuste_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`),
@@ -53,6 +55,7 @@ CREATE TABLE `apertura_caja` (
   `id_usuario` int unsigned NOT NULL,
   `fecha_apertura` datetime NOT NULL,
   `monto_inicial` decimal(12,2) NOT NULL,
+  `turno` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `observaciones` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `estado` tinyint(1) NOT NULL DEFAULT '1',
   `fecha_creacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -671,7 +674,7 @@ CREATE TABLE `log_acciones` (
   `id_log` int unsigned NOT NULL AUTO_INCREMENT,
   `id_usuario` int unsigned NOT NULL,
   `id_modulo` int unsigned NOT NULL,
-  `tipo_accion` enum('LOGIN','LOGOUT','CREAR','MODIFICAR','ELIMINAR','CONSULTAR','EXPORTAR','IMPORTAR','ERROR','ACCESO_DENEGADO','RECUPERAR_PASSWORD','CAMBIAR_PASSWORD') COLLATE utf8mb4_spanish_ci NOT NULL,
+  `tipo_accion` enum('LOGIN','LOGOUT','CREAR','MODIFICAR','ELIMINAR','CONSULTAR','EXPORTAR','IMPORTAR','ERROR','ACCESO_DENEGADO','RECUPERAR_PASSWORD','CAMBIAR_PASSWORD','CAMBIAR_USUARIO') COLLATE utf8mb4_spanish_ci NOT NULL,
   `descripcion` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci NOT NULL,
   `ip_origen` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `navegador` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,

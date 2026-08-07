@@ -15,10 +15,13 @@
     <div class="card">
         <div class="card-header bg-warning bg-opacity-10">
             <i class="bi bi-sliders text-warning"></i>
-            Ajuste #{{ ajuste.id_ajuste }}
+            Ajuste {{ ajuste.folio|default:ajuste.id_ajuste }}
         </div>
         <div class="card-body">
             <dl class="row mb-0">
+                <dt class="col-sm-3">Folio</dt>
+                <dd class="col-sm-9">{{ ajuste.folio|default:"—" }}</dd>
+
                 <dt class="col-sm-3">Producto</dt>
                 <dd class="col-sm-9">{{ ajuste.producto.nombre }}</dd>
 

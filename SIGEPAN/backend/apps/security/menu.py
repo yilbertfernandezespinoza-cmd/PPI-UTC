@@ -221,6 +221,11 @@ MENU = [
                 "url": "reportes:utilidad",
                 "icono": "bi-graph-up-arrow",
             },
+            {
+                "titulo": "Reporte de Mermas",
+                "url": "reportes:mermas",
+                "icono": "bi-exclamation-triangle",
+            },
 
         ]
     },
@@ -251,13 +256,14 @@ MENU = [
                 "icono": "bi-journal-text",
             },
 
-            {
-                "titulo": "Acerca de SIGEPAN",
-                "url":"acerca_de",
-                "icono":"bi-info-circle",
-            },
-
         ]
     },
 
 ]
+
+# "Acerca de SIGEPAN" (07-08, RF-008): se retiró de este árbol de módulos
+# porque no es un submódulo de Seguridad, sino una pantalla informativa de
+# todo el sistema — quedaba "mal ubicada" ahí. Se muestra ahora como ítem
+# fijo al final del menú lateral (ver templates/includes/sidebar.html),
+# igual que "Inicio" al principio: visible para cualquier usuario, sin
+# pasar por el árbol de permisos por módulo.

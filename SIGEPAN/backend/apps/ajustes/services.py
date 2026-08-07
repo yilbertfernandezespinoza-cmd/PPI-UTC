@@ -7,6 +7,7 @@ from apps.inventario.services import MovimientoInventarioService
 
 from .models import Ajuste
 from .repositories import AjusteRepository
+from .utils import generar_folio_ajuste
 
 
 class AjusteService:
@@ -95,6 +96,7 @@ class AjusteService:
         )
 
         return AjusteRepository.crear(
+            folio=generar_folio_ajuste(),
             producto=producto,
             usuario=usuario,
             cantidad=cantidad,

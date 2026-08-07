@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+{% boton_ayuda "Reportes" "reporte_mermas" %}
+
+<h2>Reporte de Mermas</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Producto</label>
+                <select name="producto" class="form-select">
+                    <option value="">Todos</option>
+                    {% for p in productos %}
+                        <option value="{{ p.id_producto }}" {% if producto_id == p.id_producto|stringformat:"s" %}selected{% endif %}>
+                            {{ p.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-3">
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&producto={{ producto_id }}&formato=pdf"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&producto={{ producto_id }}&formato=excel"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&producto={{ producto_id }}&formato=sheets"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
+        </div>
+
+        <p><strong>Total de unidades mermadas en el período: {{ total_unidades }}</strong></p>
+
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarMermas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaMermas" class="w-100"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{{ mermas_json|json_script:"mermas-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const mermasElement = document.getElementById("mermas-data");
+    const mermas = mermasElement ? JSON.parse(mermasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaMermas",
+        search: "#buscarMermas",
+        data: mermas,
+        placeholder: "No hay mermas registradas para el rango seleccionado.",
+        columns: [
+            { title: "Fecha", field: "fecha" },
+            { title: "Producto", field: "producto" },
+            { title: "Cantidad", field: "cantidad", hozAlign: "center" },
+            { title: "Motivo", field: "motivo" },
+            { title: "Usuario", field: "usuario" },
+        ]
+    });
+});
+</script>
+{% endblock %}

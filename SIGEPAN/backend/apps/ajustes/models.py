@@ -20,6 +20,19 @@ class Ajuste(models.Model):
         db_column="id_ajuste",
     )
 
+    # Agregado 07-08 (RF-018): folio propio del ajuste, mismo patrón que
+    # Venta.numero_venta (AJ000001, AJ000002, ...). blank/null=True porque
+    # los ajustes ya registrados antes de este cambio no tienen folio y no
+    # se van a rellenar retroactivamente.
+    folio = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        unique=True,
+        db_column="folio",
+        verbose_name="Folio",
+    )
+
     producto = models.ForeignKey(
         "productos.Producto",
         on_delete=models.PROTECT,

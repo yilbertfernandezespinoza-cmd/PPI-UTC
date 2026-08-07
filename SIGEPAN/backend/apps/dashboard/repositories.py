@@ -1,8 +1,12 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Sum, Avg
+from django.db.models import Sum, Avg, F
 from django.utils import timezone
 
+from apps.caja.models import CierreCaja
+from apps.inventario.models import Inventario
+from apps.mermas.models import Merma
+from apps.security.models import LogAcciones
 from apps.ventas.models import Venta, DetalleVenta
 
 
@@ -101,4 +105,47 @@ class DashboardRepository:
             .values("caja__sucursal__nombre")
             .annotate(total=Sum("total"))
             .order_by("-total")
+        )
+
+    # Agregado 07-08 (RF-020): "diferencias de caja" y "mermas" en el
+    # dashboard gerencial, usando el mismo patrón de rango de día
+    # [_limite_inferior, _limite_superior) que el resto del repositorio.
+
+    @staticmethod
+    def diferencia_caja_del_dia():
+        hoy = timezone.localdate()
+        total = CierreCaja.objects.filter(
+            fecha_cierre__gte=_limite_inferior(hoy),
+            fecha_cierre__lt=_limite_superior(hoy),
+        ).aggregate(total=Sum("diferencia"))["total"]
+        return total or 0
+
+    @staticmethod
+    def mermas_del_dia():
+        hoy = timezone.localdate()
+        return Merma.objects.filter(
+            fecha__gte=_limite_inferior(hoy),
+            fecha__lt=_limite_superior(hoy),
+        ).count()
+
+    # Agregado 07-08 (RF-020): datos reales para los partials "actividad"
+    # y "alertas", que hasta ahora solo mostraban el texto plano del
+    # nombre del bloque (nunca se conectaron a datos).
+
+    @staticmethod
+    def actividad_reciente(limite=8):
+        return list(
+            LogAcciones.objects
+            .select_related("id_usuario", "id_modulo")
+            .order_by("-fecha_hora")[:limite]
+        )
+
+    @staticmethod
+    def productos_stock_bajo(limite=10):
+        return list(
+            Inventario.objects.filter(
+                estado=True, stock_actual__lte=F("stock_minimo")
+            )
+            .select_related("id_producto", "id_sucursal")
+            .order_by("stock_actual")[:limite]
         )

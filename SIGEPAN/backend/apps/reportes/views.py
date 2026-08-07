@@ -7,6 +7,7 @@ from apps.security.mixins import SessionRequiredMixin
 from apps.security.permissions import PermissionRequiredMixin
 from apps.security.services import registrar_log
 from apps.configuracion.models import Sucursal
+from apps.productos.models import Producto
 
 from .services import ReporteService
 from .exports import exportar_pdf, exportar_excel
@@ -304,4 +305,88 @@ class ReporteUtilidadView(SessionRequiredMixin, PermissionRequiredMixin, View):
             "utilidad": utilidad,
             "fecha_inicio": fecha_inicio,
             "fecha_fin": fecha_fin,
+        })
+
+
+class ReporteMermasView(SessionRequiredMixin, PermissionRequiredMixin, View):
+
+    permission_module = "Reportes"
+    permission_action = "CONSULTAR"
+    template_name = "reportes/mermas.html"
+
+    def get(self, request):
+
+        fecha_inicio = request.GET.get("fecha_inicio", "")
+        fecha_fin = request.GET.get("fecha_fin", "")
+        producto_id = request.GET.get("producto", "")
+
+        queryset, total_unidades = ReporteService.reporte_mermas(
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            id_producto=producto_id,
+        )
+
+        formato = request.GET.get("formato")
+
+        if formato in ("pdf", "excel", "sheets"):
+
+            encabezados = ["Fecha", "Producto", "Cantidad", "Motivo", "Usuario"]
+
+            filas = [
+                [
+                    m.fecha.strftime("%d/%m/%Y %H:%M"),
+                    m.producto.nombre,
+                    m.cantidad,
+                    m.motivo,
+                    str(m.usuario),
+                ]
+                for m in queryset
+            ]
+
+            if formato == "sheets":
+                try:
+                    url_hoja = exportar_a_google_sheets(
+                        request.usuario, "Reporte de Mermas", encabezados, filas
+                    )
+                    registrar_log(
+                        request, request.usuario, "Reportes", "EXPORTAR",
+                        "Exportó reporte de mermas a Google Sheets"
+                    )
+                    return redirect(url_hoja)
+                except ValidationError as error:
+                    messages.error(request, str(error))
+                    registrar_log(
+                        request, request.usuario, "Reportes", "ERROR",
+                        f"Falló la exportación del reporte de mermas a Google Sheets: {error}"
+                    )
+                    return redirect("reportes:mermas")
+
+            registrar_log(
+                request, request.usuario, "Reportes", "EXPORTAR",
+                f"Exportó reporte de mermas a {formato.upper()}"
+            )
+
+            if formato == "pdf":
+                return exportar_pdf(encabezados, filas, "Reporte de Mermas", "reporte_mermas")
+            return exportar_excel(encabezados, filas, "Reporte de Mermas", "reporte_mermas")
+
+        mermas_json = [
+            {
+                "fecha": m.fecha.strftime("%d/%m/%Y %H:%M"),
+                "producto": m.producto.nombre,
+                "cantidad": m.cantidad,
+                "motivo": m.motivo,
+                "usuario": str(m.usuario),
+            }
+            for m in queryset
+        ]
+
+        return render(request, self.template_name, {
+            "mermas": queryset,
+            "total_unidades": total_unidades,
+            "mermas_json": mermas_json,
+            "productos": Producto.objects.filter(estado=True).order_by("nombre"),
+            "fecha_inicio": fecha_inicio,
+            "fecha_fin": fecha_fin,
+            "producto_id": producto_id,
         })

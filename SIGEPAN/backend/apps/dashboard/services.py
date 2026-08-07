@@ -43,8 +43,13 @@ class DashboardService:
         kpis = []
         top_productos = []
         ventas_por_sucursal = []
+        actividad_reciente = []
+        alertas_stock_bajo = []
 
         if mostrar_gerencial:
+            diferencia_caja = DashboardRepository.diferencia_caja_del_dia()
+            mermas_hoy = DashboardRepository.mermas_del_dia()
+
             kpis = [
                 {
                     "titulo": "Ventas del día",
@@ -70,9 +75,27 @@ class DashboardService:
                     "icono": "bi bi-calculator",
                     "color": "warning",
                 },
+                {
+                    # RF-020: diferencia acumulada de los cierres de caja
+                    # del día. En 0 (o sin cierres hoy) se muestra en
+                    # verde; cualquier diferencia (sobrante o faltante)
+                    # se resalta en rojo para que salte a la vista.
+                    "titulo": "Diferencia de caja (hoy)",
+                    "valor": f"₡{diferencia_caja:,.2f}",
+                    "icono": "bi bi-safe2",
+                    "color": "success" if diferencia_caja == 0 else "danger",
+                },
+                {
+                    "titulo": "Mermas registradas (hoy)",
+                    "valor": mermas_hoy,
+                    "icono": "bi bi-exclamation-triangle",
+                    "color": "danger" if mermas_hoy > 0 else "success",
+                },
             ]
             top_productos = DashboardRepository.top_productos()
             ventas_por_sucursal = DashboardRepository.ventas_por_sucursal()
+            actividad_reciente = DashboardRepository.actividad_reciente()
+            alertas_stock_bajo = DashboardRepository.productos_stock_bajo()
 
         return {
             "saludo": saludo,
@@ -85,4 +108,6 @@ class DashboardService:
             "kpis": kpis,
             "top_productos": top_productos,
             "ventas_por_sucursal": ventas_por_sucursal,
+            "actividad_reciente": actividad_reciente,
+            "alertas_stock_bajo": alertas_stock_bajo,
         }

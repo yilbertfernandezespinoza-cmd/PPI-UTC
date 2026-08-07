@@ -2,18 +2,6 @@ from django import forms
 from .models import Producto
 
 
-UNIDADES_MEDIDA = [
-    ('Unidad', 'Unidad'),
-    ('Kilogramo', 'Kilogramo (kg)'),
-    ('Gramo', 'Gramo (g)'),
-    ('Litro', 'Litro (L)'),
-    ('Mililitro', 'Mililitro (ml)'),
-    ('Docena', 'Docena'),
-    ('Paquete', 'Paquete'),
-    ('Caja', 'Caja'),
-]
-
-
 class ProductoForm(forms.ModelForm):
 
     imagen = forms.ImageField(
@@ -23,8 +11,15 @@ class ProductoForm(forms.ModelForm):
         })
     )
 
+    # Corregido (07-08, hallazgo de auditoría): este campo redeclaraba su
+    # propia lista `UNIDADES_MEDIDA` con solo 8 opciones, distinta y más
+    # corta que las 10 `choices` reales del modelo (Producto.UNIDADES_MEDIDA)
+    # — como el ChoiceField del form sobrescribe el del modelo, "Libra" y
+    # "Bolsa" nunca aparecían en el <select> real aunque el modelo/BD sí las
+    # soportara. Ahora reutiliza directamente las choices del modelo, como
+    # única fuente de verdad.
     unidad_medida = forms.ChoiceField(
-        choices=UNIDADES_MEDIDA,
+        choices=Producto.UNIDADES_MEDIDA,
         widget=forms.Select(attrs={
             'class': 'form-select'
         })

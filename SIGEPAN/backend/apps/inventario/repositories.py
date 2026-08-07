@@ -1,8 +1,31 @@
+from datetime import datetime, timedelta
+
+from django.utils import timezone
+
 from .models import (
     Inventario,
     TipoMovimientoInventario,
     MovimientoInventario,
 )
+
+
+def _limite_inferior(fecha):
+    """
+    Medianoche local (aware) del día `fecha` — evita depender de que MySQL
+    tenga cargadas las tablas de zona horaria (CONVERT_TZ). Mismo patrón
+    usado en mermas/ajustes/gastos_operativos/reportes (05-08/07-08),
+    incluyendo la conversión de string a date (el input type="date" del
+    filtro llega como texto crudo desde request.GET, nunca ya parseado).
+    """
+    if isinstance(fecha, str):
+        fecha = datetime.strptime(fecha, "%Y-%m-%d").date()
+
+    return timezone.make_aware(datetime.combine(fecha, datetime.min.time()))
+
+
+def _limite_superior(fecha):
+    """Medianoche local (aware) del día siguiente a `fecha` (límite exclusivo)."""
+    return _limite_inferior(fecha) + timedelta(days=1)
 
 
 class InventarioRepository:
@@ -176,6 +199,27 @@ class MovimientoInventarioRepository:
                 "-fecha_creacion",
             )
         )
+
+    @staticmethod
+    def filtrar(id_producto=None, desde=None, hasta=None):
+        """
+        Filtra movimientos de inventario por producto y/o rango de fechas
+        (mismo criterio de filtro ya usado en Mermas/Ajustes/Gastos
+        Operativos para sus respectivos listados).
+        """
+
+        consulta = MovimientoInventarioRepository.listar()
+
+        if id_producto:
+            consulta = consulta.filter(id_inventario__id_producto_id=id_producto)
+
+        if desde:
+            consulta = consulta.filter(fecha_creacion__gte=_limite_inferior(desde))
+
+        if hasta:
+            consulta = consulta.filter(fecha_creacion__lt=_limite_superior(hasta))
+
+        return consulta
 
     @staticmethod
     def listar_por_inventario(id_inventario):

@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DetailView, ListView
 
 from apps.productos.models import Producto
@@ -39,6 +40,23 @@ class MermaListView(
         context["filtro_producto"] = self.request.GET.get("producto", "")
         context["filtro_desde"] = self.request.GET.get("desde", "")
         context["filtro_hasta"] = self.request.GET.get("hasta", "")
+
+        # Serialización a JSON (07-08): mismo patrón Tabulator ya aplicado
+        # en el resto del sistema — el filtro por producto/fecha se
+        # sigue resolviendo en el servidor (GET), Tabulator solo agrega
+        # buscador/paginación sobre el resultado ya filtrado.
+        context["mermas_json"] = [
+            {
+                "fecha": timezone.localtime(merma.fecha).strftime("%d/%m/%Y %H:%M"),
+                "producto": merma.producto.nombre,
+                "cantidad": merma.cantidad,
+                "motivo": merma.motivo,
+                "usuario": str(merma.usuario),
+                "detalle": reverse("mermas:detalle", args=[merma.id_merma]),
+            }
+            for merma in context["mermas"]
+        ]
+
         return context
 
 

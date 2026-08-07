@@ -25,6 +25,10 @@ def lista_productos(request):
             "unidad_medida": producto.unidad_medida,
             "categoria": producto.id_categoria.nombre,
             "estado": producto.estado,
+            "imagen": producto.imagen or "",
+            "descripcion": producto.descripcion or "",
+            "porcentaje_utilidad": str(producto.porcentaje_utilidad) if producto.porcentaje_utilidad is not None else "",
+            "porcentaje_impuesto": str(producto.porcentaje_impuesto) if producto.porcentaje_impuesto is not None else "",
             "editar": f"/productos/editar/{producto.id_producto}/",
             "eliminar": f"/productos/eliminar/{producto.id_producto}/",
         })

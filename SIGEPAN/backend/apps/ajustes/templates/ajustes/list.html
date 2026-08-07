@@ -62,51 +62,70 @@
         </div>
     </div>
 
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarAjustes" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por producto, motivo o usuario...">
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
-            <table class="table table-striped table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Producto</th>
-                        <th>Tipo</th>
-                        <th>Cantidad</th>
-                        <th>Motivo</th>
-                        <th>Usuario</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ajuste in ajustes %}
-                    <tr>
-                        <td>{{ ajuste.fecha|date:"d/m/Y H:i" }}</td>
-                        <td>{{ ajuste.producto.nombre }}</td>
-                        <td>
-                            {% if ajuste.tipo == "ENTRADA" %}
-                            <span class="badge bg-success bg-opacity-10 text-success">Entrada</span>
-                            {% else %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger">Salida</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ ajuste.cantidad }}</td>
-                        <td>{{ ajuste.motivo }}</td>
-                        <td>{{ ajuste.usuario }}</td>
-                        <td class="text-end">
-                            <a href="{% url 'ajustes:detalle' ajuste.id_ajuste %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">No hay ajustes registrados.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div id="tablaAjustes" class="w-100"></div>
         </div>
     </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ ajustes_json|json_script:"ajustes-data" }}
+
+{% endblock %}
+
+{# Migrado (07-08): mismo patrón Tabulator que el resto del sistema. #}
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ajustesElement = document.getElementById("ajustes-data");
+    const ajustes = ajustesElement ? JSON.parse(ajustesElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaAjustes",
+        search: "#buscarAjustes",
+        data: ajustes,
+        placeholder: "No hay ajustes registrados.",
+        columns: [
+            { title: "Fecha", field: "fecha" },
+            { title: "Producto", field: "producto", headerHozAlign: "left" },
+            {
+                title: "Tipo",
+                field: "tipo",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    return data.tipo === "ENTRADA"
+                        ? `<span class="badge bg-success bg-opacity-10 text-success">${data.tipo_display}</span>`
+                        : `<span class="badge bg-danger bg-opacity-10 text-danger">${data.tipo_display}</span>`;
+                }
+            },
+            { title: "Cantidad", field: "cantidad", hozAlign: "center" },
+            { title: "Motivo", field: "motivo" },
+            { title: "Usuario", field: "usuario" },
+            {
+                title: "",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    return `<a href="${data.detalle}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-eye"></i> Ver</a>`;
+                }
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}

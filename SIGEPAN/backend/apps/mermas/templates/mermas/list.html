@@ -53,43 +53,66 @@
         </div>
     </div>
 
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarMermas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por producto, motivo o usuario...">
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
-            <table class="table table-striped table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Motivo</th>
-                        <th>Usuario</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for merma in mermas %}
-                    <tr>
-                        <td>{{ merma.fecha|date:"d/m/Y H:i" }}</td>
-                        <td>{{ merma.producto.nombre }}</td>
-                        <td><span class="badge bg-danger bg-opacity-10 text-danger">{{ merma.cantidad }}</span></td>
-                        <td>{{ merma.motivo }}</td>
-                        <td>{{ merma.usuario }}</td>
-                        <td class="text-end">
-                            <a href="{% url 'mermas:detalle' merma.id_merma %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">No hay mermas registradas.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div id="tablaMermas" class="w-100"></div>
         </div>
     </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ mermas_json|json_script:"mermas-data" }}
+
+{% endblock %}
+
+{# Migrado (07-08): mismo patrón Tabulator que el resto del sistema. #}
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const mermasElement = document.getElementById("mermas-data");
+    const mermas = mermasElement ? JSON.parse(mermasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaMermas",
+        search: "#buscarMermas",
+        data: mermas,
+        placeholder: "No hay mermas registradas.",
+        columns: [
+            { title: "Fecha", field: "fecha" },
+            { title: "Producto", field: "producto", headerHozAlign: "left" },
+            {
+                title: "Cantidad",
+                field: "cantidad",
+                hozAlign: "center",
+                formatter(cell) {
+                    return `<span class="badge bg-danger bg-opacity-10 text-danger">${cell.getValue()}</span>`;
+                }
+            },
+            { title: "Motivo", field: "motivo" },
+            { title: "Usuario", field: "usuario" },
+            {
+                title: "",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    return `<a href="${data.detalle}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-eye"></i> Ver</a>`;
+                }
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}

@@ -49,27 +49,50 @@
 
         <p><strong>Total de ventas del período: ₡{{ total_ventas|floatformat:2 }}</strong></p>
 
-        <table class="table table-sm table-hover">
-            <thead>
-                <tr>
-                    <th>Método de pago</th>
-                    <th class="text-end">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for m in por_metodo %}
-                <tr>
-                    <td>{{ m.metodo_pago__nombre|default:"Sin especificar" }}</td>
-                    <td class="text-end">₡{{ m.total|floatformat:2 }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="2" class="text-muted">No hay ventas registradas en este período.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarTributario" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaTributario" class="w-100"></div>
+            </div>
+        </div>
 
     </div>
 
 </div>
 
+{{ por_metodo_json|json_script:"tributario-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tributarioElement = document.getElementById("tributario-data");
+    const tributario = tributarioElement ? JSON.parse(tributarioElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaTributario",
+        search: "#buscarTributario",
+        data: tributario,
+        placeholder: "No hay ventas registradas en este período.",
+        rowFormatter(row){
+            const data = row.getData();
+            if (data.metodo_pago === "TOTAL GENERAL") {
+                row.getElement().classList.add("fw-bold", "table-secondary");
+            }
+        },
+        columns: [
+            { title: "Método de pago", field: "metodo_pago" },
+            { title: "Total", field: "total", hozAlign: "right", formatter(cell){ return `₡${parseFloat(cell.getValue()||0).toFixed(2)}`; } },
+        ]
+    });
+});
+</script>
 {% endblock %}

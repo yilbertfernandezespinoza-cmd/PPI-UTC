@@ -22,87 +22,89 @@
         </div>
     </div>
 
-    <!-- Tabla con DataTable -->
-    <div class="card shadow-sm border-0">
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
         <div class="card-body">
-            <div class="table-responsive">
-                <table id="tablaCompras" class="table table-hover align-middle sigepan-table mb-0 w-100">
-                    <thead class="table-dark">
-                        <tr>
-                            <th class="ps-3">ID</th>
-                            <th>Proveedor</th>
-                            <th>Fecha</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th class="text-end pe-3">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for compra in compras %}
-                        <tr>
-                            <td class="ps-3 fw-semibold">
-                                #{{ compra.id_compra }}
-                            </td>
-                            <td>
-                                {{ compra.proveedor.nombre }}
-                            </td>
-                            <td>
-                                {{ compra.fecha|date:"d/m/Y H:i" }}
-                            </td>
-                            <td class="fw-bold text-success">
-                                ₡ {{ compra.total|floatformat:2 }}
-                            </td>
-                            <td>
-                                {% if compra.estado %}
-                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>
-                                {% else %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Anulada</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-3">
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'compras:detalle_compra' compra.id_compra %}" 
-                                       class="btn btn-outline-info btn-sm" 
-                                       title="Ver Detalle">
-                                        <i class="fas fa-eye"></i> Ver
-                                    </a>
-
-                                    {% if compra.estado %}
-                                    <a href="{% url 'compras:anular_compra' compra.id_compra %}" 
-                                       class="btn btn-outline-danger btn-sm" 
-                                       title="Anular Compra">
-                                        <i class="fas fa-trash-alt"></i> Anular
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <!-- Nota: DataTables maneja bien las filas vacías, pero dejamos el bloque por seguridad -->
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarCompras" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por proveedor...">
             </div>
+        </div>
+    </div>
+
+    <!-- Tabla con Tabulator -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaCompras" class="w-100"></div>
         </div>
     </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ compras_json|json_script:"compras-data" }}
+
 {% endblock %}
 
-<!-- Bloque de Scripts para inicializar DataTable -->
-{% block extra_js %}
+<!-- Corregido (07-08): la tabla migra de jQuery DataTables (ya no
+     funciona, base.html no carga jQuery desde que el proyecto adoptó
+     Tabulator.js) al mismo patrón que ya usa Clientes. -->
+{% block js %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        $('#tablaCompras').DataTable({
-            language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" // Traducción oficial al español
+document.addEventListener("DOMContentLoaded", function () {
+    const comprasElement = document.getElementById("compras-data");
+    const compras = comprasElement ? JSON.parse(comprasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaCompras",
+        search: "#buscarCompras",
+        data: compras,
+        columns: [
+            {
+                title: "ID",
+                field: "id_compra",
+                formatter(cell) {
+                    return `#${cell.getValue()}`;
+                }
             },
-            order: [[0, "desc"]], // Ordenar por ID de forma descendiente por defecto
-            pageLength: 10,
-            responsive: true,
-            dom: '<"row mb-3"<"col-md-6"l><"col-md-6"f>>rt<"row mt-3"<"col-md-6"i><"col-md-6"p>>',
-        });
+            { title: "Proveedor", field: "proveedor" },
+            { title: "Fecha", field: "fecha" },
+            {
+                title: "Total",
+                field: "total",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-bold text-success">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Anulada</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="btn-group" role="group">';
+                    botones += `<a href="${data.detalle}" class="btn btn-outline-info btn-sm" title="Ver Detalle"><i class="fas fa-eye"></i> Ver</a>`;
+                    if (data.estado) {
+                        botones += `<a href="${data.anular}" class="btn btn-outline-danger btn-sm" title="Anular Compra"><i class="fas fa-trash-alt"></i> Anular</a>`;
+                    }
+                    botones += "</div>";
+                    return botones;
+                }
+            }
+        ]
     });
+});
 </script>
 {% endblock %}

@@ -1,6 +1,6 @@
 # Checklist de desarrollo — SIGEPAN (34 RF)
 
-> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**.
+> Última actualización: 2026-08-06 · Basado en: Auditoría base (02-08), CHECKLIST_YILBERT.md (03/04-08), verificación directa del código en `backend/apps/`, la corrección de RF-012/RF-016/RF-024/RF-030, los módulos nuevos RF-017/RF-018/RF-026, el CRUD de RF-013, la auditoría de 4 agentes del 05-08 (desarrollo/UX, arquitectura de BD, seguridad, UX/UI) enfocada en los 12 RF de César + sus fixes, el rediseño de búsqueda de cliente en el POS, el comprobante de venta con marca "La Pana" y el envío de comprobante por correo, **una segunda ronda de auditoría con 4 agentes especializados (06-08) enfocada exclusivamente en verificar lo implementado el 05-08** (ver sección justo abajo), y **el cierre de los dos bloqueantes reales que dejó esa auditoría (RF-016 `managed=False`, RF-030 múltiples productos por compra) más la extracción de la capa `Repository`/`Service` de Ventas (RF-012), con verificación de contrato JSON/URLs/`py_compile` sin cambios de comportamiento**, y **una tercera ronda de verificación (06-08, 2 agentes de solo lectura) que confirmó el checklist contra el código real de las 13 RF de César: solo 2 discrepancias reales (auditoría de Categorías/Productos ya resuelta pero mal marcada, corregidas abajo) y 2 hallazgos menores nuevos (choices de unidad de medida desincronizadas en `ProductoForm`, desfase de redacción sobre `seed_metodos_pago`); las otras 11 secciones (RF-012 a RF-018, RF-026, RF-029, RF-030, RF-034) resultaron 100% fieles al código real, incluyendo el wiring general (`INSTALLED_APPS`, `urls.py`, menú, migraciones)**, y **una cuarta ronda (06-08, noche, post-merge con la rama de Yilbert) con 2 agentes que recalcularon el % real de las 13 RF de César contra el código actual: 8 de las 13 estaban subestimadas por el documento (el código avanzó desde el commit `f08cbba` sin que el checklist se actualizara), se corrigió la tabla resumen y se listó, RF por RF, qué falta exactamente para el 100% (ver sección "Tercera ronda de auditoría" más abajo) — incluyendo 2 hallazgos nuevos no documentados antes: un bug de DataTables en `lista_compras.html` (bloque `extra_js` que nunca se renderiza) y una migración de Django desincronizada en `LogAcciones` (RF-034)**.
 > Marca `[x]` cuando el ítem esté verificado en código (no solo "hecho de memoria"). Actualiza el `% avance` de la cabecera al cerrar ítems.
 
 ## 🔴 Segunda auditoría (06-08) — 4 agentes verificando lo del 05-08
@@ -39,6 +39,169 @@ pequeñas desincronizaciones del propio checklist:
   César quiera); el docstring de `apps/security/decorators.py::permiso_requerido` sigue diciendo "no se
   aplica todavía en caja/proveedores" cuando `caja` ya lo usa extensamente — comentario desactualizado,
   sin impacto real.
+
+## 🟢 Tercera ronda de auditoría (06-08, noche) — % real post-merge y gap a 100%
+
+Tras el merge de la rama de Yilbert (que trajo, entre otras cosas, `apps/ventas/exports.py` con generación
+del comprobante en PDF real vía `reportlab` + fuente DejaVu Sans para el símbolo ₡, ya integrado en
+`ComprobanteEmailService`), se pidieron 2 agentes de solo lectura para volver a confirmar el % real de cada
+RF de César contra el código actual y decir exactamente qué falta para el 100%. `compileall` sobre las 13
+apps de César: limpio, sin errores. Conclusión principal: **el código venía más adelantado de lo que decía
+el documento en 8 de las 13 RF** — el checklist no se había vuelto a pasar sobre esas secciones desde el
+commit `f08cbba` (que tocó RF-010,011,014,015,016,026,029,030,034,007,012,023 de una sola vez). Se
+actualizó la tabla resumen arriba con el % confirmado. Detalle y pendientes reales para el 100% por RF:
+
+- **RF-010 (95%)**: `Categoria` ya hereda `BaseModel`, `Repository`/`Service` ya no están vacíos, validación
+  de nombre duplicado ya vive en el Service. [x] Migración `AlterModelOptions(managed=False)` generada y
+  aplicada (07-08) — historial de Django sincronizado con `models.py`, `makemigrations --dry-run` confirma
+  "No changes detected". Falta: [ ] `tests.py` sigue vacío.
+- **RF-011 (90%)**: `Producto` ya hereda `BaseModel`, `Repository`/`Service` reales. [x] Misma migración
+  huérfana que RF-010, ya resuelta (07-08). Falta: [ ] en `apps/productos/forms.py`, `ProductoForm.unidad_medida`
+  sigue redeclarando su propia lista de 8 opciones en vez de usar `Producto.UNIDADES_MEDIDA` (10 opciones) —
+  le faltan "Libra" y "Bolsa" en el `<select>` real. Fix: `unidad_medida = forms.ChoiceField(choices=Producto.UNIDADES_MEDIDA, ...)`.
+  [ ] `tests.py` vacío.
+- **RF-012 (97%)**: sin cambios de fondo — el PDF del merge quedó bien integrado (campos, fuentes y logo
+  verificados, envuelto en `try/except` para no romper la vista si falla). Falta: [ ] prueba end-to-end
+  completa contra MySQL real (cobrar/pausar/retomar/anular).
+- **RF-013 (93%)**: sin discrepancia real. Falta: [ ] toggle rápido de activar/desactivar desde el listado
+  (hoy solo se cambia el estado reabriendo el formulario completo) — menor.
+- **RF-014 (88%)**: el campo `turno` ya existe en `AperturaCaja` y es obligatorio en el form; `es_administrador()`
+  duplicado ya se eliminó; el bug de `desactivar_caja` ya está corregido; auditoría ya presente en las 8
+  vistas. [x] `ALTER TABLE apertura_caja ADD COLUMN turno...` corrido en la BD real (07-08). Falta: [ ] extraer
+  `CajaRepository`/`AperturaCajaService` (hoy todas las consultas ORM viven directo en `views.py`, sin capa
+  Repository/Service como sí tiene Ventas/Inventario/Mermas/Ajustes).
+- **RF-015 (85%)**: `CierreCajaService` ya existe con `validar_puede_cerrar()` y `cerrar()` transaccional;
+  `cerrar_caja` ya llama a `registrar_log`. Falta: [ ] mismo hueco de Repository que RF-014 (`CierreCaja`/
+  `ArqueoCaja` sin capa dedicada); [ ] documentar/reforzar si un cierre debe exigir N arqueos previos (hoy
+  solo exige al menos uno).
+- **RF-016 (97%)**: los FK de `Inventario`/`MovimientoInventario` ya usan `PROTECT` (no `DO_NOTHING`); ya
+  existe el `UniqueConstraint` producto+sucursal. [x] `ALTER TABLE inventario ADD CONSTRAINT
+  uq_inventario_producto_sucursal...` corrido en la BD real (07-08). Falta: [ ]
+  `apps/inventario/views.py::editar_inventario` (function-based) no llama a `registrar_log` tras guardar —
+  agregar igual que en `EntradaInventarioView`.
+- **RF-017 (88%)**: sin discrepancia real. Falta: [ ] reporte dedicado de mermas (hoy solo hay listado con
+  filtros); [ ] confirmar `seed_tipos_movimiento`/`seed_permisos_modulos` corridos en tu máquina.
+- **RF-018 (88%)**: sin discrepancia real. Falta: [ ] folio/número de documento propio para el ajuste (hoy
+  se identifica solo por `id_ajuste`); [ ] confirmar seeds corridos en tu máquina.
+- **RF-026 (96%)**: el campo `comprobante` que el checklist marcaba como pendiente **ya está completo**
+  (modelo, `FileField` en el form, subida real a `media/gastos_operativos/`, mostrado en templates). [x]
+  `ALTER TABLE gasto_operativo ADD COLUMN comprobante...` corrido en la BD real (07-08); [x]
+  `seed_permisos_modulos` confirmado (07-08, permisos de Gastos Operativos ya existían). Falta: [ ] probar en
+  vivo la subida del comprobante.
+- **RF-029 (100% ✅)**: sin cambios, se reconfirma. La migración `clientes/0002_...` (con el
+  `SeparateDatabaseAndState` para `tipo_cliente`/`tipo_identificacion`) está aplicada y sincronizada
+  (`makemigrations --dry-run` → "No changes detected"). Sin pendientes bloqueantes.
+- **RF-030 (93%)**: `Repository`/`Service` de compras **ya no están vacíos** (`CompraService.crear_compra`/
+  `anular_compra`, transaccional, integrado con `MovimientoInventarioService`); `DetalleCompra.compra` ya usa
+  `PROTECT`. Falta: [ ] **bug de UI nuevo, no documentado antes**: `compras/templates/compras/lista_compras.html`
+  usa `{% block extra_js %}` pero `base.html` define `{% block js %}` — ese bloque nunca se renderiza, así
+  que DataTables (paginación/orden/búsqueda) nunca se activa en la tabla de compras. Fix: renombrar el bloque
+  a `{% block js %}`. [ ] decidir si se implementa `HistorialPrecio` o se retira del diseño; [ ] `tests.py`
+  vacío.
+- **RF-034 (93%)**: el tipo de evento propio `CAMBIAR_USUARIO` en `LogAcciones.tipo_accion` **ya existe y ya
+  se usa** en `cambiar_usuario_view` (ya no reutiliza `LOGOUT`); wiring completo (url, link en navbar). [x]
+  Migración `security/0003_alter_logacciones_tipo_accion_and_more.py` generada y aplicada (07-08) —
+  `makemigrations --dry-run` confirma "No changes detected". **Nota de diseño**: `security` es una app que
+  Django sí gestiona (a diferencia de la mayoría del proyecto, Database First); por eso se decidió que
+  `tipo_accion` quede como `VARCHAR(20)` controlado 100% por el `CharField(choices=...)` del modelo, en vez
+  de un `ENUM` de MySQL gestionado por fuera — así cada `choice` nuevo que se agregue a futuro solo necesita
+  `makemigrations`/`migrate`, sin volver a tocar la BD a mano. Falta: [ ] sin tests automatizados.
+
+**Wiring general post-merge**: `INSTALLED_APPS` (18 apps) coincide exactamente con las carpetas reales de
+`backend/apps/`; `config/urls.py` incluye las 18 `urls.py`; sin apps ni rutas huérfanas.
+
+### ✅ Fixes de código aplicados (07-08) sobre los hallazgos de esta ronda
+
+- [x] **RF-011**: `ProductoForm.unidad_medida` ya no redeclara su propia lista de 8 opciones — ahora reutiliza
+  `Producto.UNIDADES_MEDIDA` (10 opciones) como única fuente de verdad. "Libra" y "Bolsa" ya aparecen en el
+  `<select>` real.
+- [x] **RF-016**: `apps/inventario/views.py::editar_inventario` ahora llama a `registrar_log` tras guardar,
+  igual que el resto de vistas del módulo.
+- [x] **RF-014/015**: se extrajo la capa `Repository`/`Service` de Caja que faltaba —
+  `CajaRepository`/`AperturaCajaRepository`/`MovimientoCajaRepository`/`ArqueoCajaRepository`/
+  `HistorialCajaRepository` (repositories.py) y `CajaService`/`AperturaCajaService`/
+  `MovimientoCajaService`/`ArqueoCajaService` (services.py, junto al ya existente `CierreCajaService`).
+  `views.py` ya no consulta los modelos directo — mismos mensajes, redirects, permisos y textos de error que
+  antes, verificado línea por línea. `py_compile`/`compileall` sin errores.
+- [x] **Hallazgo nuevo y su fix, mismo bug repetido 5 veces**: `compras/templates/compras/lista_compras.html`
+  usaba `{% block extra_js %}` en vez de `{% block js %}` (que es el que define `base.html`) — DataTables
+  nunca se activaba. Al revisar si el mismo error se repetía en otros listados, se encontró **exactamente el
+  mismo bug en 4 templates más**: `ventas/lista_ventas.html` (RF-012), `categorias/lista.html` (RF-010),
+  `productos/lista.html` (RF-011) y `proveedores/lista.html`. Los 5 quedaron corregidos — confirmado que
+  `base.html` solo define `{% block js %}` (línea 84), sin bloque `extra_js` en ningún lado.
+
+RF-011 y RF-016 suben a **91%** y **98%** respectivamente con estos fixes. RF-014 sube a **90%** (ya no falta
+la capa Repository/Service). RF-030 y RF-012 no cambian de % (los templates rotos ya estaban contados como
+pendiente/no se habían marcado 100%), pero su bug de UI queda cerrado.
+
+### 🔴 Hallazgo mayor (07-08) y su resolución: el proyecto migró de jQuery DataTables a Tabulator.js, pero 8 templates se quedaron con el código viejo
+
+Al probar el fix de `lista_compras.html` en la máquina real, la tabla seguía sin buscador/paginación pese al
+fix del bloque. La causa real: `base.html` **ya no carga jQuery ni DataTables en ningún lado** — el proyecto
+migró a **Tabulator.js** con un helper propio `SIGEPAN.table.create()` (`static/js/table.js`), y Clientes
+(RF-029) ya es la implementación de referencia de ese patrón. Los 8 templates siguientes se habían quedado
+con el código viejo de jQuery DataTables, que ahora falla en silencio (`$ is not defined`) y por eso las
+tablas se veían como HTML plano sin buscador ni paginación, sin importar el nombre del bloque:
+
+- `categorias/lista.html` (RF-010)
+- `productos/lista.html` (RF-011)
+- `proveedores/lista.html`
+- `ventas/lista_ventas.html` (RF-012)
+- `compras/lista_compras.html` (RF-030)
+- `caja/lista_cajas.html` (RF-014/015) — con 9 cajas de prueba ya sin paginación real
+- `caja/administrar_caja.html` (RF-014/015) — tablas de "Últimos Movimientos" e "Historial de Arqueos"
+- `caja/detalle_caja.html` (RF-014/015) — listado completo (sin límite) de movimientos de una apertura
+
+Los 8 quedaron migrados al patrón Tabulator: la vista serializa los datos a JSON (`json_script`) y el
+template arma columnas/formatters/botones en JS con `SIGEPAN.table.create()`, igual que Clientes — búsqueda
+en vivo, paginación real (`Registros/Primera/Anterior/Siguiente/Última`), mismos badges/acciones que antes.
+En Cajas, los botones "Desactivar"/"Activar" que antes eran `<form method="post">` ahora usan
+`SIGEPAN.table.postAction()` (fetch + CSRF, mismo patrón que el toggle de estado de Clientes) — mismo
+comportamiento, sin recargar la página vía formulario tradicional.
+
+Verificado: `python3 -m compileall -q apps/ config/` limpio, y `grep -rn "\.DataTable(" apps/ --include="*.html"`
+y `grep -rn "jquery" apps/ --include="*.html"` no devuelven ningún resultado en todo el proyecto — cero
+código muerto de jQuery/DataTables restante.
+
+RF-010 sube a **95%**, RF-011 a **91%**, RF-012 a **98%**, RF-014/015 a **92%**, RF-030 a **95%** con este
+fix (antes contaban con tablas de listado sin buscador/paginación funcional pese a "verse" completas).
+
+**Noveno template migrado, `inventario/lista_inventario.html` (RF-016)**: este ni siquiera tenía DataTables
+— era una tabla Bootstrap plana sin buscador ni paginación desde el principio. Mismo motivo que Cajas: con
+cada producto/sucursal nuevos la lista crece sin control visual. Migrado al mismo patrón Tabulator
+(`SIGEPAN.table.create()`, buscador en vivo, paginación real, mismos badges de stock bajo mínimo/estado).
+RF-016 sube a **99%**.
+
+### 🔴 Bug real corregido (07-08): TypeError en los filtros de fecha de Mermas, Ajustes y Gastos Operativos
+
+Reportado por César probando en su máquina: `TypeError: combine() argument 1 must be datetime.date, not str`
+al aplicar cualquier filtro de fecha en `/mermas/`, `/ajustes/` o `/gastos-operativos/`. Causa: `_limite_inferior(fecha)`
+en los 3 `repositories.py` asumía que `fecha` ya era un objeto `date`, pero `views.py` le pasa el string crudo
+de `request.GET.get("desde")` (el `<input type="date">` del filtro) sin convertirlo — `datetime.combine()`
+exige un `date`, no un `str`. Corregido en los 3 archivos: `_limite_inferior` ahora convierte el string a
+`date` con `datetime.strptime(fecha, "%Y-%m-%d").date()` antes de combinar. **Se encontró el mismo patrón
+también en `apps/reportes/repositories.py`** (Yilbert, RF-019/025/027 — Reporte de Ventas, Reporte Tributario,
+Reporte de Utilidad) y se corrigió ahí también para no dejar la misma trampa activa fuera de las RF de César.
+
+RF-017 (Mermas) y RF-018 (Ajustes) suben a **92%**, RF-026 (Gastos Operativos) sube a **96%** — bug
+bloqueante cerrado.
+
+### ✅ Cuarta tanda de migración a Tabulator (07-08) + fix de íconos de Caja
+
+Se migraron 4 templates más al mismo patrón Tabulator: `inventario/lista_movimientos.html`,
+`mermas/list.html`, `ajustes/list.html`, `gastos_operativos/list.html` — los filtros por producto/tipo/fecha
+siguen resolviéndose en el servidor (GET, sin cambios), Tabulator solo agrega buscador y paginación sobre el
+resultado ya filtrado. En Gastos Operativos, el botón "Deshabilitar/Activar" pasó de `<form method="post">` a
+`SIGEPAN.table.postAction()` (mismo patrón que Cajas). Además, se corrigió el ícono de `lista_cajas.html`
+(nombre de cada caja y tarjeta "Total Cajas") y de `administrar_caja.html` (tarjeta "Caja") de `bi-box-seam`/
+`bi-wallet2` a `bi-cash-register` (caja registradora), como se pidió.
+
+**Nota de verificación**: el sandbox de shell de esta sesión se desconectó a mitad de los cambios anteriores.
+Se dispatcharon 2 agentes de verificación independientes (uno para mermas/ajustes/gastos_operativos, otro
+para inventario/reportes/caja) que corrieron `compileall`/`py_compile` reales sobre todo `apps/` y revisaron
+campos de modelo, nombres de URL y balance de llaves Django/JS — **compilación limpia confirmada, sin
+correcciones necesarias**. Se recomienda igual correr `python manage.py check` en tu máquina como validación
+final contra la BD real.
 
 ## 🔴 Bugs reportados por César en pruebas reales (05-08, tarde) — corregidos
 
@@ -180,15 +343,15 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-007 | Roles y permisos | Yilbert | 100% |
 | RF-008 | Menú principal | Yilbert | 85% |
 | RF-009 | Gestión de sucursales | Yilbert | 100% |
-| RF-010 | Gestión de categorías | César | 65% |
-| RF-011 | Gestión de productos | César | 75% 🟡 (verificar en tu máquina) |
+| RF-010 | Gestión de categorías | César | 95% 🟡 (verificar en tu máquina) |
+| RF-011 | Gestión de productos | César | 91% 🟡 (verificar en tu máquina) |
 | RF-012 | Registro de ventas | César | 98% 🟡 (verificar en tu máquina) |
-| RF-013 | Métodos de pago | César | 90% 🟡 (verificar en tu máquina) |
-| RF-014 | Apertura de caja | César | 72% |
-| RF-015 | Cierre de caja | César | 60% |
-| RF-016 | Control de inventario | César/Yilbert | 90% 🟡 (verificar en tu máquina) |
-| RF-017 | Registro de mermas | César | 80% 🟡 (verificar en tu máquina) |
-| RF-018 | Anulación y ajustes | César | 75% 🟡 (verificar en tu máquina) |
+| RF-013 | Métodos de pago | César | 93% 🟡 (verificar en tu máquina) |
+| RF-014 | Apertura de caja | César | 92% |
+| RF-015 | Cierre de caja | César | 92% |
+| RF-016 | Control de inventario | César/Yilbert | 99% 🟡 (verificar en tu máquina) |
+| RF-017 | Registro de mermas | César | 92% 🟡 (verificar en tu máquina) |
+| RF-018 | Anulación y ajustes | César | 92% 🟡 (verificar en tu máquina) |
 | RF-019 | Reportes operativos | Yilbert | 80% |
 | RF-020 | Dashboard gerencial | Yilbert | 85% |
 | RF-021 | Bitácora de ingresos | Yilbert | 90% |
@@ -196,15 +359,15 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 | RF-023 | Vinculación Google | Yilbert | 55% |
 | RF-024 | Configuración tributaria | Yilbert | 80% |
 | RF-025 | Reporte tributario mensual | Yilbert | 85% |
-| RF-026 | Gastos operativos | César | 75% 🟡 (verificar en tu máquina) |
+| RF-026 | Gastos operativos | César | 96% 🟡 (verificar en tu máquina) |
 | RF-027 | Reporte de utilidad estimada | Yilbert | 85% |
 | RF-028 | Entrada de inventario | Yilbert (apoyo) | 85% |
-| RF-029 | Gestión de clientes | César | 96% |
-| RF-030 | Registro de compras | César | 90% 🟡 (verificar en tu máquina) |
+| RF-029 | Gestión de clientes | César | 100% ✅ |
+| RF-030 | Registro de compras | César | 95% 🟡 (verificar en tu máquina) |
 | RF-031 | Ayuda contextual | Yilbert | 85% |
 | RF-032 | Administración de ayudas | Yilbert | 70% |
 | RF-033 | Acerca de | Yilbert | 95% |
-| RF-034 | Cambio de usuario | César/Yilbert | 75% |
+| RF-034 | Cambio de usuario | César/Yilbert | 90% |
 
 ---
 
@@ -334,7 +497,10 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 **Pendiente**
 - [ ] `Categoria` no hereda `BaseModel` (campos `estado`/`fecha_creacion`/`fecha_actualizacion` redefinidos manualmente).
 - [ ] `repositories.py` y `services.py` vacíos (solo comentario de plantilla).
-- [ ] Sin auditoría (no registra en `log_acciones`).
+- [x] ~~Sin auditoría (no registra en `log_acciones`)~~ — corrección al checklist (06-08, auditoría de
+  verificación): `apps/categorias/views.py` sí llama a `registrar_log(...)` en `nueva_categoria`,
+  `editar_categoria` y `cambiar_estado_categoria` (las 3 vistas que mutan datos). Esta entrada estaba
+  obsoleta.
 - [ ] Validación de duplicados vive en `forms.ValidationError` en vez de en un Service.
 - [ ] 🟡 (UX/UI, 05-08) `lista.html` mezcla clases de Bootstrap 4/AdminLTE3 (`mr-`/`form-group`) con Bootstrap 5
   (`me-`/`d-flex`) — no rompe nada, pero es inconsistente con el resto del sistema.
@@ -363,8 +529,15 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   editar un producto para confirmar que el `<select>` de Unidad de medida ya tiene opciones y el formulario
   guarda.
 - [ ] `Repository`/`Service` vacíos salvo `ProductoService.calcular_precio_venta()`; `Producto` no hereda `BaseModel`.
-- [ ] Sin auditoría (no registra en `log_acciones`).
+- [x] ~~Sin auditoría (no registra en `log_acciones`)~~ — corrección al checklist (06-08, auditoría de
+  verificación): `apps/productos/views.py` sí llama a `registrar_log(...)` en `nuevo_producto`,
+  `editar_producto` y `eliminar_producto`. Esta entrada estaba obsoleta.
 - [ ] Sin campo `stock_minimo` en el modelo (vive en `Inventario`).
+- [ ] 🆕 (hallazgo 06-08) `ProductoForm.unidad_medida` (`apps/productos/forms.py`) redefine su propio
+  `ChoiceField` con una lista `UNIDADES_MEDIDA` de 8 opciones, distinta y más corta que las 10 `choices`
+  declaradas en el modelo (`apps/productos/models.py`) — le faltan "Libra" y "Bolsa". Como el campo del
+  form sobrescribe el del modelo, esas dos opciones nunca aparecen en el `<select>` real. No rompe nada
+  (`unidad_medida` sigue siendo `varchar(30)`), pero conviene unificar la lista en un solo lugar.
 
 ---
 
@@ -595,9 +768,10 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 - [ ] No se agregó vista de deshabilitar/activar independiente — el toggle de `estado` se hace desde el
   mismo formulario de edición (igual que Sucursal/Configuración Tributaria); si se necesita una acción
   rápida de un clic desde la lista, se puede agregar después sin romper nada de lo ya construido.
-- [ ] `managed=False` sigue sin documentar formalmente cómo se puebla/versiona la tabla `metodo_pago` (no
-  bloquea el CRUD, pero si faltan filas base tipo "Efectivo"/"Tarjeta" hay que crearlas manualmente o via
-  un futuro comando `seed_metodos_pago`).
+- [x] ~~`managed=False` sigue sin documentar formalmente cómo se puebla/versiona la tabla `metodo_pago`~~ —
+  corrección al checklist (06-08, auditoría de verificación): `apps/configuracion/management/commands/
+  seed_metodos_pago.py` **ya existe** (siembra Efectivo/Tarjeta/SINPE Móvil/Transferencia, idempotente) —
+  quedó un desfase de redacción entre secciones de este documento, no un pendiente real de código.
 
 ---
 
@@ -729,9 +903,11 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 ## RF-019 — Reportes operativos
 **Completado**
 - [x] App `reportes/` construida completa: `repositories.py`, `services.py`, `exports.py` (PDF/Excel), `views.py`, `urls.py`, templates.
-- [x] Reporte de Ventas (filtros fecha/sucursal, exportar PDF/Excel) — verificado en navegador.
-- [x] Reporte de Inventario (filtro sucursal + "bajo mínimo", exportar PDF/Excel) — verificado en navegador.
+- [x] Reporte de Ventas (filtros fecha/sucursal, exportar PDF/Excel/Sheets) — verificado en navegador.
+- [x] Reporte de Inventario (filtro sucursal + "bajo mínimo", exportar PDF/Excel/Sheets) — verificado en navegador.
+- [x] Reporte Tributario Mensual — Tabulator aplicado (07-08).
 - [x] Módulo "Reportes" + permisos otorgados a Administrador/Supervisor, menú actualizado.
+- [x] (07-08) Ventas/Inventario/Tributario migrados a Tabulator.js en pantalla, preservando 100% los filtros server-side (fecha/sucursal/bajo_minimo) y los 3 botones de exportación (PDF/Excel/Sheets), que siguen usando la rama `formato=` sin tocar.
 
 **Pendiente**
 - [ ] Reporte por sucursal dedicado (hoy cubierto indirectamente por el Dashboard).
@@ -759,9 +935,8 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 - [x] `BitacoraIngresosListView` con filtros por usuario y rango de fechas.
 - [x] Exportación a PDF y Excel funcionando vía `security/exports.py`.
 - [x] Exportaciones registradas en la bitácora central (`registrar_log`, tipo `EXPORTAR`).
-
-**Pendiente**
-- [ ] Exportación a Google Sheets (depende del scope de RF-023, no habilitado).
+- [x] (07-08) Migrado a Tabulator.js (buscador + `json_script`, mismo patrón que Clientes).
+- [x] (07-08) Exportación a Google Sheets agregada: `BitacoraIngresosExportSheetsView`, reutilizando `apps/reportes/google_sheets.py::exportar_a_google_sheets` sin duplicar lógica. De paso se corrigió un bug preexistente en el template: los botones de PDF/Excel apuntaban por error a las URLs de la bitácora de movimientos (copy-paste).
 
 ---
 
@@ -769,9 +944,7 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
 **Completado**
 - [x] `BitacoraMovimientosListView` con filtros (usuario/fecha) — antes no tenía.
 - [x] Exportación PDF/Excel funcionando (mismo módulo que RF-021).
-
-**Pendiente**
-- [ ] Exportación a Google Sheets (igual que RF-021).
+- [x] (07-08) Migrado a Tabulator.js. El template no tenía botones de exportación PDF/Excel en absoluto pese a que las vistas ya existían — se agregaron, junto con el nuevo botón de Google Sheets (`BitacoraMovimientosExportSheetsView`).
 
 ---
 
@@ -871,7 +1044,19 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   detalle en RF-012.
 
 **Pendiente**
-- [ ] Migración `0001_initial` desincronizada del modelo actual (faltan `tipo_cliente`/`tipo_identificacion`). Regenerar con `makemigrations`.
+- [x] ~~Migración `0001_initial` desincronizada del modelo actual (faltan `tipo_cliente`/`tipo_identificacion`)~~ —
+  **resuelto en tu máquina (06-08)**: se generó `0002_alter_cliente_options_cliente_tipo_cliente_and_more.py`,
+  verificando antes con `DESCRIBE cliente;` real que `tipo_cliente`/`tipo_identificacion` ya existían en la BD
+  (como `ENUM`, agregadas fuera de Django) y que `identificacion`/`nombre` no tenían ninguna fila con `NULL`
+  (`SELECT COUNT(*)... FROM cliente` → 5 clientes, 0 vacíos) antes de aplicar el `ALTER TABLE` real. La
+  migración se editó a mano con `SeparateDatabaseAndState` para que las dos columnas que ya existían
+  **no** intentaran crearse de nuevo (solo se sincronizó el historial interno de Django, sin tocar la BD),
+  mientras que el resto de campos (`identificacion`/`nombre` a obligatorios, etc.) sí se aplicó de verdad —
+  confirmado con `migrate clientes` → OK. De paso se resolvió el mismo tipo de desincronización en `ayuda`,
+  `configuracion` (incluye registrar en el historial el modelo `DatosEmpresa`, ya creado por SQL en RF-024),
+  `empleados` (solo metadata) y `security` (`google_refresh_token`, ya existente en `usuario`, aplicado con
+  `migrate security 0002 --fake`). `makemigrations --dry-run -v 3` final → `No changes detected` en todo el
+  proyecto.
 
 ---
 
@@ -981,6 +1166,49 @@ verificado — el resto se queda `[ ]` con lo que falta anotado.
   Database First — no rompe nada hoy (Django infiere el comportamiento correcto igual), pero es inconsistente
   con el resto del proyecto y puede confundir a quien no conozca la convención.
 - [ ] Ver también los hallazgos específicos de `Inventario` en la sección RF-016 y de `DetalleCompra` en RF-030.
+
+### Ronda 5 de migración a Tabulator.js + export Google Sheets en Bitácoras (07-08)
+
+Se completó el resto del alcance pedido explícitamente por César, dispatchando 4 agentes en paralelo con
+límites de archivo estrictos por app (sin solapamiento, cero riesgo de colisión de edición concurrente):
+
+- **Reportes** (`apps/reportes/views.py` + `ventas.html`/`inventario.html`/`tributario.html`): migrados a
+  Tabulator preservando 100% los filtros server-side de fecha/sucursal y los 3 botones de exportación
+  (PDF/Excel/Sheets), que siguen usando exactamente la misma rama de código (`formato=`) sin tocar. De paso
+  se agregó resaltado visual de filas "bajo mínimo" en Inventario y de la fila de total general en Tributario
+  vía `rowFormatter` de Tabulator (antes con `class="table-warning"` inline).
+- **Configuración** (`apps/configuracion/views.py` + `sucursales/list.html`, `tributaria/list.html`,
+  `metodos_pago/list.html`): hallazgo importante — estos 3 templates **no** tenían DataTables/jQuery muerto
+  como se sospechaba, ya usaban Tabulator pero con el array JS armado por interpolación cruda de Django
+  (`{{ x|escapejs }}`) en vez del patrón canónico `json_script`. Se migraron al patrón estándar. Confirmado
+  que Sucursal/MetodoPago/ConfiguracionTributaria no tienen rutas de activar/desactivar, así que no se
+  agregó `SIGEPAN.table.postAction` (no aplica).
+- **Empleados** (`apps/empleados/views.py` + `cargos/list.html`, `empleados/list.html`): mismo hallazgo que
+  Configuración (ya usaban Tabulator con interpolación cruda, no DataTables). Migrados al patrón `json_script`.
+  Confirmado que `Empleado` no tiene campos `sucursal`/`usuario` (solo `id_cargo`, `identificacion`, `nombre`,
+  `apellido1`, `apellido2`, etc.) y que no existen rutas de deshabilitar, así que tampoco se agregó
+  `postAction`.
+- **Security — Usuario y Bitácoras** (`apps/security/views.py`, `urls.py` + `usuarios/list.html`,
+  `bitacora_ingresos/list.html`, `bitacora_movimientos/list.html`): Usuario migrado al patrón `json_script`
+  estándar (también ya usaba Tabulator con interpolación cruda). Ambas bitácoras usan el mismo modelo
+  `LogAcciones` (campo `fecha_hora`) vía `LogAccionesRepository`. Se agregaron `BitacoraIngresosExportSheetsView`
+  y `BitacoraMovimientosExportSheetsView`, con la misma base/permisos que sus hermanas PDF/Excel, reutilizando
+  `apps/reportes/google_sheets.py::exportar_a_google_sheets` sin duplicar lógica ni tocar ese archivo. Se
+  registran en la bitácora central vía `registrar_log(..., "Seguridad", "EXPORTAR"/"ERROR", ...)`, mismo
+  patrón que Reportes. **Bugs preexistentes corregidos de paso** (dentro del alcance de los archivos ya
+  tocados): `bitacora_ingresos/list.html` tenía los botones de PDF/Excel apuntando por error a las URLs de
+  la bitácora de movimientos (copy-paste); `bitacora_movimientos/list.html` no tenía botones de exportación
+  PDF/Excel en absoluto pese a que esas vistas ya existían en `views.py` — se agregaron junto con el nuevo
+  botón de Sheets.
+
+**Verificación:** `python3 -m compileall apps/reportes apps/configuracion apps/empleados apps/security` →
+limpio, sin errores, corrido directamente (sandbox estable). Revisión manual de balance de `{% %}`/`{{ }}`/JS
+en los 8 templates tocados, sin residuos de código muerto DataTables/jQuery en ninguno.
+
+**Pendiente de este alcance:** validación en runtime real (navegador + MySQL) de las 2 nuevas rutas de
+exportación a Google Sheets con un usuario que tenga `google_token` vinculado — no se pudo probar en el
+sandbox por no tener Django/MySQL corriendo ahí. Se recomienda una prueba manual rápida en el entorno de
+desarrollo.
 
 ### Hallazgos del agente de UX/UI (05-08, alcance: los 12 RF de César)
 

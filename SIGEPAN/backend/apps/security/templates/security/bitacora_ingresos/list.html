@@ -91,83 +91,93 @@
         {% endif %}
 
         <div class="mb-3">
-            <a href="{% url 'security:bitacora_movimientos_pdf' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+            <a href="{% url 'security:bitacora_ingresos_pdf' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
                class="btn btn-outline-danger btn-sm" target="_blank">
                 <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
             </a>
-            <a href="{% url 'security:bitacora_movimientos_excel' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+            <a href="{% url 'security:bitacora_ingresos_excel' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
                class="btn btn-outline-success btn-sm">
                 <i class="bi bi-file-earmark-excel"></i> Exportar Excel
             </a>
+            <a href="{% url 'security:bitacora_ingresos_sheets' %}?usuario={{ usuario }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
         </div>
 
-        <div id="tablaBitacoraIngresos"></div>
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarBitacoraIngresos" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaBitacoraIngresos" class="w-100"></div>
+            </div>
+        </div>
 
     </div>
 
 </div>
+
+{{ bitacora_ingresos_json|json_script:"bitacora-ingresos-data" }}
 
 {% endblock %}
 
 {% block js %}
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
 
-const registros = [
+    const registrosElement = document.getElementById("bitacora-ingresos-data");
+    const registros = registrosElement ? JSON.parse(registrosElement.textContent) : [];
 
-{% for registro in registros %}
+    SIGEPAN.table.create({
 
-{
-    usuario: "{{ registro.id_usuario.username|escapejs }}",
-    accion: "{{ registro.tipo_accion|escapejs }}",
-    descripcion: "{{ registro.descripcion|escapejs }}",
-    ip: "{{ registro.ip_origen|default:'-'|escapejs }}",
-    fecha: "{{ registro.fecha_hora|date:'d/m/Y H:i:s' }}"
-}{% if not forloop.last %},{% endif %}
+        selector: "#tablaBitacoraIngresos",
 
-{% endfor %}
+        search: "#buscarBitacoraIngresos",
 
-];
+        data: registros,
 
-console.log("Bitácora de Ingresos:", registros);
+        placeholder: "No hay registros de ingresos para el rango seleccionado.",
 
-SIGEPAN.table.create({
+        columns: [
 
-    selector: "#tablaBitacoraIngresos",
+            {
+                title: "Usuario",
+                field: "usuario"
+            },
 
-    data: registros,
+            {
+                title: "Acción",
+                field: "accion"
+            },
 
-    columns: [
+            {
+                title: "Descripción",
+                field: "descripcion"
+            },
 
-        {
-            title: "Usuario",
-            field: "usuario"
-        },
+            {
+                title: "IP Origen",
+                field: "ip"
+            },
 
-        {
-            title: "Acción",
-            field: "accion"
-        },
+            {
+                title: "Fecha y Hora",
+                field: "fecha"
+            }
 
-        {
-            title: "Descripción",
-            field: "descripcion"
-        },
+        ]
 
-        {
-            title: "IP Origen",
-            field: "ip"
-        },
-
-        {
-            title: "Fecha y Hora",
-            field: "fecha"
-        }
-
-    ]
+    });
 
 });
-
 </script>
 
 {% endblock %}

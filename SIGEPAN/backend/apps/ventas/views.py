@@ -64,11 +64,29 @@ def lista_ventas(request):
     # Caja abierta del usuario actual, para el botón "Volver a Caja".
     apertura = VentaRepository.apertura_activa(request.usuario)
 
+    # Serialización a JSON (07-08): la tabla migra de jQuery DataTables
+    # (ya no funciona, base.html no carga jQuery desde que el proyecto
+    # adoptó Tabulator.js) al mismo patrón que ya usa Clientes.
+    ventas_json = [
+        {
+            "id_venta": venta.id_venta,
+            "numero_venta": venta.numero_venta,
+            "cliente": str(venta.cliente) if venta.cliente else "Cliente general",
+            "hora": timezone.localtime(venta.fecha).strftime("%H:%M"),
+            "total": str(venta.total),
+            "estado": venta.estado,
+            "detalle": reverse("ventas:detalle_venta", args=[venta.id_venta]),
+            "anular": reverse("ventas:anular_venta", args=[venta.id_venta]),
+        }
+        for venta in ventas
+    ]
+
     return render(
         request,
         "ventas/lista_ventas.html",
         {
             "ventas": ventas,
+            "ventas_json": ventas_json,
             "fecha_filtro": fecha_filtro,
             "total_recaudado": total_recaudado,
             "cantidad_ventas": cantidad_ventas,

@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView
 
 from .models import Cargo, Empleado
@@ -15,6 +15,24 @@ class CargoListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     model = Cargo
     template_name = "empleados/cargos/list.html"
     context_object_name = "cargos"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Serialización para el componente Tabulator (mismo patrón que
+        # clientes/gastos_operativos): no se toca el queryset existente.
+        context["cargos_json"] = [
+            {
+                "id_cargo": cargo.id_cargo,
+                "nombre": cargo.nombre,
+                "descripcion": cargo.descripcion or "-",
+                "estado": cargo.estado,
+                "editar": reverse("empleados:cargo_update", args=[cargo.id_cargo]),
+            }
+            for cargo in context["cargos"]
+        ]
+
+        return context
 
 
 class CargoCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
@@ -71,6 +89,29 @@ class EmpleadoListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
             .select_related("id_cargo")
             .order_by("nombre", "apellido1")
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Serialización para el componente Tabulator (mismo patrón que
+        # clientes/gastos_operativos): no se toca el queryset existente.
+        context["empleados_json"] = [
+            {
+                "id_empleado": empleado.id_empleado,
+                "identificacion": empleado.identificacion,
+                "nombre_completo": " ".join(
+                    filter(None, [empleado.nombre, empleado.apellido1, empleado.apellido2])
+                ),
+                "cargo": empleado.id_cargo.nombre if empleado.id_cargo else "-",
+                "telefono": empleado.telefono or "-",
+                "correo": empleado.correo or "-",
+                "estado": empleado.estado,
+                "editar": reverse("empleados:empleado_update", args=[empleado.id_empleado]),
+            }
+            for empleado in context["empleados"]
+        ]
+
+        return context
 
 
 class EmpleadoCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):

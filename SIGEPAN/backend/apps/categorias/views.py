@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from .models import Categoria
 from .forms import CategoriaForm
 from .services import CategoriaService
@@ -10,7 +11,27 @@ from apps.security.services import registrar_log
 @permiso_requerido("Categorías", "CONSULTAR")
 def lista_categorias(request):
     categorias = CategoriaService.listar()
-    return render(request, 'categorias/lista.html', {'categorias': categorias})
+
+    # Serialización a JSON (07-08): la tabla del listado migró de
+    # jQuery DataTables (ya no funciona, base.html no carga jQuery desde
+    # que el proyecto adoptó Tabulator.js) al mismo patrón que ya usa
+    # Clientes — SIGEPAN.table.create() consumiendo datos vía json_script.
+    categorias_json = [
+        {
+            "id_categoria": categoria.id_categoria,
+            "nombre": categoria.nombre,
+            "descripcion": categoria.descripcion,
+            "estado": categoria.estado,
+            "editar": reverse("categorias:editar_categoria", args=[categoria.id_categoria]),
+            "cambiar_estado": reverse("categorias:cambiar_estado_categoria", args=[categoria.id_categoria]),
+        }
+        for categoria in categorias
+    ]
+
+    return render(request, 'categorias/lista.html', {
+        'categorias': categorias,
+        'categorias_json': categorias_json,
+    })
 
 
 @login_required

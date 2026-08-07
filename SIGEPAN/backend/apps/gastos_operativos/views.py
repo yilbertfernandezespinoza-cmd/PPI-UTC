@@ -3,7 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import UploadedFile
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import FormView, ListView, View
 
 from apps.configuracion.models import Sucursal
@@ -72,6 +73,25 @@ class GastoOperativoListView(
             id_permiso__id_modulo__nombre="Gastos Operativos",
             id_permiso__accion="ELIMINAR",
         ).exists()
+
+        # Serialización a JSON (07-08): mismo patrón Tabulator ya aplicado
+        # en el resto del sistema.
+        context["gastos_json"] = [
+            {
+                "id_gasto": gasto.id_gasto,
+                "fecha_gasto": timezone.localtime(gasto.fecha_gasto).strftime("%d/%m/%Y %H:%M"),
+                "sucursal": gasto.sucursal.nombre if gasto.sucursal else "-",
+                "categoria": gasto.categoria,
+                "descripcion": gasto.descripcion,
+                "monto": str(gasto.monto),
+                "comprobante": f"/media/{gasto.comprobante}" if gasto.comprobante else "",
+                "caja": gasto.caja.nombre if gasto.caja else "",
+                "usuario": str(gasto.usuario),
+                "estado": gasto.estado,
+                "estado_url": reverse("gastos_operativos:estado", args=[gasto.id_gasto]),
+            }
+            for gasto in context["gastos"]
+        ]
 
         return context
 

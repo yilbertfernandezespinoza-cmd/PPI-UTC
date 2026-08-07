@@ -77,9 +77,23 @@ class ReporteVentasView(SessionRequiredMixin, PermissionRequiredMixin, View):
                 return exportar_pdf(encabezados, filas, "Reporte de Ventas", "reporte_ventas")
             return exportar_excel(encabezados, filas, "Reporte de Ventas", "reporte_ventas")
 
+        ventas_json = [
+            {
+                "numero_venta": v.numero_venta,
+                "fecha": v.fecha.strftime("%d/%m/%Y %H:%M"),
+                "cliente": v.cliente.nombre if v.cliente else "Consumidor final",
+                "usuario": v.usuario.username,
+                "sucursal": v.caja.sucursal.nombre if v.caja and v.caja.sucursal else "-",
+                "metodo_pago": v.metodo_pago.nombre,
+                "total": float(v.total),
+            }
+            for v in queryset
+        ]
+
         return render(request, self.template_name, {
             "ventas": queryset,
             "total": total,
+            "ventas_json": ventas_json,
             "sucursales": Sucursal.objects.filter(estado=True).order_by("nombre"),
             "fecha_inicio": fecha_inicio,
             "fecha_fin": fecha_fin,
@@ -147,8 +161,21 @@ class ReporteInventarioView(SessionRequiredMixin, PermissionRequiredMixin, View)
                 return exportar_pdf(encabezados, filas, "Reporte de Inventario", "reporte_inventario")
             return exportar_excel(encabezados, filas, "Reporte de Inventario", "reporte_inventario")
 
+        inventario_json = [
+            {
+                "producto": i.id_producto.nombre,
+                "sucursal": i.id_sucursal.nombre,
+                "stock_actual": i.stock_actual,
+                "stock_minimo": i.stock_minimo,
+                "stock_maximo": i.stock_maximo,
+                "bajo_minimo": i.stock_actual <= i.stock_minimo,
+            }
+            for i in queryset
+        ]
+
         return render(request, self.template_name, {
             "inventario": queryset,
+            "inventario_json": inventario_json,
             "sucursales": Sucursal.objects.filter(estado=True).order_by("nombre"),
             "sucursal_id": sucursal_id,
             "solo_bajo_minimo": solo_bajo_minimo,
@@ -203,9 +230,22 @@ class ReporteTributarioView(SessionRequiredMixin, PermissionRequiredMixin, View)
                 return exportar_pdf(encabezados, filas, "Reporte Tributario Mensual", "reporte_tributario")
             return exportar_excel(encabezados, filas, "Reporte Tributario Mensual", "reporte_tributario")
 
+        por_metodo_json = [
+            {
+                "metodo_pago": m["metodo_pago__nombre"] or "Sin especificar",
+                "total": float(m["total"]),
+            }
+            for m in por_metodo
+        ]
+        por_metodo_json.append({
+            "metodo_pago": "TOTAL GENERAL",
+            "total": float(total_ventas),
+        })
+
         return render(request, self.template_name, {
             "total_ventas": total_ventas,
             "por_metodo": por_metodo,
+            "por_metodo_json": por_metodo_json,
             "fecha_inicio": fecha_inicio,
             "fecha_fin": fecha_fin,
         })

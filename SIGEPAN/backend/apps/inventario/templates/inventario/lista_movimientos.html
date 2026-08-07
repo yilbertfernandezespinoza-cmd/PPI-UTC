@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="container-fluid mt-4">
 
     {% boton_ayuda "Inventario" "movimientos_inventario" %}
 
@@ -15,37 +15,103 @@
         </a>
     </div>
 
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Stock anterior</th>
-                <th>Stock nuevo</th>
-                <th>Usuario</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for movimiento in movimientos %}
-            <tr>
-                <td>{{ movimiento.fecha_creacion }}</td>
-                <td>{{ movimiento.id_inventario.id_producto.nombre }}</td>
-                <td>{{ movimiento.id_tipo_movimiento_inventario.nombre }}</td>
-                <td>{{ movimiento.cantidad }}</td>
-                <td>{{ movimiento.stock_anterior }}</td>
-                <td>{{ movimiento.stock_nuevo }}</td>
-                <td>{{ movimiento.id_usuario }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center">No hay movimientos registrados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Filtro por producto/rango de fechas (07-08): mismo patrón ya usado en Mermas/Ajustes. -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Producto</label>
+                    <select name="producto" class="form-select">
+                        <option value="">Todos</option>
+                        {% for producto in productos %}
+                        <option value="{{ producto.id_producto }}" {% if filtro_producto == producto.id_producto|stringformat:"s" %}selected{% endif %}>
+                            {{ producto.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="desde" class="form-control" value="{{ filtro_desde }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="hasta" class="form-control" value="{{ filtro_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Exportar (07-08): mismo patrón ya usado en Bitácora de Ingresos/Movimientos. -->
+    <!-- Los 3 botones preservan el filtro activo (producto/desde/hasta) vía querystring. -->
+    <div class="mb-3">
+        <a href="{% url 'inventario:lista_movimientos_pdf' %}?producto={{ filtro_producto }}&desde={{ filtro_desde }}&hasta={{ filtro_hasta }}"
+           class="btn btn-outline-danger btn-sm" target="_blank">
+            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+        </a>
+        <a href="{% url 'inventario:lista_movimientos_excel' %}?producto={{ filtro_producto }}&desde={{ filtro_desde }}&hasta={{ filtro_hasta }}"
+           class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+        <a href="{% url 'inventario:lista_movimientos_sheets' %}?producto={{ filtro_producto }}&desde={{ filtro_desde }}&hasta={{ filtro_hasta }}"
+           class="btn btn-outline-primary btn-sm" target="_blank">
+            <i class="bi bi-google"></i> Exportar a Google Sheets
+        </a>
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarMovimientos" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por producto, tipo o usuario...">
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaMovimientosInventario" class="w-100"></div>
+        </div>
+    </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ movimientos_json|json_script:"movimientos-inventario-data" }}
+
+{% endblock %}
+
+{# Migrado (07-08): mismo patrón Tabulator que el resto del sistema — #}
+{# esta tabla era HTML plano sin buscador ni paginación. #}
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const movimientosElement = document.getElementById("movimientos-inventario-data");
+    const movimientos = movimientosElement ? JSON.parse(movimientosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaMovimientosInventario",
+        search: "#buscarMovimientos",
+        data: movimientos,
+        placeholder: "No hay movimientos registrados.",
+        columns: [
+            { title: "Fecha", field: "fecha_creacion" },
+            { title: "Producto", field: "producto", headerHozAlign: "left" },
+            { title: "Tipo", field: "tipo_movimiento" },
+            { title: "Cantidad", field: "cantidad", hozAlign: "center" },
+            { title: "Stock anterior", field: "stock_anterior", hozAlign: "center" },
+            { title: "Stock nuevo", field: "stock_nuevo", hozAlign: "center" },
+            { title: "Usuario", field: "usuario" },
+        ]
+    });
+});
+</script>
 {% endblock %}

@@ -63,77 +63,125 @@
         </div>
     </div>
 
+    <!-- Contenedor con el token CSRF para deshabilitar/activar por AJAX -->
+    <div id="gasto-config" data-csrf="{{ csrf_token }}" data-puede-eliminar="{{ puede_eliminar|yesno:'true,false' }}" class="d-none"></div>
+
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarGastos" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por descripción, categoría o sucursal...">
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
-            <table class="table table-striped table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Sucursal</th>
-                        <th>Categoría</th>
-                        <th>Descripción</th>
-                        <th>Monto</th>
-                        <th>Comprobante</th>
-                        <th>Caja</th>
-                        <th>Usuario</th>
-                        <th>Estado</th>
-                        {% if puede_eliminar %}<th></th>{% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for gasto in gastos %}
-                    <tr>
-                        <td>{{ gasto.fecha_gasto|date:"d/m/Y H:i" }}</td>
-                        <td>{{ gasto.sucursal.nombre }}</td>
-                        <td>{{ gasto.categoria }}</td>
-                        <td>{{ gasto.descripcion }}</td>
-                        <td>₡{{ gasto.monto }}</td>
-                        <td>
-                            {% if gasto.comprobante %}
-                            <a href="{% get_media_prefix %}{{ gasto.comprobante }}" target="_blank" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-paperclip"></i> Ver
-                            </a>
-                            {% else %}
-                            <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if gasto.caja %}
-                            <span class="badge bg-info bg-opacity-10 text-info">{{ gasto.caja.nombre }}</span>
-                            {% else %}
-                            <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ gasto.usuario }}</td>
-                        <td>
-                            {% if gasto.estado %}
-                            <span class="badge bg-success bg-opacity-10 text-success">Activo</span>
-                            {% else %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger">Inactivo</span>
-                            {% endif %}
-                        </td>
-                        {% if puede_eliminar %}
-                        <td class="text-end">
-                            <form method="post" action="{% url 'gastos_operativos:estado' gasto.id_gasto %}" onsubmit="return confirm('{% if gasto.estado %}¿Desea deshabilitar{% else %}¿Desea habilitar{% endif %} este gasto?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-{% if gasto.estado %}danger{% else %}success{% endif %} btn-sm">
-                                    <i class="bi {% if gasto.estado %}bi-ban{% else %}bi-check-circle{% endif %}"></i>
-                                    {% if gasto.estado %}Deshabilitar{% else %}Activar{% endif %}
-                                </button>
-                            </form>
-                        </td>
-                        {% endif %}
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="10" class="text-center text-muted py-4">No hay gastos operativos registrados.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div id="tablaGastos" class="w-100"></div>
         </div>
     </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ gastos_json|json_script:"gastos-data" }}
+
+{% endblock %}
+
+{# Migrado (07-08): mismo patrón Tabulator que el resto del sistema. #}
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const configEl = document.getElementById("gasto-config");
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
+    const puedeEliminar = configEl ? configEl.dataset.puedeEliminar === "true" : false;
+
+    const gastosElement = document.getElementById("gastos-data");
+    const gastos = gastosElement ? JSON.parse(gastosElement.textContent) : [];
+    gastos.forEach(g => { g.csrfToken = csrfTokenGlobal; });
+
+    const columnas = [
+        { title: "Fecha", field: "fecha_gasto" },
+        { title: "Sucursal", field: "sucursal" },
+        { title: "Categoría", field: "categoria" },
+        { title: "Descripción", field: "descripcion" },
+        {
+            title: "Monto",
+            field: "monto",
+            hozAlign: "right",
+            formatter(cell) {
+                return `₡${parseFloat(cell.getValue() || 0).toFixed(2)}`;
+            }
+        },
+        {
+            title: "Comprobante",
+            field: "comprobante",
+            hozAlign: "center",
+            formatter(cell) {
+                const valor = cell.getValue();
+                if (!valor) return '<span class="text-muted">—</span>';
+                return `<a href="${valor}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-paperclip"></i> Ver</a>`;
+            }
+        },
+        {
+            title: "Caja",
+            field: "caja",
+            hozAlign: "center",
+            formatter(cell) {
+                const valor = cell.getValue();
+                return valor
+                    ? `<span class="badge bg-info bg-opacity-10 text-info">${valor}</span>`
+                    : '<span class="text-muted">—</span>';
+            }
+        },
+        { title: "Usuario", field: "usuario" },
+        {
+            title: "Estado",
+            field: "estado",
+            hozAlign: "center",
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success bg-opacity-10 text-success">Activo</span>'
+                    : '<span class="badge bg-danger bg-opacity-10 text-danger">Inactivo</span>';
+            }
+        },
+    ];
+
+    if (puedeEliminar) {
+        columnas.push({
+            title: "",
+            hozAlign: "center",
+            formatter(cell) {
+                const data = cell.getRow().getData();
+                const clase = data.estado ? "btn-outline-danger" : "btn-outline-success";
+                const icono = data.estado ? "bi-ban" : "bi-check-circle";
+                const texto = data.estado ? "Deshabilitar" : "Activar";
+                return `<button class="btn ${clase} btn-sm btn-toggle-estado"><i class="bi ${icono}"></i> ${texto}</button>`;
+            },
+            cellClick(e, cell) {
+                if (!e.target.closest(".btn-toggle-estado")) return;
+                const data = cell.getRow().getData();
+                SIGEPAN.table.postAction({
+                    url: data.estado_url,
+                    csrfToken: data.csrfToken,
+                    message: data.estado
+                        ? "¿Desea deshabilitar este gasto?"
+                        : "¿Desea habilitar este gasto?",
+                });
+            }
+        });
+    }
+
+    SIGEPAN.table.create({
+        selector: "#tablaGastos",
+        search: "#buscarGastos",
+        data: gastos,
+        placeholder: "No hay gastos operativos registrados.",
+        columns: columnas,
+    });
+});
+</script>
 {% endblock %}

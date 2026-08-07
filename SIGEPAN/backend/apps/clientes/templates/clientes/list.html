@@ -26,13 +26,13 @@
         </div>
         <div class="d-flex gap-2">
             <!-- Botón de retorno directo a Crear Venta -->
-            <a href="{% url 'ventas:crear_venta' %}" class="btn btn-outline-secondary shadow-sm d-inline-flex align-items-center gap-1">
+            <a href="{% url 'ventas:crear_venta' %}" class="btn btn-outline-secondary shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 18px;">
                 <i class="fas fa-arrow-left"></i> Volver a Ventas
             </a>
 
             <!-- Botón para registrar nuevo cliente -->
             {% if puede_crear %}
-            <a href="{% url 'clientes:crear' %}" data-track-origin class="btn btn-success shadow-sm d-inline-flex align-items-center gap-1 fw-bold">
+            <a href="{% url 'clientes:crear' %}" data-track-origin class="btn btn-outline-success shadow-sm d-inline-flex align-items-center gap-1 fw-bold" style="font-size: 18px;">
                 <i class="fas fa-user-plus"></i> Registrar Cliente
             </a>
             {% endif %}

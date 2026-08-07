@@ -83,8 +83,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 formatter(cell) {
                     const data = cell.getRow().getData();
                     let botones = '<div class="btn-group" role="group">';
-                    botones += `<a href="${data.ver}" class="btn btn-info btn-sm">Ver</a>`;
-                    botones += `<a href="${data.editar}" class="btn btn-warning btn-sm">Editar</a>`;
+                    botones += `<a href="${data.ver}" class="btn btn-outline-secondary btn-sm">Ver</a>`;
+                    botones += `<a href="${data.editar}" class="btn btn-outline-info btn-sm">Editar</a>`;
                     botones += "</div>";
                     return botones;
                 }

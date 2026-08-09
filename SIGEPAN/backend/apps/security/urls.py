@@ -9,11 +9,18 @@ from .views import (
     UsuarioUpdateView,
     UsuarioDisableView,
     UsuarioEmpleadoDatosView,
+    cambiar_usuario_view,
 
     RolPermisoListView,
     
     BitacoraIngresosListView,
     BitacoraMovimientosListView,
+    BitacoraIngresosExportPdfView,
+    BitacoraIngresosExportExcelView,
+    BitacoraIngresosExportSheetsView,
+    BitacoraMovimientosExportPdfView,
+    BitacoraMovimientosExportExcelView,
+    BitacoraMovimientosExportSheetsView,
 
     recuperar_password_view,
     restablecer_password_view,
@@ -50,6 +57,12 @@ urlpatterns = [
         "logout/",
         logout_view,
         name="logout",
+    ),
+
+    path(
+        "cambiar-usuario/",
+        cambiar_usuario_view,
+        name="cambiar_usuario",
     ),
 
     path(
@@ -97,6 +110,42 @@ urlpatterns = [
         "bitacoras/movimientos/",
         BitacoraMovimientosListView.as_view(),
         name="bitacora_movimientos",
+    ),
+
+    path(
+        "bitacoras/ingresos/exportar/pdf/",
+        BitacoraIngresosExportPdfView.as_view(),
+        name="bitacora_ingresos_pdf",
+    ),
+
+    path(
+        "bitacoras/ingresos/exportar/excel/",
+        BitacoraIngresosExportExcelView.as_view(),
+        name="bitacora_ingresos_excel",
+    ),
+
+    path(
+        "bitacoras/ingresos/exportar/sheets/",
+        BitacoraIngresosExportSheetsView.as_view(),
+        name="bitacora_ingresos_sheets",
+    ),
+
+    path(
+        "bitacoras/movimientos/exportar/pdf/",
+        BitacoraMovimientosExportPdfView.as_view(),
+        name="bitacora_movimientos_pdf",
+    ),
+
+    path(
+        "bitacoras/movimientos/exportar/excel/",
+        BitacoraMovimientosExportExcelView.as_view(),
+        name="bitacora_movimientos_excel",
+    ),
+
+    path(
+        "bitacoras/movimientos/exportar/sheets/",
+        BitacoraMovimientosExportSheetsView.as_view(),
+        name="bitacora_movimientos_sheets",
     ),
 
     path(

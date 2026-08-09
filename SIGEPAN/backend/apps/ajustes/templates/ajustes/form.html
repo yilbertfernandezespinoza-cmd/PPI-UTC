@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ajustes:listar' %}">Ajustes de inventario</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Registrar</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="bi bi-sliders text-warning"></i> Registrar ajuste de inventario</h2>
+
+    <div class="card">
+        <div class="card-body">
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.producto.label }}</label>
+                    {{ form.producto }}
+                    {% if form.producto.errors %}<div class="text-danger small">{{ form.producto.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.tipo.label }}</label>
+                    {{ form.tipo }}
+                    {% if form.tipo.errors %}<div class="text-danger small">{{ form.tipo.errors }}</div>{% endif %}
+                    <div class="form-text">Entrada incrementa el stock; salida lo reduce (y no permite dejarlo negativo).</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.cantidad.label }}</label>
+                    {{ form.cantidad }}
+                    {% if form.cantidad.errors %}<div class="text-danger small">{{ form.cantidad.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.motivo.label }}</label>
+                    {{ form.motivo }}
+                    {% if form.motivo.errors %}<div class="text-danger small">{{ form.motivo.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.fecha.label }}</label>
+                    {{ form.fecha }}
+                    {% if form.fecha.errors %}<div class="text-danger small">{{ form.fecha.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                </div>
+
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-sliders"></i> Registrar ajuste
+                </button>
+                <a href="{% url 'ajustes:listar' %}" class="btn btn-outline-secondary">Cancelar</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var tipoSelect = document.getElementById("id_tipo");
+    var productoSelect = document.getElementById("id_producto");
+
+    if (!tipoSelect || !productoSelect) {
+        return;
+    }
+
+    var urlProductosDisponibles = "{% url 'ajustes:productos_disponibles' %}";
+    var seleccionInicial = productoSelect.value;
+
+    // Vuelve a pedir el catálogo de productos según el tipo elegido
+    // (ENTRADA: todos los activos; SALIDA: solo los que ya tienen
+    // inventario en la sucursal del usuario) — mismo criterio que valida
+    // AjusteService.registrar() en el servidor, para no dejar elegir de
+    // entrada un producto que se sabe que va a fallar.
+    function cargarProductosPorTipo(mantenerSeleccionActual) {
+        var tipo = tipoSelect.value;
+        var seleccionDeseada = mantenerSeleccionActual ? productoSelect.value : seleccionInicial;
+
+        fetch(urlProductosDisponibles + "?tipo=" + encodeURIComponent(tipo))
+            .then(function (resp) {
+                if (!resp.ok) {
+                    throw new Error("No se pudo consultar los productos disponibles.");
+                }
+                return resp.json();
+            })
+            .then(function (productos) {
+                productoSelect.innerHTML = "";
+
+                var opcionVacia = document.createElement("option");
+                opcionVacia.value = "";
+                opcionVacia.textContent = "---------";
+                productoSelect.appendChild(opcionVacia);
+
+                productos.forEach(function (producto) {
+                    var opcion = document.createElement("option");
+                    opcion.value = producto.id;
+                    opcion.textContent = producto.nombre;
+                    if (String(producto.id) === String(seleccionDeseada)) {
+                        opcion.selected = true;
+                    }
+                    productoSelect.appendChild(opcion);
+                });
+            })
+            .catch(function (error) {
+                console.warn("No se pudo actualizar la lista de productos:", error);
+            });
+    }
+
+    tipoSelect.addEventListener("change", function () {
+        cargarProductosPorTipo(false);
+    });
+
+    // Si el formulario ya trae un tipo elegido (por ejemplo, al volver a
+    // mostrarse tras un error de validación), se refresca la lista una
+    // vez al cargar la página, conservando la selección actual.
+    if (tipoSelect.value) {
+        cargarProductosPorTipo(true);
+    }
+});
+</script>
+
+{% endblock %}

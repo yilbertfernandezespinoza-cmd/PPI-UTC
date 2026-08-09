@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'gastos_operativos:listar' %}">Gastos operativos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Registrar</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="bi bi-cash-coin text-secondary"></i> Registrar gasto operativo</h2>
+
+    <div class="card">
+        <div class="card-body">
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="alert alert-info d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle fs-5"></i>
+                <div>Si tienes una caja abierta a tu nombre, este gasto se descontará automáticamente del saldo de esa caja.</div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.categoria.label }}</label>
+                    {{ form.categoria }}
+                    {% if form.categoria.errors %}<div class="text-danger small">{{ form.categoria.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.descripcion.label }}</label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.errors %}<div class="text-danger small">{{ form.descripcion.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.monto.label }}</label>
+                    {{ form.monto }}
+                    {% if form.monto.errors %}<div class="text-danger small">{{ form.monto.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.fecha_gasto.label }}</label>
+                    {{ form.fecha_gasto }}
+                    {% if form.fecha_gasto.errors %}<div class="text-danger small">{{ form.fecha_gasto.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.comprobante.label }}</label>
+                    {{ form.comprobante }}
+                    <div class="form-text">Foto o PDF de la factura/recibo (opcional).</div>
+                    {% if form.comprobante.errors %}<div class="text-danger small">{{ form.comprobante.errors }}</div>{% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-secondary">
+                    <i class="bi bi-cash-coin"></i> Registrar gasto
+                </button>
+                <a href="{% url 'gastos_operativos:listar' %}" class="btn btn-outline-secondary">Cancelar</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

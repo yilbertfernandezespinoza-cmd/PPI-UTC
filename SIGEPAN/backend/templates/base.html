@@ -8,6 +8,8 @@
 
     <title>{% block title %}SIGEPAN{% endblock %}</title>
 
+    <link rel="icon" type="image/png" href="{% static 'img/logos/sigepan-favicon.png' %}">
+
     <!-- Bootstrap -->
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
 
@@ -26,6 +28,21 @@
 
     {% block css %}{% endblock %}
 </head>
+
+ <!-- Toolstip cualquier botón del sistema que tenga data-bs-toggle="tooltip" funcionará automáticamente -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+
+    [...tooltipTriggerList].forEach(function (element) {
+
+        new bootstrap.Tooltip(element);
+
+    });
+
+});
+</script>
 
 <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
 

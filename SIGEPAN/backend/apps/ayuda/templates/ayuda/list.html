@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block content %}
+
+{% boton_ayuda "Configuración" "ayudas" %}
 
 <h2>Ayudas</h2>
 
@@ -104,7 +108,7 @@ const columns = [
 
                 botonEstado = `
                     <button
-                        class="btn btn-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm"
                         onclick="deshabilitarAyuda(${data.id}, '${data.titulo}')"
                     >
                         Deshabilitar
@@ -115,7 +119,7 @@ const columns = [
 
                 botonEstado = `
                     <button
-                        class="btn btn-success btn-sm"
+                        class="btn btn-outline-success btn-sm"
                         onclick="deshabilitarAyuda(${data.id}, '${data.titulo}')"
                     >
                         Activar
@@ -129,7 +133,7 @@ const columns = [
 
                     <a
                         href="${data.editar}"
-                        class="btn btn-warning btn-sm"
+                        class="btn btn-outline-info btn-sm"
                     >
                         Editar
                     </a>

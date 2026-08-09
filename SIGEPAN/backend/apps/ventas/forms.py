@@ -1,228 +1,27 @@
-from django import forms
-from django.forms import inlineformset_factory
-
-from .models import (
-    Venta,
-    DetalleVenta,
-    DetallePago
-)
-
-
-
 # =====================================================
-# FORMULARIO VENTA
+# SIGEPAN - Módulo: Ventas
+# Archivo: forms.py
 # =====================================================
-
-class VentaForm(forms.ModelForm):
-
-    class Meta:
-
-        model = Venta
-
-        fields = [
-            "cliente",
-            "tipo_comprobante",
-            "metodo_pago",
-            "subtotal",
-            "impuesto",
-            "descuento",
-            "total",
-        ]
-
-
-        widgets = {
-
-
-            "cliente": forms.Select(
-                attrs={
-                    "class": "form-select"
-                }
-            ),
-
-
-            "tipo_comprobante": forms.Select(
-                attrs={
-                    "class": "form-select"
-                }
-            ),
-
-
-            "metodo_pago": forms.Select(
-                attrs={
-                    "class": "form-select"
-                }
-            ),
-
-
-            "subtotal": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "impuesto": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "descuento": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "total": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-        }
-
-
-
-
-# =====================================================
-# DETALLE VENTA
-# =====================================================
-
-class DetalleVentaForm(forms.ModelForm):
-
-
-    class Meta:
-
-
-        model = DetalleVenta
-
-
-        fields = [
-
-            "producto",
-            "cantidad",
-            "precio_unitario",
-            "subtotal"
-
-        ]
-
-
-        widgets = {
-
-
-            "producto": forms.Select(
-                attrs={
-                    "class": "form-select"
-                }
-            ),
-
-
-            "cantidad": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "precio_unitario": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "subtotal": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-        }
-
-
-
-
-# =====================================================
-# DETALLE PAGO
-# =====================================================
-
-class DetallePagoForm(forms.ModelForm):
-
-
-    class Meta:
-
-
-        model = DetallePago
-
-
-        fields = [
-
-            "metodo_pago",
-            "monto",
-            "referencia"
-
-        ]
-
-
-        widgets = {
-
-
-            "metodo_pago": forms.Select(
-                attrs={
-                    "class": "form-select"
-                }
-            ),
-
-
-            "monto": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "referencia": forms.TextInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-        }
-
-
-
-# =====================================================
-# FORMSETS
-# =====================================================
-
-DetalleVentaFormSet = inlineformset_factory(
-
-    Venta,
-
-    DetalleVenta,
-
-    form=DetalleVentaForm,
-
-    extra=1,
-
-    can_delete=True
-
-)
-
-
-
-DetallePagoFormSet = inlineformset_factory(
-
-    Venta,
-
-    DetallePago,
-
-    form=DetallePagoForm,
-
-    extra=1,
-
-    can_delete=True
-
-)
+#
+# Este módulo NO tiene formularios Django activos.
+#
+# Hasta el 04-08-2026 aquí vivían VentaForm, DetalleVentaForm,
+# DetallePagoForm y los inlineformset_factory (DetalleVentaFormSet /
+# DetallePagoFormSet), usados por el POS (crear_venta.html) para armar el
+# carrito con inputs ocultos tipo "detalle-0-producto", "detalle-0-cantidad",
+# etc. Ese enfoque resultó extremadamente frágil: bug de método de pago con
+# código de texto en vez de PK real, bug de "agregarAlCarritoDirecto" no
+# existente al reanudar una venta pausada y, finalmente, un bug persistente
+# de "id_detalle_venta: Este campo es obligatorio" en el formset al guardar
+# una venta pendiente — que sobrevivió incluso forzando required=False
+# explícitamente sobre el campo de la PK vía un mixin
+# (_FormSetPkOpcionalMixin, ya eliminado).
+#
+# Se decidió abandonar los formsets para el carrito del POS y migrar a un
+# flujo JSON/AJAX: el carrito vive como un array de JavaScript (fuente de
+# verdad única en el navegador) y se envía completo en un solo fetch() con
+# Content-Type: application/json a apps.ventas.views.procesar_venta, que lo
+# valida y recalcula todo (precios, impuesto, total) en el servidor sin
+# depender de formsets ni de nombres de campo indexados.
+#
+# Ver apps/ventas/views.py::procesar_venta para el contrato JSON completo.

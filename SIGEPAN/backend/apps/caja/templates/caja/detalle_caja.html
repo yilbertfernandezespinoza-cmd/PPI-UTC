@@ -1,160 +1,205 @@
 {% extends "base.html" %}
 
-
 {% block content %}
 
+<div class="container-fluid mt-4">
 
-<div class="container mt-4">
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
-<h2>
-Caja abierta
-</h2>
+        <div>
 
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-journal-text text-primary me-2"></i> Detalle de Caja
+            </h2>
 
+            <small class="text-muted">
+                Consulta de los movimientos registrados durante la apertura de caja.
+            </small>
 
-<div class="card mb-3">
+        </div>
 
+    </div>
 
-<div class="card-body">
+    <!-- ===================================== -->
+    <!-- INFORMACIÓN GENERAL -->
+    <!-- ===================================== -->
 
+    <div class="card shadow-sm border-0 mb-4">
 
-<p>
-Caja:
-{{ apertura.caja }}
-</p>
+        <div class="card-header bg-white py-3">
 
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-info-circle text-primary me-2"></i> Información General
+            </h5>
 
-<p>
-Fecha apertura:
-{{ apertura.fecha_apertura }}
-</p>
+        </div>
 
+        <div class="card-body">
 
-<p>
-Monto inicial:
-₡ {{ apertura.monto_inicial }}
-</p>
+            <div class="row align-items-center">
 
+                <div class="col-md-6">
+
+                    <p class="mb-2">
+                        <strong class="text-muted">Caja:</strong>
+                        <span class="fw-semibold text-dark">{{ apertura.caja.nombre }}</span>
+                    </p>
+
+                    <p class="mb-2">
+                        <strong class="text-muted">Responsable:</strong>
+                        <span class="fw-semibold text-dark">{{ apertura.usuario }}</span>
+                    </p>
+
+                    <p class="mb-2">
+                        <strong class="text-muted">Fecha de apertura:</strong>
+                        <span class="fw-semibold text-dark">{{ apertura.fecha_apertura|date:"d/m/Y H:i" }}</span>
+                    </p>
+
+                    <p class="mb-2">
+                        <strong class="text-muted">Monto inicial:</strong>
+                        <span class="fw-semibold text-dark">₡ {{ apertura.monto_inicial }}</span>
+                    </p>
+
+                </div>
+
+                <div class="col-md-6 mt-3 mt-md-0">
+
+                    <div class="p-3 bg-light rounded shadow-sm border">
+                        <span class="d-block text-muted small fw-semibold text-uppercase mb-1">Saldo Sistema</span>
+                        <h3 class="fw-bold text-success mb-0">
+                            ₡ {{ saldo_sistema|floatformat:2 }}
+                        </h3>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- MOVIMIENTOS -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-list-check text-warning me-2"></i> Movimientos Registrados
+            </h5>
+
+            <span class="badge bg-primary">
+                {{ movimientos|length }} registros
+            </span>
+
+        </div>
+
+        <div class="card-body p-0">
+
+            <div id="tablaMovimientosDetalle" class="w-100"></div>
+
+        </div>
+
+    </div>
+
+    {{ movimientos_json|json_script:"movimientos-detalle-data" }}
+
+    <!-- ===================================== -->
+    <!-- ACCIONES -->
+    <!-- ===================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-white py-3">
+
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-tools text-secondary me-2"></i> Acciones
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-center gap-3">
+
+                <!-- VOLVER -->
+
+                <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
+                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
+                   style="width:70px;height:70px;"
+                   data-bs-toggle="tooltip"
+                   title="Volver">
+
+                    <i class="bi bi-arrow-left fs-3"></i>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
-</div>
-
-
-
-<div class="d-flex justify-content-between">
-
-
-<h4>
-Movimientos
-</h4>
-
-
-<a href="{% url 'caja:movimiento_caja' apertura.id_apertura %}"
-class="btn btn-primary">
-
-Nuevo movimiento
-
-</a>
-
-
-</div>
-
-
-
-
-<table class="table">
-
-
-<thead>
-
-<tr>
-
-<th>Tipo</th>
-<th>Monto</th>
-<th>Descripción</th>
-<th>Fecha</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-
-{% for movimiento in movimientos %}
-
-
-<tr>
-
-
-<td>
-
-{{ movimiento.tipo_movimiento }}
-
-</td>
-
-
-<td>
-
-₡ {{ movimiento.monto }}
-
-</td>
-
-
-<td>
-
-{{ movimiento.descripcion }}
-
-</td>
-
-
-<td>
-
-{{ movimiento.fecha_movimiento }}
-
-</td>
-
-
-</tr>
-
-
-{% empty %}
-
-
-<tr>
-
-<td colspan="4">
-
-Sin movimientos registrados.
-
-</td>
-
-</tr>
-
-
-{% endfor %}
-
-
-</tbody>
-
-
-</table>
-
-
-
-
-<a href="{% url 'caja:cerrar_caja' apertura.id_apertura %}"
-class="btn btn-danger">
-
-Cerrar caja
-
-</a>
-
-
-</div>
-
+<!-- Corregido (07-08): la tabla migró de jQuery DataTables (ya no
+     funciona, base.html no carga jQuery desde que el proyecto adoptó
+     Tabulator.js) al mismo patrón que ya usa Clientes/Cajas. -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const badgeTipoMovimiento = {
+        INGRESO: '<span class="badge bg-success">Ingreso</span>',
+        VENTA: '<span class="badge bg-primary">Venta</span>',
+        RETIRO: '<span class="badge bg-danger">Retiro</span>',
+        GASTO: '<span class="badge bg-danger">Gasto</span>',
+        AJUSTE: '<span class="badge bg-warning text-dark">Ajuste</span>',
+    };
+
+    const movimientosElement = document.getElementById("movimientos-detalle-data");
+    const movimientos = movimientosElement ? JSON.parse(movimientosElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaMovimientosDetalle",
+        data: movimientos,
+        placeholder: "No existen movimientos registrados.",
+        columns: [
+            {
+                title: "Tipo",
+                field: "tipo_movimiento",
+                width: 120,
+                formatter(cell) {
+                    const tipo = cell.getValue();
+                    return badgeTipoMovimiento[tipo] || tipo;
+                }
+            },
+            { title: "Descripción", field: "descripcion" },
+            {
+                title: "Monto",
+                field: "monto",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-semibold">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            { title: "Fecha", field: "fecha_movimiento" },
+        ]
+    });
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+});
+</script>
 
 {% endblock %}

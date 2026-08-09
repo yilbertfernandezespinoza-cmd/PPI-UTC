@@ -28,6 +28,11 @@ MENU = [
         "opciones": [
 
             {
+                "titulo": "Datos de la Empresa",
+                "url": "configuracion:datos_empresa",
+                "icono": "bi-building-gear",
+            },
+            {
                 "titulo": "Sucursales",
                 "url": "configuracion:sucursal_list",
                 "icono": "bi-building",
@@ -36,6 +41,11 @@ MENU = [
                 "titulo": "Configuración Tributaria",
                 "url": "configuracion:tributaria_list",
                 "icono": "bi-percent",
+            },
+            {
+                "titulo": "Métodos de Pago",
+                "url": "configuracion:metodo_pago_list",
+                "icono": "bi-credit-card",
             },
             {
                 "titulo": "Cargos",
@@ -70,7 +80,11 @@ MENU = [
                 "modulo_permiso": "Productos",
                 "titulo": "Productos",
                 "url": "productos:lista_productos",
-                "icono": "bi-box",
+                # Marcador especial (mismo patrón que "Caja"): dibuja un
+                # SVG propio de canasta de productos en vez de un ícono de
+                # Bootstrap Icons — ver templates/includes/sidebar.html y
+                # apps/dashboard/templates/dashboard/partials/accesos.html.
+                "icono": "svg-canasta-productos",
 
                 "dashboard":True,
                 "color":"warning",
@@ -78,7 +92,7 @@ MENU = [
             {
                 "modulo_permiso": "Clientes",
                 "titulo": "Clientes",
-                "url": "clientes:lista_clientes",
+                "url": "clientes:listar",
                 "icono": "bi-people",
 
                 "dashboard":True,
@@ -113,6 +127,20 @@ MENU = [
             },
 
             {
+                "modulo_permiso": "Inventario",
+                "titulo": "Entrada de Inventario",
+                "url": "inventario:entrada_inventario",
+                "icono": "bi-box-arrow-in-down",
+            },
+
+            {
+                "modulo_permiso": "Inventario",
+                "titulo": "Movimientos de Inventario",
+                "url": "inventario:lista_movimientos",
+                "icono": "bi-arrow-left-right",
+            },
+
+            {
                 "modulo_permiso": "Compras",
                 "titulo": "Compras",
                 "url": "compras:lista_compras",
@@ -126,6 +154,12 @@ MENU = [
                 "modulo_permiso": "Ventas",
                 "titulo": "Ventas",
                 "url": "ventas:lista_ventas",
+                # El acceso rápido del dashboard debe abrir directamente una
+                # venta nueva (POS), no el reporte de ventas diarias — el
+                # link del menú lateral sí debe seguir yendo al reporte
+                # (lista_ventas), por eso se usa una URL aparte solo para
+                # la tarjeta del dashboard en vez de cambiar "url".
+                "url_dashboard": "ventas:crear_venta",
                 "icono": "bi-cash-stack",
 
                 "dashboard": True,
@@ -136,10 +170,70 @@ MENU = [
                 "modulo_permiso": "Caja",
                 "titulo": "Caja",
                 "url": "caja:lista_cajas",
-                "icono": "bi-safe2",
+                # Bootstrap Icons no tiene un glifo de "caja registradora"
+                # real (bi-cash-register no existe: se ve como un cuadro
+                # vacío). Este marcador especial le indica a sidebar.html
+                # que dibuje el SVG propio en vez de un <i class="bi ...">
+                # — ver templates/includes/sidebar.html.
+                "icono": "svg-caja-registradora",
 
                 "dashboard": True,
                 "color": "dark",
+            },
+
+            {
+                "modulo_permiso": "Mermas",
+                "titulo": "Mermas",
+                "url": "mermas:listar",
+                "icono": "bi-exclamation-triangle",
+            },
+
+            {
+                "modulo_permiso": "Ajustes",
+                "titulo": "Ajustes de Inventario",
+                "url": "ajustes:listar",
+                "icono": "bi-sliders",
+            },
+
+            {
+                "modulo_permiso": "Gastos Operativos",
+                "titulo": "Gastos Operativos",
+                "url": "gastos_operativos:listar",
+                "icono": "bi-cash-coin",
+            },
+
+        ]
+    },
+
+    {
+        "modulo": "Reportes",
+        "icono": "bi-file-earmark-bar-graph",
+        "opciones": [
+
+            {
+                "titulo": "Reporte de Ventas",
+                "url": "reportes:ventas",
+                "icono": "bi-cash-stack",
+            },
+            {
+                "titulo": "Reporte de Inventario",
+                "url": "reportes:inventario",
+                "icono": "bi-box-seam",
+            },
+            {
+                "titulo": "Reporte Tributario",
+                "url": "reportes:tributario",
+                "icono": "bi-receipt-cutoff",
+            },
+            {
+                "titulo": "Reporte de Utilidad",
+                "url": "reportes:utilidad",
+                "icono": "bi-graph-up-arrow",
+            },
+            {
+                "titulo": "Reporte de Mermas",
+                "url": "reportes:mermas",
+                "icono": "bi-exclamation-triangle",
             },
 
         ]
@@ -171,13 +265,14 @@ MENU = [
                 "icono": "bi-journal-text",
             },
 
-            {
-                "titulo": "Acerca de SIGEPAN",
-                "url":"acerca_de",
-                "icono":"bi-info-circle",
-            },
-
         ]
     },
 
 ]
+
+# "Acerca de SIGEPAN" (07-08, RF-008): se retiró de este árbol de módulos
+# porque no es un submódulo de Seguridad, sino una pantalla informativa de
+# todo el sistema — quedaba "mal ubicada" ahí. Se muestra ahora como ítem
+# fijo al final del menú lateral (ver templates/includes/sidebar.html),
+# igual que "Inicio" al principio: visible para cualquier usuario, sin
+# pasar por el árbol de permisos por módulo.

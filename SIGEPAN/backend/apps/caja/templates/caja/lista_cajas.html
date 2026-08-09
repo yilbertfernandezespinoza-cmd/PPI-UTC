@@ -1,139 +1,220 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
 
 {% block content %}
 
+{% boton_ayuda "Caja" "caja" %}
 
-<div class="container mt-4">
+<!-- Contenedor con el token CSRF para las acciones de activar/desactivar por AJAX -->
+<div id="caja-config" data-csrf="{{ csrf_token }}" class="d-none"></div>
 
+<div class="container-fluid mt-4">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">
+                <i class="bi bi-cash-stack text-success"></i> Gestión de Cajas
+            </h2>
+            <small class="text-muted">
+                Administración y control operativo de cajas por sucursal.
+            </small>
+        </div>
+        <a href="{% url 'caja:crear_caja' %}" class="btn btn-success d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-plus-circle fs-5"></i>
+            Nueva Caja
+        </a>
+    </div>
 
+    <!-- ===================================== -->
+    <!-- TARJETAS DE RESUMEN RÁPIDO -->
+    <!-- ===================================== -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success text-white p-3 rounded shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="13" y="2" width="8" height="5" rx="1"></rect>
+                            <line x1="17" y1="7" x2="17" y2="10"></line>
+                            <rect x="8" y="4" width="3" height="7" rx="1"></rect>
+                            <path d="M6 11 L18 11 L21 16 L3 16 Z"></path>
+                            <rect x="3" y="16" width="18" height="6" rx="1.2"></rect>
+                            <line x1="9" y1="19" x2="15" y2="19" stroke-width="2.2"></line>
+                        </svg>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Total Cajas</h6>
+                        <h3 class="fw-bold mb-0">{{ cajas|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Puedes complementar el conteo en el backend o dejar las tarjetas visuales de soporte -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-unlock fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Estado Operativo</h6>
+                        <span class="text-muted small">Control de turnos activos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-dark text-white p-3 rounded shadow-sm">
+                        <i class="bi bi-building fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Sucursales</h6>
+                        <span class="text-muted small">Gestión centralizada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<h2>
-Cajas
-</h2>
+    <!-- ===================================== -->
+    <!-- BUSCADOR -->
+    <!-- ===================================== -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarCajas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por nombre o sucursal...">
+            </div>
+        </div>
+    </div>
 
-
-<a href="{% url 'caja:crear_caja' %}"
-class="btn btn-primary">
-
-Nueva caja
-
-</a>
-
+    <!-- ===================================== -->
+    <!-- TABLA DE CAJAS -->
+    <!-- ===================================== -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaCajas" class="w-100"></div>
+        </div>
+    </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ cajas_json|json_script:"cajas-data" }}
 
+{% endblock %}
 
-<table class="table table-striped">
+<!-- Corregido (07-08): la tabla migra de jQuery DataTables (ya no
+     funciona, base.html no carga jQuery desde que el proyecto adoptó
+     Tabulator.js) al mismo patrón que ya usa Clientes. -->
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const configEl = document.getElementById("caja-config");
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
 
+    const cajasElement = document.getElementById("cajas-data");
+    const cajas = cajasElement ? JSON.parse(cajasElement.textContent) : [];
+    cajas.forEach(c => { c.csrfToken = csrfTokenGlobal; });
 
-<thead>
+    SIGEPAN.table.create({
+        selector: "#tablaCajas",
+        search: "#buscarCajas",
+        data: cajas,
+        placeholder: "No existen cajas registradas en el sistema.",
+        columns: [
+            {
+                title: "Nombre",
+                field: "nombre",
+                headerHozAlign: "left",
+                formatter(cell) {
+                    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-muted me-1" style="vertical-align:-2px;" aria-hidden="true"><rect x="13" y="2" width="8" height="5" rx="1"></rect><line x1="17" y1="7" x2="17" y2="10"></line><rect x="8" y="4" width="3" height="7" rx="1"></rect><path d="M6 11 L18 11 L21 16 L3 16 Z"></path><rect x="3" y="16" width="18" height="6" rx="1.2"></rect><line x1="9" y1="19" x2="15" y2="19" stroke-width="2.2"></line></svg> ${cell.getValue()}`;
+                }
+            },
+            { title: "Sucursal", field: "sucursal" },
+            {
+                title: "Saldo Actual",
+                field: "saldo_actual",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-semibold text-success">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactiva</span>';
+                }
+            },
+            {
+                title: "Operación",
+                field: "apertura_activa",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">Abierta</span>'
+                        : '<span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">Cerrada</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="d-flex justify-content-center gap-1">';
 
-<tr>
+                    if (data.estado) {
+                        botones += `<a href="${data.administrar}" class="btn btn-outline-dark btn-sm" title="Administrar caja"><i class="bi bi-gear"></i></a>`;
+                    }
 
-<th>Nombre</th>
-<th>Sucursal</th>
-<th>Saldo actual</th>
-<th>Estado</th>
-<th>Acciones</th>
+                    if (data.estado && !data.apertura_activa) {
+                        botones += `<a href="${data.abrir}" class="btn btn-outline-success btn-sm" title="Abrir caja"><i class="bi bi-unlock"></i></a>`;
+                    }
 
-</tr>
+                    if (data.estado) {
+                        botones += `<button class="btn btn-outline-warning btn-sm btn-desactivar-caja" title="Desactivar caja"><i class="bi bi-x-circle"></i></button>`;
+                    } else {
+                        botones += `<button class="btn btn-outline-success btn-sm btn-activar-caja" title="Activar caja"><i class="bi bi-check-circle"></i></button>`;
+                    }
 
-</thead>
+                    botones += "</div>";
+                    return botones;
+                },
+                cellClick(e, cell) {
+                    const data = cell.getRow().getData();
 
+                    if (e.target.closest(".btn-desactivar-caja")) {
+                        SIGEPAN.table.postAction({
+                            url: data.desactivar,
+                            csrfToken: data.csrfToken,
+                            message: "¿Desactivar esta caja?",
+                        });
+                        return;
+                    }
 
-<tbody>
-
-
-{% for caja in cajas %}
-
-
-<tr>
-
-
-<td>
-{{ caja.nombre }}
-</td>
-
-
-<td>
-{{ caja.sucursal }}
-</td>
-
-
-<td>
-₡ {{ caja.saldo_actual }}
-</td>
-
-
-<td>
-
-
-{% if caja.estado %}
-
-<span class="badge bg-success">
-Activa
-</span>
-
-
-{% else %}
-
-
-<span class="badge bg-danger">
-Inactiva
-</span>
-
-
-{% endif %}
-
-
-</td>
-
-
-<td>
-
-
-<a href="{% url 'caja:abrir_caja' %}"
-class="btn btn-success btn-sm">
-
-Abrir
-
-</a>
-
-
-</td>
-
-
-</tr>
-
-
-{% empty %}
-
-
-<tr>
-
-<td colspan="5">
-
-No existen cajas registradas.
-
-</td>
-
-</tr>
-
-
-{% endfor %}
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
+                    if (e.target.closest(".btn-activar-caja")) {
+                        SIGEPAN.table.postAction({
+                            url: data.activar,
+                            csrfToken: data.csrfToken,
+                            message: "¿Activar esta caja?",
+                        });
+                    }
+                }
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}

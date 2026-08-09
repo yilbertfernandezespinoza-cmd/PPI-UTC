@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    {% boton_ayuda "Inventario" "entrada_inventario" %}
+
+    <h2 class="mb-4">Entrada de Inventario</h2>
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.producto.label }}</label>
+                    {{ form.producto }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.sucursal.label }}</label>
+                    {{ form.sucursal }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.tipo_movimiento.label }}</label>
+                    {{ form.tipo_movimiento }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.cantidad.label }}</label>
+                    {{ form.cantidad }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                </div>
+
+                <button type="submit" class="btn btn-primary">Registrar entrada</button>
+                <a href="{% url 'inventario:lista_inventario' %}" class="btn btn-secondary">Cancelar</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,48 +1,248 @@
 {% extends "base.html" %}
 
-
 {% block content %}
 
+<div class="container-fluid mt-4">
 
-<div class="container mt-4">
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
-<h2>
-Registrar movimiento
-</h2>
+        <div>
 
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-cash-coin text-primary me-2"></i> Registrar Movimiento
+            </h2>
 
+            <small class="text-muted">
+                Registro manual de ingresos, retiros, gastos y ajustes de caja.
+            </small>
 
-<form method="POST">
+        </div>
 
+    </div>
 
-{% csrf_token %}
+    <form method="POST">
 
+        {% csrf_token %}
 
-{{ form.as_p }}
+        <!-- ===================================== -->
+        <!-- INFORMACIÓN DE LA CAJA -->
+        <!-- ===================================== -->
 
+        <div class="card shadow-sm border-0 mb-4">
 
+            <div class="card-header bg-white py-3">
 
-<button class="btn btn-success">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Información de la Caja
+                </h5>
 
-Guardar movimiento
+            </div>
 
-</button>
+            <div class="card-body">
 
+                <div class="row">
 
+                    <div class="col-md-6">
 
-<a href="{% url 'caja:detalle_caja' apertura.id_apertura %}"
-class="btn btn-secondary">
+                        <div class="mb-3">
 
-Cancelar
+                            <label class="form-label fw-semibold text-dark">
+                                Caja
+                            </label>
 
-</a>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.caja.nombre }}"
+                                    readonly>
+                            </div>
 
+                        </div>
 
-</form>
+                    </div>
 
+                    <div class="col-md-6">
+
+                        <div class="mb-3">
+
+                            <label class="form-label fw-semibold text-dark">
+                                Responsable
+                            </label>
+
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                <input
+                                    type="text"
+                                    class="form-control bg-light"
+                                    value="{{ apertura.usuario }}"
+                                    readonly>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- DATOS DEL MOVIMIENTO -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header bg-white py-3">
+
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-wallet2 text-primary me-2"></i> Datos del Movimiento
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold text-dark">
+                        Tipo de movimiento <span class="text-danger">*</span>
+                    </label>
+
+                    {{ form.tipo_movimiento }}
+
+                    {% if form.tipo_movimiento.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.tipo_movimiento.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold text-dark">
+                        Monto <span class="text-danger">*</span>
+                    </label>
+
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">₡</span>
+                        {{ form.monto }}
+                    </div>
+
+                    {% if form.monto.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.monto.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold text-dark">
+                        Descripción <span class="text-danger">*</span>
+                    </label>
+
+                    {{ form.descripcion }}
+
+                    {% if form.descripcion.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.descripcion.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- ACCIONES -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header bg-white py-3">
+
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-center gap-3">
+
+                    <!-- GUARDAR -->
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-success d-flex align-items-center justify-content-center shadow-sm"
+                        style="width:70px;height:70px;"
+                        data-bs-toggle="tooltip"
+                        title="Guardar movimiento">
+
+                        <i class="bi bi-check-lg fs-3"></i>
+
+                    </button>
+
+                    <!-- VOLVER -->
+
+                    <a href="{% url 'caja:administrar_caja' apertura.caja.id_caja %}"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
+                       style="width:70px;height:70px;"
+                       data-bs-toggle="tooltip"
+                       title="Volver">
+
+                        <i class="bi bi-arrow-left fs-3"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
 
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Asegurar clases de Bootstrap en los inputs generados por Django
+    const tipoSelect = document.querySelector("#id_tipo_movimiento");
+    if (tipoSelect && !tipoSelect.classList.contains('form-select')) {
+        tipoSelect.classList.add('form-select');
+    }
+
+    const montoInput = document.querySelector("#id_monto");
+    if (montoInput && !montoInput.classList.contains('form-control')) {
+        montoInput.classList.add('form-control');
+    }
+
+    const descInput = document.querySelector("#id_descripcion");
+    if (descInput && !descInput.classList.contains('form-control')) {
+        descInput.classList.add('form-control');
+        descInput.rows = 3;
+    }
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
 
 {% endblock %}

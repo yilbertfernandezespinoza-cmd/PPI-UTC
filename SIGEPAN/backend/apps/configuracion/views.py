@@ -1,9 +1,11 @@
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
+from django.shortcuts import render, redirect
+from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView
 
-from .models import Modulo, Sucursal, ConfiguracionTributaria
-from .forms import ModuloForm, SucursalForm, ConfiguracionTributariaForm
+from .models import Modulo, Sucursal, MetodoPago, ConfiguracionTributaria, DatosEmpresa
+from .forms import ModuloForm, SucursalForm, MetodoPagoForm, ConfiguracionTributariaForm, DatosEmpresaForm
 from apps.security.mixins import SessionRequiredMixin
 from apps.security.audit import AuditMixin
 from apps.security.permissions import PermissionRequiredMixin
@@ -74,6 +76,27 @@ class SucursalListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     template_name = "configuracion/sucursales/list.html"
     context_object_name = "sucursales"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["sucursales_json"] = [
+            {
+                "id_sucursal": s.id_sucursal,
+                "nombre": s.nombre,
+                "direccion": s.direccion,
+                "telefono": s.telefono,
+                "encargado": s.encargado,
+                "estado": s.estado,
+                "editar": reverse(
+                    "configuracion:sucursal_update",
+                    args=[s.id_sucursal],
+                ),
+            }
+            for s in context["sucursales"]
+        ]
+
+        return context
+
 
 class SucursalCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
     permission_module = "Configuración"
@@ -124,6 +147,121 @@ class SucursalUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         messages.success(self.request, "Sucursal actualizada correctamente.")
         return super().form_valid(form)    
     
+class MetodoPagoListView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    ListView
+):
+    permission_module = "Configuración"
+    permission_action = "CONSULTAR"
+
+    model = MetodoPago
+    template_name = "configuracion/metodos_pago/list.html"
+    context_object_name = "metodos_pago"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        usuario = self.request.usuario
+
+        context["puede_crear"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Configuración",
+            id_permiso__accion="CREAR",
+        ).exists()
+
+        context["puede_modificar"] = RolPermiso.objects.filter(
+            id_rol=usuario.id_rol,
+            id_permiso__id_modulo__nombre="Configuración",
+            id_permiso__accion="MODIFICAR",
+        ).exists()
+
+        context["metodos_pago_json"] = [
+            {
+                "id_metodo_pago": m.id_metodo_pago,
+                "nombre": m.nombre,
+                "descripcion": m.descripcion,
+                "estado": m.estado,
+                "editar": reverse(
+                    "configuracion:metodo_pago_update",
+                    args=[m.id_metodo_pago],
+                ),
+            }
+            for m in context["metodos_pago"]
+        ]
+
+        return context
+
+
+class MetodoPagoCreateView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    AuditMixin,
+    CreateView
+):
+    permission_module = "Configuración"
+    permission_action = "CREAR"
+
+    audit_module = "Configuración"
+    model = MetodoPago
+    form_class = MetodoPagoForm
+    template_name = "configuracion/metodos_pago/form.html"
+    success_url = reverse_lazy("configuracion:metodo_pago_list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        self.registrar_auditoria(
+            tipo_accion="CREAR",
+            descripcion=(
+                f"Se creó el método de pago "
+                f"{self.object.nombre}"
+            ),
+        )
+
+        messages.success(
+            self.request,
+            "Método de pago creado correctamente."
+        )
+
+        return response
+
+
+class MetodoPagoUpdateView(
+    SessionRequiredMixin,
+    PermissionRequiredMixin,
+    AuditMixin,
+    UpdateView
+):
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+
+    audit_module = "Configuración"
+    model = MetodoPago
+    form_class = MetodoPagoForm
+    pk_url_kwarg = "id_metodo_pago"
+    template_name = "configuracion/metodos_pago/form.html"
+    success_url = reverse_lazy("configuracion:metodo_pago_list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        self.registrar_auditoria(
+            tipo_accion="MODIFICAR",
+            descripcion=(
+                f"Se actualizó el método de pago "
+                f"{self.object.nombre}"
+            ),
+        )
+
+        messages.success(
+            self.request,
+            "Método de pago actualizado correctamente."
+        )
+
+        return response
+
+
 class ConfiguracionTributariaListView(
     SessionRequiredMixin,
     PermissionRequiredMixin,
@@ -152,6 +290,23 @@ class ConfiguracionTributariaListView(
             id_permiso__id_modulo__nombre="Configuración",
             id_permiso__accion="MODIFICAR",
         ).exists()
+
+        context["configuraciones_tributarias_json"] = [
+            {
+                "id_configuracion_tributaria": c.id_configuracion_tributaria,
+                "nombre": c.nombre,
+                "descripcion": c.descripcion,
+                "porcentaje": str(c.porcentaje),
+                "aplica_compras": c.aplica_compras,
+                "aplica_ventas": c.aplica_ventas,
+                "estado": c.estado,
+                "editar": reverse(
+                    "configuracion:tributaria_update",
+                    args=[c.id_configuracion_tributaria],
+                ),
+            }
+            for c in context["configuraciones_tributarias"]
+        ]
 
         return context
 
@@ -223,3 +378,40 @@ class ConfiguracionTributariaUpdateView(
         )
 
         return response    
+
+class DatosEmpresaView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, View):
+
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+    audit_module = "Configuración"
+    template_name = "configuracion/datos_empresa/form.html"
+
+    def get_object(self):
+        objeto, _ = DatosEmpresa.objects.get_or_create(
+            id_datos_empresa=1,
+            defaults={
+                "nombre_comercial": "",
+                "cedula_juridica": "",
+            },
+        )
+        return objeto
+
+    def get(self, request):
+        form = DatosEmpresaForm(instance=self.get_object())
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        objeto = self.get_object()
+        form = DatosEmpresaForm(request.POST, instance=objeto)
+
+        if form.is_valid():
+            form.save()
+            self.registrar_auditoria(
+                tipo_accion="MODIFICAR",
+                descripcion="Se actualizaron los datos de la empresa",
+            )
+            messages.success(request, "Datos de la empresa guardados correctamente.")
+            return redirect("configuracion:datos_empresa")
+
+        messages.error(request, "Revisa los datos ingresados.")
+        return render(request, self.template_name, {"form": form})    

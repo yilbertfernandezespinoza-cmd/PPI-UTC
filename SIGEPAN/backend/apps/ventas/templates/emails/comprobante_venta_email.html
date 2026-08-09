@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante {{ venta.numero_venta }} - La Pana</title>
+</head>
+
+<body style="margin:0; padding:40px 0; background-color:#F1F5F9; font-family:Arial, Helvetica, sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center">
+
+<table width="640" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:14px; overflow:hidden; border:1px solid #E2E8F0;">
+
+    <!-- ENCABEZADO: logo de La Pana + datos del emisor -->
+    <tr>
+        <td align="center" style="padding:35px 40px 15px; background:#ffffff;">
+            <img src="cid:lapana_logo" alt="La Pana" width="130" height="130" style="display:block; border:2px solid #eeeeee; border-radius:50%; object-fit:cover;">
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 45px 20px; color:#444444; font-size:13px; line-height:1.6;">
+            <div>Cédula Física: {{ datos_empresa.cedula_juridica|default:"2-0557-0979" }}</div>
+            <div>Dirección: {{ datos_empresa.direccion_fiscal|default:"San José, Moravia, San Vicente, Urbanización Saint Claire" }}</div>
+            <div>Teléfono: {{ datos_empresa.telefono|default:"4082-3934" }}</div>
+            <div>{{ datos_empresa.correo|default:"lapanacostarrica@gmail.com" }}</div>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding:0 45px;">
+            <hr style="border:none; border-top:1px solid #E2E8F0;">
+        </td>
+    </tr>
+
+    <!-- CONTENIDO -->
+    <tr>
+        <td style="padding:20px 45px 10px; color:#333333; font-size:15px; line-height:1.7;">
+
+            <p style="margin:0 0 15px;">
+                Estimado(a) <strong>{% if venta.cliente %}{{ venta.cliente.nombre_completo }}{% else %}cliente{% endif %}</strong>,
+                gracias por su compra en <strong>La Pana</strong>. Adjuntamos el detalle de su comprobante.
+            </p>
+
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:15px; font-size:13px;">
+                <tr>
+                    <td><strong>Comprobante:</strong> {{ venta.numero_venta }}</td>
+                    <td align="right"><strong>Tipo:</strong> {{ venta.tipo_comprobante }}</td>
+                </tr>
+            </table>
+
+            <h3 style="margin:0 0 10px; font-size:16px; color:#0F172A;">Datos del cliente</h3>
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="margin-bottom:20px; font-size:13px;">
+                <tr>
+                    <td width="50%"><strong>Cliente:</strong> {% if venta.cliente %}{{ venta.cliente.nombre_completo }}{% else %}Consumidor Final{% endif %}</td>
+                    <td width="50%" align="right"><strong>Cédula del cliente:</strong> {{ venta.cliente.identificacion|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Correo:</strong> {{ venta.cliente.correo|default:"—" }}</td>
+                    <td align="right"><strong>Cajero:</strong> {{ venta.usuario|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td colspan="2"><strong>Hora:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}</td>
+                </tr>
+            </table>
+
+            <h3 style="margin:0 0 10px; font-size:16px; color:#0F172A;">Detalle de la compra</h3>
+            <table width="100%" cellpadding="8" cellspacing="0" border="0" style="border-collapse:collapse; font-size:13px; margin-bottom:15px;">
+                <tr style="background:#F8FAFC;">
+                    <td style="border-bottom:1px solid #E2E8F0;"><strong>Producto</strong></td>
+                    <td align="center" style="border-bottom:1px solid #E2E8F0;"><strong>Cant.</strong></td>
+                    <td align="right" style="border-bottom:1px solid #E2E8F0;"><strong>Precio Unit.</strong></td>
+                    <td align="right" style="border-bottom:1px solid #E2E8F0;"><strong>Subtotal</strong></td>
+                </tr>
+                {% for detalle in detalles %}
+                <tr>
+                    <td style="border-bottom:1px solid #F1F5F9;">{{ detalle.producto.nombre|default:detalle.producto }}</td>
+                    <td align="center" style="border-bottom:1px solid #F1F5F9;">{{ detalle.cantidad }}</td>
+                    <td align="right" style="border-bottom:1px solid #F1F5F9;">₡{{ detalle.precio_unitario|floatformat:2 }}</td>
+                    <td align="right" style="border-bottom:1px solid #F1F5F9;">₡{{ detalle.subtotal|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" align="center" style="color:#888888;">No hay productos en este comprobante.</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="font-size:13px; margin-bottom:20px;">
+                <tr>
+                    <td align="right" width="80%">Subtotal:</td>
+                    <td align="right">₡{{ venta.subtotal|floatformat:2 }}</td>
+                </tr>
+                {% if venta.descuento > 0 %}
+                <tr>
+                    <td align="right">Descuento:</td>
+                    <td align="right">-₡{{ venta.descuento|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td align="right">Impuesto:</td>
+                    <td align="right">₡{{ venta.impuesto|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td align="right" style="border-top:1px solid #E2E8F0; padding-top:8px;"><strong style="font-size:16px;">Total:</strong></td>
+                    <td align="right" style="border-top:1px solid #E2E8F0; padding-top:8px;"><strong style="font-size:16px;">₡{{ venta.total|floatformat:2 }}</strong></td>
+                </tr>
+            </table>
+
+            {% if pagos %}
+            <h3 style="margin:0 0 10px; font-size:16px; color:#0F172A;">Pagos</h3>
+            <table width="100%" cellpadding="6" cellspacing="0" border="0" style="border-collapse:collapse; font-size:13px; margin-bottom:10px;">
+                <tr style="background:#F8FAFC;">
+                    <td width="40%" style="border-bottom:1px solid #E2E8F0;"><strong>Método de pago</strong></td>
+                    <td width="25%" align="right" style="border-bottom:1px solid #E2E8F0;"><strong>Monto</strong></td>
+                    <td width="35%" align="center" style="border-bottom:1px solid #E2E8F0;"><strong>N.º de Comprobante</strong></td>
+                </tr>
+                {% for pago in pagos %}
+                <tr>
+                    <td style="border-bottom:1px solid #F1F5F9;">{{ pago.metodo_pago }}</td>
+                    <td align="right" style="border-bottom:1px solid #F1F5F9;">₡{{ pago.monto|floatformat:2 }}</td>
+                    <td align="center" style="border-bottom:1px solid #F1F5F9;">{{ pago.referencia|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% if vuelto > 0 %}
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="font-size:13px; margin-bottom:20px;">
+                <tr>
+                    <td align="right" width="80%"><strong>Vuelto entregado:</strong></td>
+                    <td align="right"><strong style="color:#198754;">₡{{ vuelto|floatformat:2 }}</strong></td>
+                </tr>
+            </table>
+            {% endif %}
+            {% endif %}
+
+        </td>
+    </tr>
+
+    <!-- PIE -->
+    <tr>
+        <td align="center" style="background:#f8f8f8; padding:30px 35px; border-top:1px solid #e5e5e5;">
+            <div style="color:#666666; font-size:13px; line-height:1.6;">
+                ¡Gracias por su compra! — <strong>La Pana</strong>
+                <br>
+                Este correo fue generado automáticamente, por favor no responda a esta dirección.
+            </div>
+        </td>
+    </tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+
+</html>

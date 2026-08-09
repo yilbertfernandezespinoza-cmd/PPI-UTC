@@ -1,132 +1,251 @@
 {% extends "base.html" %}
 
-
-
 {% block content %}
-
-
-<div class="container mt-4">
-
-
-<h2>
-Registrar compra
-</h2>
-
-
-
-<form method="POST">
-
-
-{% csrf_token %}
-
-
-
-<h4>
-Datos generales
-</h4>
-
-
-{{ compra_form.as_p }}
-
-
-
-<hr>
-
-
-
-<h4>
-Productos
-</h4>
-
-
-
-{{ detalle_formset.management_form }}
-
-
-
-<table class="table">
-
-
-<thead>
-
-<tr>
-
-<th>Producto</th>
-<th>Cantidad</th>
-<th>Precio</th>
-
-</tr>
-
-</thead>
-
-
-
-<tbody>
-
-
-{% for form in detalle_formset %}
-
-
-<tr>
-
-
-<td>
-
-{{ form.producto }}
-
-</td>
-
-
-<td>
-
-{{ form.cantidad }}
-
-</td>
-
-
-<td>
-
-{{ form.precio_unitario }}
-
-</td>
-
-
-</tr>
-
-
-{% endfor %}
-
-
-
-</tbody>
-
-
-</table>
-
-
-
-<button type="submit"
-class="btn btn-success">
-
-Guardar compra
-
-</button>
-
-
-
-<a href="{% url 'compras:lista_compras' %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
-
-
-
-</form>
-
-
+<div class="container-fluid py-4">
+
+    <!-- Cabecera del Módulo -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 text-dark fw-bold">
+                <i class="fas fa-cart-plus me-2"></i> Registrar Nueva Compra
+            </h2>
+            <p class="text-muted small mb-0">Complete la información general y detalle los insumos adquiridos.</p>
+        </div>
+        <div>
+            <a href="{% url 'compras:lista_compras' %}" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> Volver al listado
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario Principal -->
+    <form method="POST" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <!-- Alertas de errores generales si los hay -->
+        {% if compra_form.errors or detalle_formset.errors %}
+        <div class="alert alert-danger shadow-sm mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> Por favor, corrija los errores marcados en el formulario antes de guardar.
+        </div>
+        {% endif %}
+
+        <!-- Bloque 1: Datos Generales -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 text-primary fw-bold">
+                    <i class="fas fa-info-circle me-2"></i> Datos Generales
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for field in compra_form %}
+                    <div class="col-md-4">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold small text-muted">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text text-muted small">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloque 2: Productos / Insumos -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-primary fw-bold">
+                    <i class="fas fa-boxes me-2"></i> Productos o Insumos
+                </h5>
+                <span class="text-muted small">Detalle de líneas de compra</span>
+            </div>
+            <div class="card-body p-0">
+                {{ detalle_formset.management_form }}
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="width: 45%;">Producto</th>
+                                <th style="width: 18%;">Cantidad</th>
+                                <th style="width: 22%;">Precio Unitario (₡)</th>
+                                <th class="text-center" style="width: 15%;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-detalle-compra-body" data-prefix="{{ detalle_formset.prefix }}">
+                            {% for form in detalle_formset %}
+                            <tr class="fila-detalle-compra">
+                                <td class="ps-3">
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    {{ form.producto }}
+                                    {% for error in form.producto.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ form.cantidad }}
+                                    {% for error in form.cantidad.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ form.precio_unitario }}
+                                    {% for error in form.precio_unitario.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarFilaCompra(this)" title="Quitar producto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Plantilla oculta (fix RF-030, 06-08): extra=1 en el formset solo renderiza UNA
+                                 fila al cargar la página, así que sin esto solo se podía registrar un producto
+                                 por compra. Esta fila usa detalle_formset.empty_form (que Django genera con
+                                 "__prefix__" en vez de un índice real en cada name/id) como plantilla para
+                                 clonar filas nuevas por JS — nunca se envía tal cual, solo se clona. -->
+                            <tr id="fila-vacia-compra" class="fila-detalle-compra d-none">
+                                <td class="ps-3">
+                                    {% for hidden in detalle_formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    {{ detalle_formset.empty_form.producto }}
+                                </td>
+                                <td>{{ detalle_formset.empty_form.cantidad }}</td>
+                                <td>{{ detalle_formset.empty_form.precio_unitario }}</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarFilaCompra(this)" title="Quitar producto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 border-top">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarFilaCompra()">
+                        <i class="fas fa-plus me-1"></i> Agregar línea
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción Final -->
+        <div class="d-flex justify-content-end gap-2 mb-5">
+            <a href="{% url 'compras:lista_compras' %}" class="btn btn-light border px-4">
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-success px-4 shadow-sm">
+                <i class="fas fa-save me-1"></i> Guardar compra
+            </button>
+        </div>
+
+    </form>
 </div>
 
+<!-- Script rápido opcional para asegurar que los inputs de Django usen clases Bootstrap -->
+<script>
+    function aplicarClasesBootstrap(alcance) {
+        // Añade clases de Bootstrap a los inputs generados por Django que no las
+        // tengan, dentro de "alcance" (todo el documento en la carga inicial, o
+        // solo la fila nueva cuando se agrega dinámicamente).
+        const inputs = alcance.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea');
+        inputs.forEach(function (input) {
+            if (!input.classList.contains('form-control') && !input.classList.contains('form-select')) {
+                if (input.tagName === 'SELECT') {
+                    input.classList.add('form-select');
+                } else {
+                    input.classList.add('form-control');
+                }
+            }
+        });
+    }
 
+    document.addEventListener("DOMContentLoaded", function () {
+        aplicarClasesBootstrap(document);
+    });
+
+    // =====================================================
+    // FIX RF-030 (06-08): agregar/quitar líneas de compra
+    // =====================================================
+    //
+    // El formset de detalle de compra usa extra=1 (apps/compras/forms.py)
+    // y no tenía forma de agregar más filas desde la interfaz — solo se
+    // podía registrar un producto por compra. Esto agrega/quita filas en
+    // el navegador y reindexa los campos del formset (name/id/for) para
+    // que Django los procese exactamente igual que si hubieran venido
+    // renderizados desde el servidor. No se tocó la vista crear_compra ni
+    // el formset en sí: ambos ya procesaban correctamente N líneas,
+    // el único problema era que la plantilla solo mostraba 1.
+
+    function actualizarIndicesFormsetCompra() {
+        const cuerpo = document.getElementById('tabla-detalle-compra-body');
+        const prefijo = cuerpo.dataset.prefix;
+        const filas = cuerpo.querySelectorAll('tr.fila-detalle-compra:not(.d-none)');
+
+        filas.forEach(function (fila, indice) {
+            fila.querySelectorAll('input, select, textarea, label').forEach(function (el) {
+                ['name', 'id', 'for'].forEach(function (atributo) {
+                    if (el.hasAttribute(atributo)) {
+                        const valorActual = el.getAttribute(atributo);
+                        const patron = new RegExp(prefijo + '-(\\d+|__prefix__)-');
+                        if (patron.test(valorActual)) {
+                            el.setAttribute(
+                                atributo,
+                                valorActual.replace(patron, prefijo + '-' + indice + '-')
+                            );
+                        }
+                    }
+                });
+            });
+        });
+
+        const totalForms = document.getElementById('id_' + prefijo + '-TOTAL_FORMS');
+        if (totalForms) {
+            totalForms.value = filas.length;
+        }
+    }
+
+    function agregarFilaCompra() {
+        const filaVacia = document.getElementById('fila-vacia-compra');
+        const nuevaFila = filaVacia.cloneNode(true);
+
+        nuevaFila.removeAttribute('id');
+        nuevaFila.classList.remove('d-none');
+
+        // Limpiar cualquier valor que haya quedado en la plantilla oculta
+        // (no debería tener ninguno, es defensivo).
+        nuevaFila.querySelectorAll('input:not([type="checkbox"]), select').forEach(function (campo) {
+            if (campo.tagName === 'SELECT') {
+                campo.selectedIndex = 0;
+            } else {
+                campo.value = '';
+            }
+        });
+
+        filaVacia.parentNode.insertBefore(nuevaFila, filaVacia);
+
+        aplicarClasesBootstrap(nuevaFila);
+        actualizarIndicesFormsetCompra();
+    }
+
+    function quitarFilaCompra(boton) {
+        const filas = document.querySelectorAll('#tabla-detalle-compra-body tr.fila-detalle-compra:not(.d-none)');
+
+        if (filas.length <= 1) {
+            alert('La compra debe tener al menos un producto.');
+            return;
+        }
+
+        boton.closest('tr').remove();
+        actualizarIndicesFormsetCompra();
+    }
+</script>
 {% endblock %}

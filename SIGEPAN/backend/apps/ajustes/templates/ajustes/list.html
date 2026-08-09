@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    {% boton_ayuda "Ajustes" "ajustes_inventario" %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Ajustes de inventario</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-sliders text-warning"></i> Ajustes de inventario</h2>
+        <a href="{% url 'ajustes:registrar' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Registrar ajuste
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Producto</label>
+                    <select name="producto" class="form-select">
+                        <option value="">Todos</option>
+                        {% for producto in productos %}
+                        <option value="{{ producto.id_producto }}" {% if filtro_producto == producto.id_producto|stringformat:"s" %}selected{% endif %}>
+                            {{ producto.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tipo</label>
+                    <select name="tipo" class="form-select">
+                        <option value="">Todos</option>
+                        {% for valor, etiqueta in tipos %}
+                        <option value="{{ valor }}" {% if filtro_tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="desde" class="form-control" value="{{ filtro_desde }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="hasta" class="form-control" value="{{ filtro_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarAjustes" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por producto, motivo o usuario...">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div id="tablaAjustes" class="w-100"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ ajustes_json|json_script:"ajustes-data" }}
+
+{% endblock %}
+
+{# Migrado (07-08): mismo patrón Tabulator que el resto del sistema. #}
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ajustesElement = document.getElementById("ajustes-data");
+    const ajustes = ajustesElement ? JSON.parse(ajustesElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaAjustes",
+        search: "#buscarAjustes",
+        data: ajustes,
+        placeholder: "No hay ajustes registrados.",
+        columns: [
+            { title: "Folio", field: "folio" },
+            { title: "Fecha", field: "fecha" },
+            { title: "Producto", field: "producto", headerHozAlign: "left" },
+            {
+                title: "Tipo",
+                field: "tipo",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    return data.tipo === "ENTRADA"
+                        ? `<span class="badge bg-success bg-opacity-10 text-success">${data.tipo_display}</span>`
+                        : `<span class="badge bg-danger bg-opacity-10 text-danger">${data.tipo_display}</span>`;
+                }
+            },
+            { title: "Cantidad", field: "cantidad", hozAlign: "center" },
+            { title: "Motivo", field: "motivo" },
+            { title: "Usuario", field: "usuario" },
+            {
+                title: "",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    return `<a href="${data.detalle}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-eye"></i> Ver</a>`;
+                }
+            }
+        ]
+    });
+});
+</script>
+{% endblock %}

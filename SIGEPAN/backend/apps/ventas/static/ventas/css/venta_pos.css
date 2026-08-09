@@ -1,0 +1,704 @@
+/* =====================================================
+   SIGEPAN
+   Módulo Ventas POS
+   Estilos exclusivos Punto de Venta
+===================================================== */
+
+
+
+/* =====================================================
+   CONTENEDOR PRINCIPAL POS
+===================================================== */
+
+
+.pos-container{
+
+
+    padding-bottom:30px;
+
+
+}
+
+
+
+
+
+/* =====================================================
+   TITULO POS
+===================================================== */
+
+
+.pos-header-title{
+
+
+    font-size:2rem;
+
+
+    font-weight:700;
+
+
+}
+
+
+
+
+
+.pos-header-icon{
+
+
+    font-size:2.2rem;
+
+
+    margin-right:10px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   TARJETAS DEL POS
+===================================================== */
+
+
+.pos-card{
+
+
+    border-radius:
+    12px;
+
+
+    border:none;
+
+
+    box-shadow:
+    0 3px 10px rgba(0,0,0,.10);
+
+
+}
+
+
+
+.pos-card-header{
+
+
+    font-weight:600;
+
+
+    font-size:1.05rem;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   BUSCADORES POS
+===================================================== */
+
+
+.pos-search{
+
+
+    height:55px;
+
+
+    font-size:1.05rem;
+
+
+}
+
+
+
+.pos-search-button{
+
+
+    min-width:120px;
+
+
+    font-weight:600;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   BOTONES POS
+===================================================== */
+
+
+.pos-btn{
+
+    min-height:65px;
+
+    font-size:1.15rem;
+
+    font-weight:700;
+
+    border-radius:12px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    line-height:1;
+
+}
+
+
+/* Ajuste específico para enlaces usados como botones */
+
+a.pos-btn{
+
+    text-decoration:none;
+
+}
+
+
+
+.pos-btn i{
+
+
+    font-size:1.4rem;
+
+
+    margin-right:8px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   BOTÓN PRINCIPAL COBRAR
+===================================================== */
+
+
+.pos-btn-cobrar{
+
+
+    min-height:85px;
+
+
+    font-size:1.5rem;
+
+
+    font-weight:800;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   TABLA CARRITO
+===================================================== */
+
+
+.pos-cart-table{
+
+
+    margin-bottom:0;
+
+
+}
+
+
+
+.pos-cart-table th{
+
+
+    font-size:.95rem;
+
+
+    text-transform:uppercase;
+
+
+}
+
+
+
+.pos-cart-table td{
+
+
+    vertical-align:middle;
+
+
+}
+
+
+
+
+
+.pos-cart-empty{
+
+
+    padding:40px;
+
+
+    text-align:center;
+
+
+    color:#6c757d;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   RESUMEN DE VENTA
+===================================================== */
+
+
+.pos-summary-line{
+
+
+    display:flex;
+
+
+    justify-content:space-between;
+
+
+    align-items:center;
+
+
+    margin-bottom:12px;
+
+
+    font-size:1.05rem;
+
+
+}
+
+
+
+.pos-summary-total{
+
+
+    font-size:2.3rem;
+
+
+    font-weight:800;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   METODOS DE PAGO
+===================================================== */
+
+
+.pos-payment-option{
+
+
+    padding:15px;
+
+
+    border-radius:10px;
+
+
+    border:1px solid #dee2e6;
+
+
+    margin-bottom:12px;
+
+
+    cursor:pointer;
+
+
+}
+
+
+
+.pos-payment-option:hover{
+
+
+    background:#f8f9fa;
+
+
+}
+
+/* Bloque de Monto/Vuelto/Comprobante de cada método de pago, visible solo
+   cuando su checkbox está marcado (ver venta_pos.js, sección 9). */
+.pos-pago-detalle{
+
+    border-left:3px solid #dee2e6;
+
+    padding-left:10px;
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   CLIENTE SELECCIONADO
+===================================================== */
+
+
+.pos-client-box{
+
+
+    padding:15px;
+
+
+    border-radius:10px;
+
+
+    background:#f8f9fa;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   RESPONSIVE TABLET
+===================================================== */
+
+
+@media(max-width:992px){
+
+
+    .pos-btn{
+
+
+        min-height:60px;
+
+
+        font-size:1rem;
+
+
+    }
+
+
+
+    .pos-summary-total{
+
+
+        font-size:2rem;
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   PANTALLAS TÁCTILES GRANDES
+===================================================== */
+
+
+@media(min-width:1400px){
+
+
+
+    .pos-search{
+
+
+        height:65px;
+
+
+    }
+
+
+
+    .pos-btn{
+
+
+        min-height:75px;
+
+
+    }
+
+
+
+    .pos-btn-cobrar{
+
+
+        min-height:100px;
+
+
+    }
+
+
+
+}
+
+/* =====================================================
+   RESULTADOS BÚSQUEDA CLIENTES
+===================================================== */
+
+#resultado_clientes{
+
+    max-height:250px;
+
+    overflow-y:auto;
+
+    border-radius:10px;
+
+    box-shadow:0 .25rem .75rem rgba(0,0,0,.12);
+
+    z-index:1050;
+
+}
+
+#resultado_clientes .list-group-item{
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+#resultado_clientes .list-group-item:hover{
+
+    background:#e9f3ff;
+
+}
+
+/* =====================================================
+   CUADRÍCULA DE CATEGORÍAS + PRODUCTOS (POS táctil)
+   Agregado 04-08-2026 junto con la migración del carrito a JSON/AJAX.
+===================================================== */
+
+.pos-category-tabs{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:8px;
+
+}
+
+.pos-category-btn{
+
+    min-height:48px;
+
+    padding:8px 18px;
+
+    font-size:1rem;
+
+    font-weight:600;
+
+    border-radius:999px;
+
+    border:2px solid #dee2e6;
+
+    background:#fff;
+
+    color:#495057;
+
+    transition:.15s;
+
+}
+
+.pos-category-btn:hover{
+
+    border-color:#0d6efd;
+
+    color:#0d6efd;
+
+}
+
+.pos-category-btn.active{
+
+    border-color:#0d6efd;
+
+    background:#0d6efd;
+
+    color:#fff;
+
+}
+
+.pos-product-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
+
+    gap:10px;
+
+    max-height:360px;
+
+    overflow-y:auto;
+
+    padding-top:4px;
+
+}
+
+.pos-product-grid-hint{
+
+    grid-column:1 / -1;
+
+}
+
+.pos-product-tile{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:6px;
+
+    min-height:90px;
+
+    padding:12px 8px;
+
+    border-radius:12px;
+
+    border:2px solid #dee2e6;
+
+    background:#fff;
+
+    text-align:center;
+
+    cursor:pointer;
+
+    transition:.12s;
+
+}
+
+.pos-product-tile:hover{
+
+    border-color:#198754;
+
+    box-shadow:0 3px 10px rgba(0,0,0,.10);
+
+}
+
+.pos-product-tile:active,
+.pos-product-tile-added{
+
+    border-color:#198754;
+
+    background:#e9f7ef;
+
+    transform:scale(.97);
+
+}
+
+.pos-product-tile-nombre{
+
+    font-weight:700;
+
+    font-size:.95rem;
+
+    line-height:1.15;
+
+}
+
+.pos-product-tile-precio{
+
+    font-weight:600;
+
+    font-size:.9rem;
+
+    color:#198754;
+
+}
+
+/* Pantallas táctiles grandes: tiles y pestañas de categoría más generosos */
+@media(min-width:1400px){
+
+    .pos-category-btn{
+
+        min-height:56px;
+
+        font-size:1.1rem;
+
+    }
+
+    .pos-product-tile{
+
+        min-height:110px;
+
+    }
+
+    .pos-product-tile-nombre{
+
+        font-size:1.05rem;
+
+    }
+
+    .pos-product-tile-precio{
+
+        font-size:1rem;
+
+    }
+
+}

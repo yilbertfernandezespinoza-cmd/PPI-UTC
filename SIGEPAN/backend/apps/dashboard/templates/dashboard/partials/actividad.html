@@ -1,8 +1,35 @@
 <div class="card mb-4">
 
+    <div class="card-header">
+        <strong>Actividad reciente</strong>
+    </div>
+
     <div class="card-body">
 
-        actividad
+        {% if actividad_reciente %}
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Módulo</th>
+                    <th>Fecha y hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in actividad_reciente %}
+                <tr>
+                    <td>{{ registro.id_usuario.username|default:"—" }}</td>
+                    <td>{{ registro.get_tipo_accion_display }}</td>
+                    <td>{{ registro.id_modulo.nombre|default:"—" }}</td>
+                    <td>{{ registro.fecha_hora|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mb-0">Todavía no hay actividad registrada en la bitácora.</p>
+        {% endif %}
 
     </div>
 

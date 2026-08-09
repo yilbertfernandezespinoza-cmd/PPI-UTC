@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+<!-- Contenedor con la configuración y permisos limpios para el linter -->
+<div id="cliente-config" 
+     data-puede-modificar="{{ puede_modificar|yesno:'true,false' }}" 
+     data-puede-eliminar="{{ puede_eliminar|yesno:'true,false' }}" 
+     data-csrf="{{ csrf_token }}" 
+     class="d-none">
+</div>
+
+<div class="container-fluid py-4">
+
+    {% boton_ayuda "Clientes" "clientes" %}
+
+    <!-- Cabecera del Módulo (Estilo idéntico a Gestión de Compras) -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 text-dark fw-bold">
+                <i class="fas fa-users me-2"></i> Gestión de Clientes
+            </h2>
+            <p class="text-muted small mb-0">Gestión de clientes registrados y control de estados en SIGEPAN.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <!-- Botón de retorno directo a Crear Venta -->
+            <a href="{% url 'ventas:crear_venta' %}" class="btn btn-outline-secondary shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 18px;">
+                <i class="fas fa-arrow-left"></i> Volver a Ventas
+            </a>
+
+            <!-- Botón para registrar nuevo cliente -->
+            {% if puede_crear %}
+            <a href="{% url 'clientes:crear' %}" data-track-origin class="btn btn-outline-success shadow-sm d-inline-flex align-items-center gap-1 fw-bold" style="font-size: 18px;">
+                <i class="fas fa-user-plus"></i> Registrar Cliente
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Barra de Búsqueda (Integrada en tarjeta limpia) -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarClientes" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por identificación, nombre, teléfono o correo...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla con Tabulator (Contenedor de Tarjeta) -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaClientes" class="w-100"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ clientes_json|json_script:"clientes-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Leemos la configuración y permisos de forma limpia desde los atributos HTML
+    const configEl = document.getElementById("cliente-config");
+    const puedeModificar = configEl ? configEl.dataset.puedeModificar === "true" : false;
+    const puedeEliminar = configEl ? configEl.dataset.puedeEliminar === "true" : false;
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
+
+    // Leemos los datos inyectados por json_script
+    const clientesElement = document.getElementById("clientes-data");
+    const clientesRaw = clientesElement ? JSON.parse(clientesElement.textContent) : [];
+
+    // Mapeamos las URLs y el token a cada objeto de cliente
+    const clientes = clientesRaw.map(c => ({
+        id: c.id_cliente,
+        identificacion: c.identificacion,
+        tipo: c.tipo_cliente_display || c.tipo_cliente,
+        nombre: c.nombre_completo,
+        telefono: c.telefono,
+        correo: c.correo,
+        estado: c.estado,
+        editar: `/clientes/editar/${c.id_cliente}/`,
+        estado_url: `/clientes/estado/${c.id_cliente}/`,
+        csrfToken: csrfTokenGlobal
+    }));
+
+    SIGEPAN.table.create({
+        selector: "#tablaClientes",
+        search: "#buscarClientes",
+        data: clientes,
+        columns: [
+            { title: "Identificación", field: "identificacion", headerHozAlign: "left" },
+            { title: "Tipo", field: "tipo" },
+            { title: "Cliente", field: "nombre" },
+            { title: "Teléfono", field: "telefono" },
+            { title: "Correo", field: "correo" },
+            { 
+                title: "Estado", 
+                field: "estado",
+                formatter(cell){
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activo</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Inactivo</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell){
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="btn-group" role="group">';
+
+                    if (puedeModificar) {
+                        botones += `<a href="${data.editar}" class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="Editar"><i class="fas fa-edit"></i> Editar</a>`;
+                    }
+
+                    if (puedeEliminar) {
+                        const iconoEstado = data.estado ? 'fa-ban' : 'fa-check-circle';
+                        const tituloEstado = data.estado ? 'Deshabilitar' : 'Activar';
+                        const claseBoton = data.estado ? 'btn-outline-danger' : 'btn-outline-success';
+                        const textoBoton = data.estado ? 'Deshabilitar' : 'Activar';
+                        botones += `<button class="btn ${claseBoton} btn-sm btn-estado" data-bs-toggle="tooltip" title="${tituloEstado}"><i class="fas ${iconoEstado}"></i> ${textoBoton}</button>`;
+                    }
+
+                    botones += "</div>";
+                    return botones;
+                },
+                cellClick(e, cell){
+                    if(!e.target.closest(".btn-estado")){
+                        return;
+                    }
+                    const data = cell.getRow().getData();
+                    SIGEPAN.table.postAction({
+                        url: data.estado_url,
+                        csrfToken: data.csrfToken,
+                        message: data.estado
+                            ? "¿Desea deshabilitar este cliente?"
+                            : "¿Desea activar este cliente?"
+                    });
+                }
+            }
+        ]
+    });
+});
+</script>
+{% endblock %}

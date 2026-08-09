@@ -1,0 +1,241 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Comprobante {{ venta.numero_venta }} - La Pana</title>
+
+    <link rel="icon" type="image/png" href="{% static 'img/logos/sigepan-favicon.png' %}">
+
+    <!-- Bootstrap (mismo CSS que usa base.html, para mantener consistencia tipográfica) -->
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+    <style>
+        body {
+            background-color: #f1f3f5;
+        }
+        .comprobante-hoja {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #fff;
+        }
+        .comprobante-total {
+            font-size: 1.5rem;
+        }
+        .comprobante-logo {
+            width: 130px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #eee;
+        }
+
+        /* Al imprimir: sin fondo gris, sin botones ni barra de acciones. */
+        @media print {
+            body {
+                background-color: #fff;
+            }
+            .no-imprimir {
+                display: none !important;
+            }
+            .comprobante-hoja {
+                max-width: 100%;
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="py-4">
+    <div class="container">
+
+        <!-- Barra de acciones: no aparece en la impresión -->
+        <div class="comprobante-hoja d-flex justify-content-between align-items-center mb-3 no-imprimir">
+            <a href="{% url 'ventas:detalle_venta' venta.pk %}"
+               onclick="cerrarComprobante(this.href); return false;"
+               class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+        </div>
+
+        <div class="comprobante-hoja shadow-sm border rounded p-4 p-md-5">
+
+            <!-- Encabezado: logo de La Pana centrado arriba -->
+            <div class="text-center mb-3">
+                <img src="{% static 'img/logos/lapana-logo.jpeg' %}"
+                     alt="{{ datos_empresa.nombre_comercial|default:'La Pana' }}"
+                     class="comprobante-logo">
+            </div>
+
+            <!-- Datos del emisor (La Pana), alineados a la izquierda debajo del logo.
+                 Se usan los campos de DatosEmpresa con un valor por defecto: si más
+                 adelante se cargan estos datos reales en Configuración > Datos de la
+                 Empresa, el comprobante los toma automáticamente sin tocar este
+                 template de nuevo. -->
+            <div class="small mb-3">
+                <div>Cédula Física: {{ datos_empresa.cedula_juridica|default:"2-0557-0979" }}</div>
+                <div>Dirección: {{ datos_empresa.direccion_fiscal|default:"San José, Moravia, San Vicente, Urbanización Saint Claire" }}</div>
+                <div>Teléfono: {{ datos_empresa.telefono|default:"4082-3934" }}</div>
+                <div>{{ datos_empresa.correo|default:"lapanacostarrica@gmail.com" }}</div>
+            </div>
+
+            <hr>
+
+            <!-- Referencia del comprobante (número/tipo), para no perder este dato clave -->
+            <div class="row g-2 mb-3 small">
+                <div class="col-6">
+                    <strong>Comprobante:</strong> {{ venta.numero_venta }}
+                </div>
+                <div class="col-6 text-end">
+                    <strong>Tipo:</strong> {{ venta.tipo_comprobante }}
+                </div>
+            </div>
+
+            <!-- Datos del cliente -->
+            <h6 class="fw-bold mb-2"><i class="bi bi-person me-1"></i> Datos del cliente</h6>
+            <div class="row g-2 mb-3 small">
+                <div class="col-6">
+                    <strong>Cliente:</strong>
+                    {% if venta.cliente %}{{ venta.cliente.nombre_completo }}{% else %}Consumidor Final{% endif %}
+                </div>
+                <div class="col-6 text-end">
+                    <strong>Cédula del cliente:</strong> {{ venta.cliente.identificacion|default:"—" }}
+                </div>
+                <div class="col-6">
+                    <strong>Correo:</strong> {{ venta.cliente.correo|default:"—" }}
+                </div>
+                <div class="col-6 text-end">
+                    <strong>Cajero:</strong> {{ venta.usuario|default:"—" }}
+                </div>
+                <div class="col-6">
+                    <strong>Hora:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Detalle de la compra -->
+            <h6 class="fw-bold mb-2"><i class="bi bi-basket me-1"></i> Detalle de la compra</h6>
+            <table class="table table-sm mb-3">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th class="text-center">Cant.</th>
+                        <th class="text-end">Precio Unit.</th>
+                        <th class="text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.producto.nombre|default:detalle.producto }}</td>
+                        <td class="text-center">{{ detalle.cantidad }}</td>
+                        <td class="text-end">₡{{ detalle.precio_unitario|floatformat:2 }}</td>
+                        <td class="text-end">₡{{ detalle.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-3">No hay productos en este comprobante.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Totales -->
+            <div class="ms-auto" style="max-width: 300px;">
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span>₡{{ venta.subtotal|floatformat:2 }}</span>
+                </div>
+                {% if venta.descuento > 0 %}
+                <div class="d-flex justify-content-between">
+                    <span>Descuento:</span>
+                    <span>-₡{{ venta.descuento|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between">
+                    <span>Impuesto:</span>
+                    <span>₡{{ venta.impuesto|floatformat:2 }}</span>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between fw-bold comprobante-total">
+                    <span>Total:</span>
+                    <span>₡{{ venta.total|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Detalle de pagos -->
+            <h6 class="fw-bold mb-2"><i class="bi bi-wallet2 me-1"></i> Pagos</h6>
+            {% if pagos %}
+            <table class="table table-sm mb-3">
+                <colgroup>
+                    <col style="width: 40%;">
+                    <col style="width: 25%;">
+                    <col style="width: 35%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Método de pago</th>
+                        <th class="text-end">Monto</th>
+                        <th class="text-center">Referencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pago in pagos %}
+                    <tr>
+                        <td>{{ pago.metodo_pago }}</td>
+                        <td class="text-end">₡{{ pago.monto|floatformat:2 }}</td>
+                        <td class="text-center">{{ pago.referencia|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if vuelto > 0 %}
+            <div class="ms-auto d-flex justify-content-between fw-bold" style="max-width: 300px;">
+                <span>Vuelto entregado:</span>
+                <span>₡{{ vuelto|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-muted small">No hay pagos registrados para esta venta.</p>
+            {% endif %}
+
+            <hr>
+
+            <!-- Pie -->
+            <div class="text-center text-muted small mt-4">
+                ¡Gracias por su compra! — La Pana · Impreso el {% now "d/m/Y H:i" %}
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // "Volver" abre en una pestaña nueva (ver detalle_venta.html), así
+        // que en vez de navegar aquí mismo (lo que dejaba pestañas
+        // acumuladas cada vez que se imprimía otro comprobante), primero
+        // se intenta cerrar esta pestaña. Si el navegador no lo permite
+        // (por ejemplo, si esta página se abrió directamente y no tiene
+        // pestaña de origen), se navega de vuelta como respaldo.
+        function cerrarComprobante(urlVolver) {
+            window.close();
+            setTimeout(function () {
+                window.location.href = urlVolver;
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>

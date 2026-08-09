@@ -1,158 +1,110 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
 
 {% block content %}
+<div class="container-fluid py-4">
 
+    {% boton_ayuda "Compras" "compras" %}
 
-<div class="container mt-4">
+    <!-- Cabecera del Módulo -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 text-dark fw-bold">
+                <i class="fas fa-shopping-cart me-2"></i> Gestión de Compras
+            </h2>
+            <p class="text-muted small mb-0">Historial de adquisiciones y registro de facturas a proveedores.</p>
+        </div>
+        <div>
+            <a href="{% url 'compras:crear_compra' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> Nueva compra
+            </a>
+        </div>
+    </div>
 
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarCompras" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por proveedor...">
+            </div>
+        </div>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-
-<h2>
-Compras
-</h2>
-
-
-<a href="{% url 'compras:crear_compra' %}"
-class="btn btn-primary">
-
-Nueva compra
-
-</a>
-
+    <!-- Tabla con Tabulator -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaCompras" class="w-100"></div>
+        </div>
+    </div>
 
 </div>
 
-
-
-<table class="table table-striped">
-
-
-<thead>
-
-<tr>
-
-<th>ID</th>
-<th>Proveedor</th>
-<th>Fecha</th>
-<th>Total</th>
-<th>Estado</th>
-<th>Acciones</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-
-{% for compra in compras %}
-
-
-<tr>
-
-
-<td>
-{{ compra.id_compra }}
-</td>
-
-
-<td>
-{{ compra.proveedor.nombre }}
-</td>
-
-
-<td>
-{{ compra.fecha }}
-</td>
-
-
-<td>
-₡ {{ compra.total }}
-</td>
-
-
-<td>
-
-
-{% if compra.estado %}
-
-<span class="badge bg-success">
-Activa
-</span>
-
-
-{% else %}
-
-<span class="badge bg-danger">
-Anulada
-</span>
-
-
-{% endif %}
-
-
-</td>
-
-
-<td>
-
-
-<a href="{% url 'compras:detalle_compra' compra.id_compra %}"
-class="btn btn-info btn-sm">
-
-Ver
-
-</a>
-
-
-
-{% if compra.estado %}
-
-<a href="{% url 'compras:anular_compra' compra.id_compra %}"
-class="btn btn-danger btn-sm">
-
-Anular
-
-</a>
-
-{% endif %}
-
-
-
-</td>
-
-
-</tr>
-
-
-{% empty %}
-
-
-<tr>
-
-<td colspan="6">
-
-No existen compras registradas.
-
-</td>
-
-</tr>
-
-
-{% endfor %}
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ compras_json|json_script:"compras-data" }}
+
+{% endblock %}
+
+<!-- Corregido (07-08): la tabla migra de jQuery DataTables (ya no
+     funciona, base.html no carga jQuery desde que el proyecto adoptó
+     Tabulator.js) al mismo patrón que ya usa Clientes. -->
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const comprasElement = document.getElementById("compras-data");
+    const compras = comprasElement ? JSON.parse(comprasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaCompras",
+        search: "#buscarCompras",
+        data: compras,
+        columns: [
+            {
+                title: "ID",
+                field: "id_compra",
+                formatter(cell) {
+                    return `#${cell.getValue()}`;
+                }
+            },
+            { title: "Proveedor", field: "proveedor" },
+            { title: "Fecha", field: "fecha" },
+            {
+                title: "Total",
+                field: "total",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-bold text-success">₡ ${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Anulada</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="btn-group" role="group">';
+                    botones += `<a href="${data.detalle}" class="btn btn-outline-info btn-sm" title="Ver Detalle"><i class="fas fa-eye"></i> Ver</a>`;
+                    if (data.estado) {
+                        botones += `<a href="${data.anular}" class="btn btn-outline-danger btn-sm" title="Anular Compra"><i class="fas fa-trash-alt"></i> Anular</a>`;
+                    }
+                    botones += "</div>";
+                    return botones;
+                }
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}

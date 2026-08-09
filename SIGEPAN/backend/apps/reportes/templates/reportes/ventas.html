@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+{% boton_ayuda "Reportes" "reporte_ventas" %}
+
+<h2>Reporte de Ventas</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Sucursal</label>
+                <select name="sucursal" class="form-select">
+                    <option value="">Todas</option>
+                    {% for s in sucursales %}
+                        <option value="{{ s.id_sucursal }}" {% if sucursal_id == s.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                            {{ s.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-3">
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&sucursal={{ sucursal_id }}&formato=pdf"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&sucursal={{ sucursal_id }}&formato=excel"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&sucursal={{ sucursal_id }}&formato=sheets"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
+        </div>
+
+        <p><strong>Total del período: ₡{{ total|floatformat:2 }}</strong></p>
+
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarVentas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaVentas" class="w-100"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{{ ventas_json|json_script:"ventas-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ventasElement = document.getElementById("ventas-data");
+    const ventas = ventasElement ? JSON.parse(ventasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaVentas",
+        search: "#buscarVentas",
+        data: ventas,
+        placeholder: "No hay ventas registradas para el rango seleccionado.",
+        columns: [
+            { title: "N° Venta", field: "numero_venta" },
+            { title: "Fecha", field: "fecha" },
+            { title: "Cliente", field: "cliente" },
+            { title: "Usuario", field: "usuario" },
+            { title: "Sucursal", field: "sucursal" },
+            { title: "Método de pago", field: "metodo_pago" },
+            { title: "Total", field: "total", hozAlign: "right", formatter(cell){ return `₡${parseFloat(cell.getValue()||0).toFixed(2)}`; } },
+        ]
+    });
+});
+</script>
+{% endblock %}

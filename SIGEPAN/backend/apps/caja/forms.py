@@ -4,6 +4,7 @@ from .models import (
     Caja,
     AperturaCaja,
     MovimientoCaja,
+    ArqueoCaja,
     CierreCaja
 )
 
@@ -15,17 +16,17 @@ from .models import (
 
 class CajaForm(forms.ModelForm):
 
+
     class Meta:
 
         model = Caja
+
 
         fields = [
 
             "sucursal",
             "nombre",
             "descripcion",
-            "saldo_inicial",
-            "saldo_actual",
             "estado"
 
         ]
@@ -55,32 +56,9 @@ class CajaForm(forms.ModelForm):
                 }
             ),
 
-
-            "saldo_inicial": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "saldo_actual": forms.NumberInput(
-                attrs={
-                    "class": "form-control"
-                }
-            ),
-
-
-            "estado": forms.CheckboxInput(
-                attrs={
-                    "class": "form-check-input"
-                }
-            )
-
         }
 
-
-
-
+        
 # =====================================================
 # APERTURA CAJA
 # =====================================================
@@ -90,14 +68,13 @@ class AperturaCajaForm(forms.ModelForm):
 
     class Meta:
 
-
         model = AperturaCaja
 
 
         fields = [
 
-            "caja",
             "monto_inicial",
+            "turno",
             "observaciones"
 
         ]
@@ -106,16 +83,17 @@ class AperturaCajaForm(forms.ModelForm):
         widgets = {
 
 
-            "caja": forms.Select(
+            "monto_inicial": forms.NumberInput(
                 attrs={
-                    "class": "form-select"
+                    "class": "form-control",
+                    "placeholder": "Ingrese monto inicial"
                 }
             ),
 
 
-            "monto_inicial": forms.NumberInput(
+            "turno": forms.Select(
                 attrs={
-                    "class": "form-control"
+                    "class": "form-select"
                 }
             ),
 
@@ -123,12 +101,62 @@ class AperturaCajaForm(forms.ModelForm):
             "observaciones": forms.Textarea(
                 attrs={
                     "class": "form-control",
-                    "rows": 3
+                    "rows": 3,
+                    "placeholder": "Observaciones de apertura"
                 }
             )
 
+
         }
 
+
+    # =========================================
+    # VALIDAR MONTO INICIAL
+    # =========================================
+
+    def clean_monto_inicial(self):
+
+        monto = self.cleaned_data.get(
+            "monto_inicial"
+        )
+
+
+        if monto is None:
+
+            raise forms.ValidationError(
+                "Debe ingresar un monto inicial."
+            )
+
+
+        if monto < 0:
+
+            raise forms.ValidationError(
+                "El monto inicial no puede ser negativo."
+            )
+
+
+        return monto
+
+
+    # =========================================
+    # VALIDAR TURNO
+    # =========================================
+
+    def clean_turno(self):
+
+        turno = self.cleaned_data.get(
+            "turno"
+        )
+
+
+        if not turno:
+
+            raise forms.ValidationError(
+                "Debe seleccionar el turno."
+            )
+
+
+        return turno
 
 
 
@@ -166,7 +194,8 @@ class MovimientoCajaForm(forms.ModelForm):
 
             "monto": forms.NumberInput(
                 attrs={
-                    "class": "form-control"
+                    "class": "form-control",
+                    "step": "0.01"
                 }
             ),
 
@@ -181,6 +210,143 @@ class MovimientoCajaForm(forms.ModelForm):
         }
 
 
+    # =========================================
+    # VALIDAR MONTO DEL MOVIMIENTO
+    # =========================================
+
+    def clean_monto(self):
+
+        monto = self.cleaned_data.get(
+            "monto"
+        )
+
+
+        if monto is None:
+
+            raise forms.ValidationError(
+                "Debe ingresar un monto."
+            )
+
+
+        if monto <= 0:
+
+            raise forms.ValidationError(
+                "El monto debe ser mayor que cero."
+            )
+
+
+        return monto
+
+    # =========================================
+    # VALIDAR TIPO DE MOVIMIENTO
+    # =========================================
+
+    def clean_tipo_movimiento(self):
+
+        tipo = self.cleaned_data.get(
+            "tipo_movimiento"
+        )
+
+
+        tipos_validos = [
+
+            "VENTA",
+            "INGRESO",
+            "RETIRO",
+            "GASTO",
+            "AJUSTE"
+
+        ]
+
+
+        if tipo not in tipos_validos:
+
+            raise forms.ValidationError(
+                "Tipo de movimiento no permitido."
+            )
+
+
+        return tipo
+
+# =====================================================
+# ARQUEO CAJA
+# =====================================================
+
+class ArqueoCajaForm(forms.ModelForm):
+
+
+    class Meta:
+
+        model = ArqueoCaja
+
+
+        fields = [
+
+            "saldo_contado",
+
+            "observaciones"
+
+        ]
+
+
+        widgets = {
+
+
+            "saldo_contado": forms.NumberInput(
+
+                attrs={
+
+                    "class": "form-control",
+
+                    "step": "0.01",
+
+                    "placeholder": "Ingrese efectivo contado"
+
+                }
+
+            ),
+
+
+            "observaciones": forms.Textarea(
+
+                attrs={
+
+                    "class": "form-control",
+
+                    "rows": 3,
+
+                    "placeholder": "Detalle cualquier diferencia encontrada..."
+
+                }
+
+            )
+
+        }
+
+
+
+    def clean_saldo_contado(self):
+
+        saldo = self.cleaned_data.get(
+            "saldo_contado"
+        )
+
+
+        if saldo is None:
+
+            raise forms.ValidationError(
+                "Debe ingresar el monto contado físicamente."
+            )
+
+
+        if saldo < 0:
+
+            raise forms.ValidationError(
+                "El monto contado no puede ser negativo."
+            )
+
+
+        return saldo
 
 
 # =====================================================
@@ -209,7 +375,9 @@ class CierreCajaForm(forms.ModelForm):
 
             "monto_final": forms.NumberInput(
                 attrs={
-                    "class": "form-control"
+                    "class": "form-control",
+                    "step": "0.01",
+                    "placeholder": "Ingrese efectivo contado"
                 }
             ),
 
@@ -217,8 +385,37 @@ class CierreCajaForm(forms.ModelForm):
             "observaciones": forms.Textarea(
                 attrs={
                     "class": "form-control",
-                    "rows": 3
+                    "rows": 3,
+                    "placeholder": "Detalle cualquier diferencia encontrada..."
                 }
             )
 
         }
+
+
+    # =========================================
+    # VALIDAR MONTO FINAL
+    # =========================================
+
+    def clean_monto_final(self):
+
+        monto = self.cleaned_data.get(
+            "monto_final"
+        )
+
+
+        if monto is None:
+
+            raise forms.ValidationError(
+                "Debe ingresar el monto contado físicamente."
+            )
+
+
+        if monto < 0:
+
+            raise forms.ValidationError(
+                "El monto final no puede ser negativo."
+            )
+
+
+        return monto

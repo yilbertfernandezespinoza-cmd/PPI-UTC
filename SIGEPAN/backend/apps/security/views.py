@@ -1,27 +1,27 @@
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View, TemplateView
 from django.contrib.auth.hashers import check_password, make_password
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 
 from .forms import RolForm, PermisoForm, UsuarioForm, LoginForm, RecuperarPasswordForm, RestablecerPasswordForm
 from .models import Rol, Permiso, Usuario, RolPermiso
 from .mixins import SessionRequiredMixin
-from .services import (
-    registrar_log, RolPermisoService, 
-    RolService, BitacoraService, 
-    RecuperacionPasswordService, UsuarioService, procesar_callback_google)
+from .services import (registrar_log, RolPermisoService, RolService, BitacoraService, RecuperacionPasswordService, UsuarioService, procesar_callback_google)
 from .audit import AuditMixin
 from .permissions import PermissionRequiredMixin
 from apps.configuracion.models import Modulo
 from datetime import datetime, timedelta
 from apps.empleados.models import Empleado
 from apps.security.services import generar_url_google
+from .exports import exportar_bitacora_pdf, exportar_bitacora_excel
+from apps.reportes.google_sheets import exportar_a_google_sheets
 
 class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, ListView):
     model = RolPermiso
@@ -42,7 +42,6 @@ class RolPermisoListView(SessionRequiredMixin, PermissionRequiredMixin, AuditMix
         ).order_by("nombre")
     
     def get_context_data(self, **kwargs):
-        print(">>> Entró a get_context_data")
         context = super().get_context_data(**kwargs)
 
         # Todos los roles
@@ -403,7 +402,7 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
 
             queryset = queryset.filter(
                 Q(username__icontains=busqueda)
-                | Q(email__icontains=busqueda)
+                | Q(id_empleado__correo__icontains=busqueda)
                 | Q(id_empleado__nombre__icontains=busqueda)
                 | Q(id_empleado__apellido1__icontains=busqueda)
             )
@@ -436,6 +435,28 @@ class UsuarioListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
             id_permiso__id_modulo__nombre="Seguridad",
             id_permiso__accion="ELIMINAR",
         ).exists()
+
+        context["usuarios_json"] = [
+            {
+                "id_usuario": u.id_usuario,
+                "username": u.username,
+                "empleado": (
+                    f"{u.id_empleado.nombre} {u.id_empleado.apellido1}"
+                    if u.id_empleado else "-"
+                ),
+                "rol": u.id_rol.nombre if u.id_rol else "-",
+                "sucursal": u.id_sucursal.nombre if u.id_sucursal else "",
+                "correo": (
+                    u.id_empleado.correo
+                    if u.id_empleado and u.id_empleado.correo
+                    else ""
+                ),
+                "estado": u.estado,
+                "editar_url": reverse("security:usuario_update", args=[u.id_usuario]),
+                "deshabilitar_url": reverse("security:usuario_disable", args=[u.id_usuario]),
+            }
+            for u in context["usuarios"]
+        ]
 
         return context
 
@@ -830,117 +851,245 @@ def logout_view(request):
 
     return redirect("security:login")
 
+def cambiar_usuario_view(request):
+
+    usuario_id = request.session.get("usuario_id")
+    usuario = None
+
+    if usuario_id:
+        try:
+            usuario = Usuario.objects.get(id_usuario=usuario_id)
+
+        except Usuario.DoesNotExist:
+            pass
+
+    if usuario:
+
+        registrar_log(
+            request=request,
+            usuario=usuario,
+            modulo="Seguridad",
+            tipo_accion="CAMBIAR_USUARIO",
+            descripcion=f"Cambio de usuario: {usuario.username} cerró sesión para permitir el ingreso de otro usuario.",
+        )
+
+    request.session.pop("usuario_id", None)
+    request.session.pop("username", None)
+    request.session.pop("empleado", None)
+    request.session.pop("rol", None)
+    request.session.pop("sucursal", None)
+
+    messages.info(
+        request,
+        "Sesión cerrada. Ingrese con otro usuario."
+    )
+
+    return redirect("security:login")
 
 class BitacoraIngresosListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
-    """
-    Muestra la bitácora de ingresos al sistema.
-    """
-
     template_name = "security/bitacora_ingresos/list.html"
     context_object_name = "registros"
-
     permission_module = "Seguridad"
     permission_action = "CONSULTAR"
 
     def get_queryset(self):
-
-        queryset = (
-            BitacoraService
-            .listar_ingresos()
+        return BitacoraService.filtrar_ingresos(
+            usuario=self.request.GET.get("usuario", ""),
+            fecha_inicio=self.request.GET.get("fecha_inicio", ""),
+            fecha_fin=self.request.GET.get("fecha_fin", ""),
         )
 
-        usuario = self.request.GET.get(
-            "usuario",
-            "",
-        ).strip()
-
-        fecha_inicio = self.request.GET.get(
-            "fecha_inicio",
-            "",
-        )
-
-        fecha_fin = self.request.GET.get(
-            "fecha_fin",
-            "",
-        )
-
-        if usuario:
-
-            queryset = queryset.filter(
-                id_usuario__username__icontains=usuario
-            )
-
-        if fecha_inicio:
-
-            inicio = datetime.strptime(
-            fecha_inicio,
-            "%Y-%m-%d",
-            )
-
-            inicio = timezone.make_aware(
-            inicio,
-            timezone.get_current_timezone(),
-            )
-
-            queryset = queryset.filter(
-                fecha_hora__gte=inicio
-            )
-
-        if fecha_fin:
-
-            fin = datetime.strptime(
-            fecha_fin,
-            "%Y-%m-%d",
-            )
-
-            fin = fin + timedelta(days=1)
-
-            fin = timezone.make_aware(
-                fin,
-                timezone.get_current_timezone(),
-            )
-
-            queryset = queryset.filter(
-                fecha_hora__lt=fin
-        )
-
-        return queryset
-    
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
+        context["usuario"] = self.request.GET.get("usuario", "")
+        context["fecha_inicio"] = self.request.GET.get("fecha_inicio", "")
+        context["fecha_fin"] = self.request.GET.get("fecha_fin", "")
 
-        context["usuario"] = self.request.GET.get(
-            "usuario",
-            "",
-        )
-
-        context["fecha_inicio"] = self.request.GET.get(
-            "fecha_inicio",
-            "",
-        )
-
-        context["fecha_fin"] = self.request.GET.get(
-            "fecha_fin",
-            "",
-        )
+        context["bitacora_ingresos_json"] = [
+            {
+                "usuario": registro.id_usuario.username if registro.id_usuario else "-",
+                "accion": registro.tipo_accion,
+                "descripcion": registro.descripcion,
+                "ip": registro.ip_origen or "-",
+                "fecha": timezone.localtime(registro.fecha_hora).strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            for registro in context["registros"]
+        ]
 
         return context
-    
-class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
-    """
-    Muestra la bitácora de movimientos del sistema.
-    """
 
+
+class BitacoraMovimientosListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
     template_name = "security/bitacora_movimientos/list.html"
     context_object_name = "registros"
-
     permission_module = "Seguridad"
     permission_action = "CONSULTAR"
 
     def get_queryset(self):
-        return BitacoraService.listar_movimientos()   
-    
+        return BitacoraService.filtrar_movimientos(
+            usuario=self.request.GET.get("usuario", ""),
+            fecha_inicio=self.request.GET.get("fecha_inicio", ""),
+            fecha_fin=self.request.GET.get("fecha_fin", ""),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["usuario"] = self.request.GET.get("usuario", "")
+        context["fecha_inicio"] = self.request.GET.get("fecha_inicio", "")
+        context["fecha_fin"] = self.request.GET.get("fecha_fin", "")
+
+        context["bitacora_movimientos_json"] = [
+            {
+                "usuario": registro.id_usuario.username if registro.id_usuario else "-",
+                "modulo": registro.id_modulo.nombre if registro.id_modulo else "-",
+                "accion": registro.tipo_accion,
+                "descripcion": registro.descripcion,
+                "ip": registro.ip_origen or "-",
+                "fecha": timezone.localtime(registro.fecha_hora).strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            for registro in context["registros"]
+        ]
+
+        return context
+
+class BitacoraIngresosExportPdfView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_ingresos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+        registrar_log(request, request.usuario, "Seguridad", "EXPORTAR", "Exportó bitácora de ingresos a PDF")
+        return exportar_bitacora_pdf(queryset, "Bitácora de Ingresos", "bitacora_ingresos")
+
+
+class BitacoraIngresosExportExcelView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_ingresos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+        registrar_log(request, request.usuario, "Seguridad", "EXPORTAR", "Exportó bitácora de ingresos a Excel")
+        return exportar_bitacora_excel(queryset, "Bitácora de Ingresos", "bitacora_ingresos")
+
+
+class BitacoraIngresosExportSheetsView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_ingresos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+
+        encabezados = ["Usuario", "Acción", "Módulo", "Descripción", "IP Origen", "Fecha y Hora"]
+        filas = [
+            [
+                registro.id_usuario.username if registro.id_usuario else "-",
+                registro.tipo_accion,
+                registro.id_modulo.nombre if registro.id_modulo else "-",
+                registro.descripcion or "-",
+                registro.ip_origen or "-",
+                registro.fecha_hora.strftime("%d/%m/%Y %H:%M:%S"),
+            ]
+            for registro in queryset
+        ]
+
+        try:
+            url_hoja = exportar_a_google_sheets(
+                request.usuario, "Bitácora de Ingresos", encabezados, filas
+            )
+            registrar_log(
+                request, request.usuario, "Seguridad", "EXPORTAR",
+                "Exportó bitácora de ingresos a Google Sheets"
+            )
+            return redirect(url_hoja)
+        except ValidationError as error:
+            messages.error(request, str(error))
+            registrar_log(
+                request, request.usuario, "Seguridad", "ERROR",
+                f"Falló la exportación de bitácora de ingresos a Google Sheets: {error}"
+            )
+            return redirect("security:bitacora_ingresos")
+
+
+class BitacoraMovimientosExportPdfView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_movimientos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+        registrar_log(request, request.usuario, "Seguridad", "EXPORTAR", "Exportó bitácora de movimientos a PDF")
+        return exportar_bitacora_pdf(queryset, "Bitácora de Movimientos", "bitacora_movimientos")
+
+
+class BitacoraMovimientosExportExcelView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_movimientos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+        registrar_log(request, request.usuario, "Seguridad", "EXPORTAR", "Exportó bitácora de movimientos a Excel")
+        return exportar_bitacora_excel(queryset, "Bitácora de Movimientos", "bitacora_movimientos")
+
+
+class BitacoraMovimientosExportSheetsView(SessionRequiredMixin, PermissionRequiredMixin, View):
+    permission_module = "Seguridad"
+    permission_action = "CONSULTAR"
+
+    def get(self, request):
+        queryset = BitacoraService.filtrar_movimientos(
+            usuario=request.GET.get("usuario", ""),
+            fecha_inicio=request.GET.get("fecha_inicio", ""),
+            fecha_fin=request.GET.get("fecha_fin", ""),
+        )
+
+        encabezados = ["Usuario", "Acción", "Módulo", "Descripción", "IP Origen", "Fecha y Hora"]
+        filas = [
+            [
+                registro.id_usuario.username if registro.id_usuario else "-",
+                registro.tipo_accion,
+                registro.id_modulo.nombre if registro.id_modulo else "-",
+                registro.descripcion or "-",
+                registro.ip_origen or "-",
+                registro.fecha_hora.strftime("%d/%m/%Y %H:%M:%S"),
+            ]
+            for registro in queryset
+        ]
+
+        try:
+            url_hoja = exportar_a_google_sheets(
+                request.usuario, "Bitácora de Movimientos", encabezados, filas
+            )
+            registrar_log(
+                request, request.usuario, "Seguridad", "EXPORTAR",
+                "Exportó bitácora de movimientos a Google Sheets"
+            )
+            return redirect(url_hoja)
+        except ValidationError as error:
+            messages.error(request, str(error))
+            registrar_log(
+                request, request.usuario, "Seguridad", "ERROR",
+                f"Falló la exportación de bitácora de movimientos a Google Sheets: {error}"
+            )
+            return redirect("security:bitacora_movimientos")
 
 class PerfilView(TemplateView):
     template_name = "security/perfil/perfil.html"    
@@ -954,7 +1103,6 @@ class PerfilView(TemplateView):
             password_nueva=request.POST.get("password_nueva"),
             password_confirmacion=request.POST.get("password_confirmacion"),
         )
-        print(resultado)
         if resultado["success"]:
             messages.success(request, resultado["message"])
         else:
@@ -1019,11 +1167,15 @@ def google_callback(request):
         usuario.google_email = datos_google["google_email"]
         usuario.google_token = datos_google["token"]
 
+        if datos_google.get("refresh_token"):
+            usuario.google_refresh_token = datos_google["refresh_token"]
+
         usuario.save(
             update_fields=[
                 "google_id",
                 "google_email",
                 "google_token",
+                "google_refresh_token"
             ]
         )
 
@@ -1069,12 +1221,14 @@ def google_desvincular(request):
         usuario.google_email = None
         usuario.google_id = None
         usuario.google_token = None
+        usuario.google_refresh_token = None
 
         usuario.save(
             update_fields=[
                 "google_email",
                 "google_id",
                 "google_token",
+                "google_refresh_token",
             ]
         )
 

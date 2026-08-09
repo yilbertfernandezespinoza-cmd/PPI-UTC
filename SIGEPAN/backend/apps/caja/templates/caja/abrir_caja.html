@@ -1,57 +1,182 @@
 {% extends "base.html" %}
 
-
 {% block content %}
+<div class="container-fluid mt-4">
 
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">
+                <i class="bi bi-unlock text-success me-2"></i> Apertura de Caja
+            </h2>
+            <small class="text-muted">
+                Inicio de jornada operativa para registro de ventas y movimientos.
+            </small>
+        </div>
+        <a href="{% url 'caja:lista_cajas' %}" class="btn btn-outline-dark d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-arrow-left"></i> Volver a Cajas
+        </a>
+    </div>
 
-<div class="container mt-4">
+    <!-- ===================================== -->
+    <!-- FORMULARIO DE APERTURA -->
+    <!-- ===================================== -->
+    <form method="POST">
+        {% csrf_token %}
 
+        <!-- DATOS DE APERTURA -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Datos de Apertura
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- CAJA SELECCIONADA -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold text-muted">Caja asignada</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                            <input type="text" class="form-control bg-light" value="{{ caja.nombre }}" readonly>
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            La caja fue seleccionada previamente y no puede modificarse durante la apertura.
+                        </small>
+                    </div>
 
-<h2>
-Apertura de caja
-</h2>
+                    <!-- MONTO INICIAL -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold text-dark">Monto inicial <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">₡</span>
+                            {{ form.monto_inicial }}
+                        </div>
+                        {% if form.monto_inicial.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.monto_inicial.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
 
+                <div class="row">
+                    <!-- TURNO -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-dark">Turno <span class="text-danger">*</span></label>
+                        {{ form.turno }}
+                        {% if form.turno.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.turno.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
 
+                    <!-- USUARIO -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-muted">Usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control bg-light" value="{{ request.usuario }}" readonly>
+                        </div>
+                    </div>
 
-<div class="alert alert-info">
+                    <!-- SUCURSAL -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-muted">Sucursal</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-shop"></i></span>
+                            <input type="text" class="form-control bg-light" value="{{ request.usuario.id_sucursal }}" readonly>
+                        </div>
+                    </div>
 
-Ingrese el monto inicial disponible en caja.
+                    <!-- FECHA -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold text-muted">Fecha</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                            <input type="text" class="form-control bg-light" value="{% now 'd/m/Y H:i' %}" readonly>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- OBSERVACIONES -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark">Observaciones</label>
+                    {{ form.observaciones }}
+                    {% if form.observaciones.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.observaciones.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================== -->
+        <!-- ACCIONES -->
+        <!-- ===================================== -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-warning me-2"></i> Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-center gap-3">
+                    <!-- ABRIR CAJA -->
+                    <button type="submit" 
+                            class="btn btn-success d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" 
+                            style="width:90px; height:80px;" 
+                            data-bs-toggle="tooltip" 
+                            title="Confirmar apertura">
+                        <i class="bi bi-unlock fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Abrir Caja</span>
+                    </button>
+
+                    <!-- VOLVER -->
+                    <a href="{% url 'caja:lista_cajas' %}" 
+                       class="btn btn-outline-secondary d-flex flex-column align-items-center justify-content-center p-2 rounded shadow-sm" 
+                       style="width:90px; height:80px;" 
+                       data-bs-toggle="tooltip" 
+                       title="Cancelar y volver">
+                        <i class="bi bi-arrow-left fs-3 mb-1"></i>
+                        <span style="font-size: 0.75rem;">Cancelar</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
+{% endblock %}
 
+{% block js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Asegurar que los widgets generados por Django tengan las clases de Bootstrap correctas
+        const montoInput = document.querySelector("#id_monto_inicial");
+        if (montoInput && !montoInput.classList.contains('form-control')) {
+            montoInput.classList.add('form-control');
+        }
 
+        const obsInput = document.querySelector("#id_observaciones");
+        if (obsInput && !obsInput.classList.contains('form-control')) {
+            obsInput.classList.add('form-control');
+            obsInput.rows = 3;
+        }
 
-<form method="POST">
+        const turnoInput = document.querySelector("#id_turno");
+        if (turnoInput && !turnoInput.classList.contains('form-select')) {
+            turnoInput.classList.add('form-select');
+        }
 
-
-{% csrf_token %}
-
-
-{{ form.as_p }}
-
-
-
-<button class="btn btn-success">
-
-Abrir caja
-
-</button>
-
-
-
-<a href="{% url 'caja:lista_cajas' %}"
-class="btn btn-secondary">
-
-Cancelar
-
-</a>
-
-
-
-</form>
-
-
-</div>
-
-
+        // Inicializar Tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
 {% endblock %}

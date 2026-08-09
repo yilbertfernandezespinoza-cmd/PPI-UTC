@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- ===================================== -->
+    <!-- ENCABEZADO -->
+    <!-- ===================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-pencil-square text-primary me-2"></i> Editar Caja
+            </h2>
+
+            <small class="text-muted">
+                Modifique la configuración permanente de la caja.
+            </small>
+
+        </div>
+
+    </div>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <!-- ===================================== -->
+        <!-- DATOS DE LA CAJA -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header bg-white py-3">
+
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i> Información General
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <!-- SUCURSAL -->
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold text-dark">
+                        Sucursal
+                    </label>
+
+                    {{ form.sucursal }}
+
+                    {% if form.sucursal.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.sucursal.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- NOMBRE -->
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold text-dark">
+                        Nombre <span class="text-danger">*</span>
+                    </label>
+
+                    {{ form.nombre }}
+
+                    {% if form.nombre.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.nombre.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- DESCRIPCIÓN -->
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold text-dark">
+                        Descripción
+                    </label>
+
+                    {{ form.descripcion }}
+
+                    {% if form.descripcion.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.descripcion.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- ESTADO -->
+
+                <div class="form-check form-switch mb-3">
+                    {{ form.estado }}
+                    <label class="form-check-label fw-semibold text-dark ms-2" id="estadoLabel">
+                        Activa
+                    </label>
+
+                    {% if form.estado.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.estado.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+        </div>
+             
+        <!-- ===================================== -->
+        <!-- ACCIONES -->
+        <!-- ===================================== -->
+
+        <div class="card shadow-sm border-0 mb-4">
+
+            <div class="card-header bg-white py-3">
+
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tools text-secondary me-2"></i> Acciones
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-center gap-3">
+
+                    <!-- GUARDAR -->
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-success d-flex align-items-center justify-content-center shadow-sm"
+                        style="width:70px;height:70px;"
+                        data-bs-toggle="tooltip"
+                        title="Guardar cambios">
+                    
+                        <i class="bi bi-check-circle fs-3"></i>
+
+                    </button>
+
+                    <!-- VOLVER -->
+
+                    <a href="{% url 'caja:administrar_caja' caja.id_caja %}"
+                       class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm"
+                       style="width:70px;height:70px;"
+                       data-bs-toggle="tooltip"
+                       title="Volver">
+
+                        <i class="bi bi-arrow-left fs-3"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Asegurar clases de Bootstrap en los inputs generados por Django
+    const sucursalSelect = document.querySelector("#id_sucursal");
+    if (sucursalSelect && !sucursalSelect.classList.contains('form-select')) {
+        sucursalSelect.classList.add('form-select');
+    }
+
+    const nombreInput = document.querySelector("#id_nombre");
+    if (nombreInput && !nombreInput.classList.contains('form-control')) {
+        nombreInput.classList.add('form-control');
+    }
+
+    const descInput = document.querySelector("#id_descripcion");
+    if (descInput && !descInput.classList.contains('form-control')) {
+        descInput.classList.add('form-control');
+        descInput.rows = 3;
+    }
+
+    const estadoCheck = document.querySelector("#id_estado");
+    const estadoLabel = document.querySelector("#estadoLabel");
+    if (estadoCheck) {
+        estadoCheck.classList.add('form-check-input');
+        
+        // Dinámica para actualizar el texto de la etiqueta según el estado del checkbox
+        function actualizarLabelEstado() {
+            if (estadoCheck.checked) {
+                estadoLabel.textContent = "Activa";
+                estadoLabel.className = "form-check-label fw-semibold text-success ms-2";
+            } else {
+                estadoLabel.textContent = "Inactiva";
+                estadoLabel.className = "form-check-label fw-semibold text-danger ms-2";
+            }
+        }
+        
+        actualizarLabelEstado();
+        estadoCheck.addEventListener('change', actualizarLabelEstado);
+    }
+
+    // Inicializar Tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+
+{% endblock %}

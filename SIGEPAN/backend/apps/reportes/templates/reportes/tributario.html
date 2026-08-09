@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+{% boton_ayuda "Reportes" "reporte_tributario" %}
+
+<h2>Reporte Tributario Mensual</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-3">
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=pdf"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=excel"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=sheets"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
+        </div>
+
+        <p><strong>Total de ventas del período: ₡{{ total_ventas|floatformat:2 }}</strong></p>
+
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarTributario" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar...">
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="tablaTributario" class="w-100"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{{ por_metodo_json|json_script:"tributario-data" }}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tributarioElement = document.getElementById("tributario-data");
+    const tributario = tributarioElement ? JSON.parse(tributarioElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaTributario",
+        search: "#buscarTributario",
+        data: tributario,
+        placeholder: "No hay ventas registradas en este período.",
+        rowFormatter(row){
+            const data = row.getData();
+            if (data.metodo_pago === "TOTAL GENERAL") {
+                row.getElement().classList.add("fw-bold", "table-secondary");
+            }
+        },
+        columns: [
+            { title: "Método de pago", field: "metodo_pago" },
+            { title: "Total", field: "total", hozAlign: "right", formatter(cell){ return `₡${parseFloat(cell.getValue()||0).toFixed(2)}`; } },
+        ]
+    });
+});
+</script>
+{% endblock %}

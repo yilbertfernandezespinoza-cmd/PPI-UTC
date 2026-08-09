@@ -26,6 +26,7 @@ class Cargo(BaseModel):
     )
 
     class Meta:
+        managed = False
         db_table = "cargo"
         verbose_name = "Cargo"
         verbose_name_plural = "Cargos"
@@ -102,6 +103,7 @@ class Empleado(BaseModel):
     )
 
     class Meta:
+        managed = False
         db_table = "empleado"
         verbose_name = "Empleado"
         verbose_name_plural = "Empleados"

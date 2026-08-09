@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+
+{% block content %}
+
+{% boton_ayuda "Reportes" "reporte_utilidad" %}
+
+<h2>Reporte de Utilidad Estimada</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <form method="get" class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+            </div>
+
+        </form>
+
+        <div class="mb-4">
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=pdf"
+               class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=excel"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&formato=sheets"
+               class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="bi bi-google"></i> Exportar a Google Sheets
+            </a>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <small class="text-muted">Ventas totales</small>
+                        <h3>₡{{ total_ventas|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-danger">
+                    <div class="card-body">
+                        <small class="text-muted">Costos estimados</small>
+                        <h3>₡{{ costos|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <small class="text-muted">Utilidad bruta</small>
+                        <h3>₡{{ utilidad|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

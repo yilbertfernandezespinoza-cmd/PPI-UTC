@@ -1,173 +1,172 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block content %}
 
-<h2>Usuarios</h2>
+{% boton_ayuda "Seguridad" "usuarios" %}
 
-<div class="row mb-3">
-
-    <div class="col-md-5">
-
-        <input
-            type="text"
-            id="buscarUsuarios"
-            class="form-control"
-            placeholder="Buscar por usuario, empleado o correo..."
-        >
-
-    </div>
-
+<!-- Contenedor con permisos y csrf limpios para el linter -->
+<div id="usuario-config"
+     data-puede-modificar="{{ puede_modificar|yesno:'true,false' }}"
+     data-puede-eliminar="{{ puede_eliminar|yesno:'true,false' }}"
+     data-csrf="{{ csrf_token }}"
+     class="d-none">
 </div>
 
-{% if puede_crear %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Usuarios</h2>
 
-    <a
-        href="{% url 'security:usuario_create' %}"
-        class="btn btn-primary mb-3"
-    >
-        Nuevo Usuario
-    </a>
+    {% if puede_crear %}
+        <a
+            href="{% url 'security:usuario_create' %}"
+            class="btn btn-primary"
+        >
+            Nuevo Usuario
+        </a>
+    {% endif %}
+</div>
 
-{% endif %}
+<div class="card shadow-sm mb-3 border-0">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" id="buscarUsuarios" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por usuario, empleado o correo...">
+        </div>
+    </div>
+</div>
 
-<div id="tablaUsuarios"></div>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div id="tablaUsuarios" class="w-100"></div>
+    </div>
+</div>
+
+{{ usuarios_json|json_script:"usuarios-data" }}
 
 {% endblock %}
 
 {% block js %}
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
 
-const usuarios = [
+    const configEl = document.getElementById("usuario-config");
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
 
-{% for usuario in usuarios %}
+    const usuariosElement = document.getElementById("usuarios-data");
+    const usuarios = usuariosElement ? JSON.parse(usuariosElement.textContent) : [];
+    usuarios.forEach(u => { u.csrfToken = csrfTokenGlobal; });
 
-{
-    id: "{{ usuario.id_usuario }}",
-    usuario: "{{ usuario.username|escapejs }}",
-    empleado: "{{ usuario.id_empleado.nombre|escapejs }} {{ usuario.id_empleado.apellido1|escapejs }}",
-    rol: "{{ usuario.id_rol.nombre|escapejs }}",
-    sucursal: "{% if usuario.id_sucursal %}{{ usuario.id_sucursal.nombre|escapejs }}{% endif %}",
-    correo: "{{ usuario.id_empleado.correo|default:''|escapejs }}",
-    estado: {{ usuario.estado|yesno:"true,false" }},
-    editar: "{% url 'security:usuario_update' usuario.id_usuario %}",
+    SIGEPAN.table.create({
 
-    deshabilitar: "{% url 'security:usuario_disable' usuario.id_usuario %}",
-    csrfToken: "{{ csrf_token }}"
-}{% if not forloop.last %},{% endif %}
+        selector: "#tablaUsuarios",
 
-{% endfor %}
+        search: "#buscarUsuarios",
 
-];
+        data: usuarios,
 
-console.log("Usuarios:", usuarios);
+        placeholder: "No hay usuarios registrados.",
 
-SIGEPAN.table.create({
+        columns: [
 
-    selector: "#tablaUsuarios",
-
-    search: "#buscarUsuarios",
-
-    data: usuarios,
-
-    columns: [
-
-        {
-            title: "ID",
-            field: "id"
-        },
-
-        {
-            title: "Usuario",
-            field: "usuario"
-        },
-
-        {
-            title: "Empleado",
-            field: "empleado"
-        },
-
-        {
-            title: "Rol",
-            field: "rol"
-        },
-
-        {
-            title: "Sucursal",
-            field: "sucursal"
-        },
-
-        {
-            title: "Correo",
-            field: "correo"
-        },
-
-        {
-            title: "Estado",
-            field: "estado",
-
-            formatter(cell){
-                return cell.getValue()
-                    ? '<span class="badge bg-success">Activo</span>'
-                    : '<span class="badge bg-danger">Inactivo</span>';
-            }
-        },
-
-        {
-            title: "Acciones",
-            hozAlign: "center",
-
-            formatter(cell) {
-
-                const data = cell.getRow().getData();
-
-                return `
-                    <div class="d-flex gap-1 justify-content-center">
-
-                        <a
-                            href="${data.editar}"
-                            class="btn btn-warning btn-sm"
-                        >
-                            Editar
-                        </a>
-
-                        <button
-                            class="btn btn-danger btn-sm btn-deshabilitar"
-                        >
-                            Deshabilitar
-                        </button>
-
-                    </div>
-                `;
-
+            {
+                title: "ID",
+                field: "id_usuario"
             },
 
-            cellClick(e, cell) {
+            {
+                title: "Usuario",
+                field: "username"
+            },
 
-                if (!e.target.classList.contains("btn-deshabilitar")) {
-                    return;
+            {
+                title: "Empleado",
+                field: "empleado"
+            },
+
+            {
+                title: "Rol",
+                field: "rol"
+            },
+
+            {
+                title: "Sucursal",
+                field: "sucursal"
+            },
+
+            {
+                title: "Correo",
+                field: "correo"
+            },
+
+            {
+                title: "Estado",
+                field: "estado",
+
+                formatter(cell){
+                    return cell.getValue()
+                        ? '<span class="badge bg-success">Activo</span>'
+                        : '<span class="badge bg-danger">Inactivo</span>';
                 }
+            },
 
-                const data = cell.getRow().getData();
+            {
+                title: "Acciones",
+                hozAlign: "center",
 
-                SIGEPAN.table.postAction({
+                formatter(cell) {
 
-                    url: data.deshabilitar,
+                    const data = cell.getRow().getData();
 
-                    csrfToken: data.csrfToken,
-            
-                    message: "¿Desea deshabilitar este usuario?"
+                    return `
+                        <div class="d-flex gap-1 justify-content-center">
 
-                });
+                            <a
+                                href="${data.editar_url}"
+                                class="btn btn-outline-info btn-sm"
+                            >
+                                Editar
+                            </a>
+
+                            <button
+                                class="btn btn-outline-danger btn-sm btn-deshabilitar"
+                            >
+                                Deshabilitar
+                            </button>
+
+                        </div>
+                    `;
+
+                },
+
+                cellClick(e, cell) {
+
+                    if (!e.target.classList.contains("btn-deshabilitar")) {
+                        return;
+                    }
+
+                    const data = cell.getRow().getData();
+
+                    SIGEPAN.table.postAction({
+
+                        url: data.deshabilitar_url,
+
+                        csrfToken: data.csrfToken,
+
+                        message: "¿Desea deshabilitar este usuario?"
+
+                    });
+
+                }
 
             }
 
-        }
+        ]
 
-    ]
+    });
 
 });
-
 </script>
 
 {% endblock %}

@@ -1,46 +1,60 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 
 <section class="content">
     <div class="container-fluid">
-
-        <div class="card">
-
+        <div class="card card-outline card-primary">
             <div class="card-header">
-                <h3 class="card-title">Editar Producto</h3>
-
-                <a href="{% url 'productos:lista_productos' %}"
-                   class="btn btn-secondary float-right">
-                    Volver
-                </a>
+                <h3 class="card-title font-weight-bold pt-1">
+                    <i class="fas fa-edit mr-2"></i> Editar Producto
+                </h3>
             </div>
 
             <div class="card-body">
-
-                <form method="post">
+                <!-- Importante: enctype añadido por si manejas imágenes -->
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
-                    {% for field in form %}
-                        {% if field.name != 'estado' %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {{ field }}
+                    {% if form.instance.imagen %}
+                        <div class="mb-3">
+                            <img
+                                src="{% get_media_prefix %}{{ form.instance.imagen }}"
+                                alt="Imagen actual"
+                                style="max-height: 100px;"
+                                class="d-block rounded border mb-1"
+                            >
+                            <small class="text-muted">Imagen actual. Suba un archivo nuevo para reemplazarla.</small>
+                        </div>
+                    {% endif %}
 
-                                {% if field.errors %}
-                                    <div class="text-danger">
-                                        {{ field.errors }}
+                    <div class="row">
+                        <!-- Iteramos sobre los campos excluyendo 'estado' para ordenarlos en dos columnas de forma limpia -->
+                        {% for field in form %}
+                            {% if field.name != 'estado' %}
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ field.label_tag }}
+                                        {{ field }}
+
+                                        {% if field.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {{ field.errors }}
+                                            </div>
+                                        {% endif %}
                                     </div>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
 
-                    <!-- Estado -->
+                    <hr class="my-3">
+
+                    <!-- Sección del Estado con diseño interactivo -->
                     <div class="form-group">
                         <label for="id_estado">
-                            <strong>Estado:</strong>
+                            <strong>Estado del Producto:</strong>
                         </label>
-
                         <div class="form-check">
                             <input
                                 type="checkbox"
@@ -49,58 +63,50 @@
                                 name="estado"
                                 {% if form.estado.value %}checked{% endif %}
                             >
-
                             <label class="form-check-label" for="id_estado">
-                                <span
-                                    id="estado_label"
-                                    class="{% if form.estado.value %}text-success{% else %}text-danger{% endif %}">
-                                    {% if form.estado.value %}
-                                        Activo
-                                    {% else %}
-                                        Inactivo
-                                    {% endif %}
+                                <span id="estado_label" class="font-weight-bold {% if form.estado.value %}text-success{% else %}text-danger{% endif %}">
+                                    {% if form.estado.value %}Activo{% else %}Inactivo{% endif %}
                                 </span>
                             </label>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
-                        Actualizar
-                    </button>
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save mr-1"></i> Actualizar Producto
+                        </button>
+                        <a href="{% url 'productos:lista_productos' %}" class="btn btn-danger ml-2 px-3">
+                            <i class="fas fa-arrow-left mr-1"></i> Cancelar y Volver
+                        </a>
+                    </div>
 
                 </form>
-
             </div>
-
         </div>
-
     </div>
 </section>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
     const checkbox = document.getElementById("id_estado");
     const label = document.getElementById("estado_label");
 
-    function actualizarEstado() {
-
-        if (checkbox.checked) {
-            label.textContent = "Activo";
-            label.classList.remove("text-danger");
-            label.classList.add("text-success");
-        } else {
-            label.textContent = "Inactivo";
-            label.classList.remove("text-success");
-            label.classList.add("text-danger");
+    if (checkbox && label) {
+        function actualizarEstado() {
+            if (checkbox.checked) {
+                label.textContent = "Activo";
+                label.classList.remove("text-danger");
+                label.classList.add("text-success");
+            } else {
+                label.textContent = "Inactivo";
+                label.classList.remove("text-success");
+                label.classList.add("text-danger");
+            }
         }
 
+        actualizarEstado();
+        checkbox.addEventListener("change", actualizarEstado);
     }
-
-    actualizarEstado();
-
-    checkbox.addEventListener("change", actualizarEstado);
-
 });
 </script>
 

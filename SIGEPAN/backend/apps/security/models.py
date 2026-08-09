@@ -66,6 +66,12 @@ class Usuario(BaseModel):
         db_column="google_token"
     )
 
+    google_refresh_token = models.TextField(
+        blank=True,
+        null=True,
+        db_column="google_refresh_token"
+    )
+
     ultimo_acceso = models.DateTimeField(
         blank=True,
         null=True,
@@ -73,6 +79,15 @@ class Usuario(BaseModel):
     )
 
     class Meta:
+        # managed=False (07-08): apps.security se había quedado como la
+        # única excepción sin este flag, a pesar de que el resto del
+        # proyecto (categorías, productos, clientes, ayuda...) ya sigue
+        # el enfoque Database First — la tabla `usuario` ya existe en la
+        # BD real, Django no debe intentar migrarla nunca. Corregido
+        # después de agregar por error dos migraciones nuevas
+        # (0002/0003) que hubieran requerido correr `migrate`, algo que
+        # el equipo decidió evitar explícitamente.
+        managed = False
         db_table = "usuario"
         verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
@@ -106,6 +121,8 @@ class Rol(BaseModel):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "rol"
         verbose_name = "Rol"
         verbose_name_plural = "Roles"
@@ -146,6 +163,8 @@ class Permiso(BaseModel):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "permiso"
         verbose_name = "Permiso"
         verbose_name_plural = "Permisos"
@@ -179,10 +198,13 @@ class RolPermiso(models.Model):
     )
 
     fecha_creacion = models.DateTimeField(
-        db_column="fecha_creacion"
+        db_column="fecha_creacion",
+        auto_now_add=True,
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "rol_permiso"
         verbose_name = "Rol - Permiso"
         verbose_name_plural = "Roles - Permisos"
@@ -222,6 +244,12 @@ class LogAcciones(models.Model):
         ("ACCESO_DENEGADO","ACCESO DENEGADO"),
         ("RECUPERAR_PASSWORD","RECUPERAR CONTRASEÑA"),
         ("CAMBIAR_PASSWORD","CAMBIAR CONTRASEÑA"),
+        # Agregado 06-08 (RF-034): antes se reutilizaba "LOGOUT" para
+        # registrar un cambio de usuario, lo cual mezclaba en la bitácora
+        # un cierre de sesión real con un cambio de usuario. Requiere
+        # correr el ALTER TABLE de log_acciones (ver nota técnica) antes
+        # de usar este valor contra la BD real.
+        ("CAMBIAR_USUARIO","CAMBIAR USUARIO"),
     ]
 
     tipo_accion = models.CharField(
@@ -255,6 +283,8 @@ class LogAcciones(models.Model):
     )
 
     class Meta:
+        # managed=False (07-08): mismo motivo que Usuario.Meta más arriba.
+        managed = False
         db_table = "log_acciones"
         verbose_name = "Log de acciones"
-        verbose_name_plural = "Logs de acciones"    
+        verbose_name_plural = "Logs de acciones"

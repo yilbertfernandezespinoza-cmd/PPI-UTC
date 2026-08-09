@@ -4,6 +4,7 @@ from .models import (
     Caja,
     AperturaCaja,
     MovimientoCaja,
+    ArqueoCaja,
     CierreCaja
 )
 
@@ -169,7 +170,46 @@ class MovimientoCajaAdmin(admin.ModelAdmin):
     )
 
 
+# =====================================================
+# ADMIN ARQUEO CAJA
+# =====================================================
 
+@admin.register(ArqueoCaja)
+class ArqueoCajaAdmin(admin.ModelAdmin):
+
+
+    list_display = (
+
+        "id_arqueo",
+        "apertura",
+        "usuario",
+        "fecha_arqueo",
+        "saldo_sistema",
+        "saldo_contado",
+        "diferencia"
+
+    )
+
+
+    list_filter = (
+
+        "fecha_arqueo",
+
+    )
+
+
+    search_fields = (
+
+        "apertura__caja__nombre",
+
+    )
+
+
+    readonly_fields = (
+
+        "fecha_creacion",
+
+    )
 
 
 # =====================================================

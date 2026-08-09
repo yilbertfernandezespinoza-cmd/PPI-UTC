@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block content %}
+
+{% boton_ayuda "Seguridad" "asignacion_permisos" %}
 
 <h2>Asignación de Permisos</h2>
 
@@ -76,7 +80,7 @@
 
         <button
             type="button"
-            class="btn btn-success"
+            class="btn btn-outline-success"
             onclick="mostrarPanelRol()"
         >
 
@@ -88,7 +92,7 @@
 
         <button
             type="button"
-            class="btn btn-warning"
+            class="btn btn-outline-warning"
             onclick="mostrarPanelEditarRol()"
         >
 
@@ -100,7 +104,7 @@
 
         <button
             type="button"
-            class="btn btn-danger"
+            class="btn btn-outline-danger"
             onclick="deshabilitarRol()"
         >
 

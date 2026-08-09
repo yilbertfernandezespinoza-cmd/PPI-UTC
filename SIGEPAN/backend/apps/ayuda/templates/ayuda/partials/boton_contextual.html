@@ -1,0 +1,49 @@
+{% load static %}
+<button type="button"
+        class="btn btn-primary rounded-circle shadow"
+        style="position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; z-index: 1050;"
+        data-bs-toggle="modal"
+        data-bs-target="#modalAyuda{{ modulo_id }}{{ pantalla_id }}"
+        title="Ayuda">
+    <i class="bi bi-question-lg"></i>
+</button>
+
+<div class="modal fade" id="modalAyuda{{ modulo_id }}{{ pantalla_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {% if ayuda %}{{ ayuda.titulo }}{% else %}Ayuda{% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                {% if ayuda %}
+                    {% if ayuda.imagen %}
+                        <img
+                            src="{% get_media_prefix %}{{ ayuda.imagen }}"
+                            alt="{{ ayuda.titulo }}"
+                            class="img-fluid rounded mb-3"
+                        >
+                    {% endif %}
+                    {{ ayuda.contenido|linebreaks }}
+                {% else %}
+                    <p class="text-muted">
+                        Todavía no hay contenido de ayuda registrado para esta pantalla.
+                        Puedes agregarlo desde Configuración → Ayudas.
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <a href="{% url 'ayuda:list' %}" class="btn btn-outline-secondary btn-sm">
+                    Administrar ayudas
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>

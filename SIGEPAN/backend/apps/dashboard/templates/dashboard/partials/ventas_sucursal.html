@@ -1,0 +1,32 @@
+<div class="card mb-4">
+
+    <div class="card-header">
+        <strong>Ventas por sucursal (últimos 30 días)</strong>
+    </div>
+
+    <div class="card-body">
+
+        {% if ventas_por_sucursal %}
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Sucursal</th>
+                    <th class="text-end">Total vendido</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in ventas_por_sucursal %}
+                <tr>
+                    <td>{{ item.caja__sucursal__nombre|default:"Sin sucursal" }}</td>
+                    <td class="text-end">₡{{ item.total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mb-0">Todavía no hay ventas registradas en este período.</p>
+        {% endif %}
+
+    </div>
+
+</div>

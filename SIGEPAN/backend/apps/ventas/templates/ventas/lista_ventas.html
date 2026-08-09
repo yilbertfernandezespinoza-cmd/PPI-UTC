@@ -1,163 +1,144 @@
 {% extends "base.html" %}
 
+{% load ayuda_tags %}
+
 {% block content %}
 
-<div class="container mt-4">
+{% boton_ayuda "Ventas" "ventas" %}
 
+<div class="container-fluid py-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-
-        <h2>
-            Ventas
-        </h2>
-
-
-        <a href="{% url 'ventas:crear_venta' %}"
-           class="btn btn-primary">
-
-            Nueva venta
-
-        </a>
-
+    <!-- ENCABEZADO Y FILTRO SIMÉTRICO -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-12 col-md-4">
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="fas fa-file-invoice-dollar me-2"></i> Reporte de Ventas Diarias
+            </h2>
+            <p class="text-muted small mb-0">Control y auditoría de transacciones del día</p>
+        </div>
+        <div class="col-12 col-md-8">
+            <form method="GET" class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+                <div class="input-group input-group-sm w-auto">
+                    <span class="input-group-text bg-light border-secondary-subtle"><i class="fas fa-calendar"></i></span>
+                    <input type="date" name="fecha" value="{{ fecha_filtro|date:'Y-m-d' }}" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 px-3 shadow-sm" style="font-size: 18px;">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'ventas:crear_venta' %}" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1 px-3 shadow-sm" style="font-size: 18px;">
+                    <i class="fas fa-plus"></i> Nueva venta
+                </a>
+                {% if apertura %}
+                    {% comment %}
+                        Bug corregido (05-08): usaba apertura.id_apertura (PK de AperturaCaja) en vez del
+                        id_caja real, así que el link caía sobre un id_caja que casi nunca existía.
+                    {% endcomment %}
+                    <a href="{% url 'caja:administrar_caja' apertura.caja_id %}" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3 shadow-sm" style="font-size: 18px;">
+                        <i class="fas fa-arrow-left"></i> Volver a Caja
+                    </a>
+                {% else %}
+                    <a href="javascript:history.back()" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 px-3 shadow-sm" style="font-size: 18px;">
+                        <i class="fas fa-arrow-left"></i> Volver a Caja
+                    </a>
+                {% endif %}
+            </form>
+        </div>
     </div>
 
-
-
-    <table class="table table-striped">
-
-
-        <thead>
-
-            <tr>
-
-                <th>Número</th>
-                <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-
-            </tr>
-
-        </thead>
-
-
-
-        <tbody>
-
-
-        {% for venta in ventas %}
-
-
-            <tr>
-
-
-                <td>
-                    {{ venta.numero_venta }}
-                </td>
-
-
-                <td>
-
-                    {% if venta.cliente %}
-
-                        {{ venta.cliente }}
-
-                    {% else %}
-
-                        Cliente general
-
-                    {% endif %}
-
-                </td>
-
-
-                <td>
-                    {{ venta.fecha|date:"d/m/Y H:i" }}
-                </td>
-
-
-                <td>
-                    ₡ {{ venta.total }}
-                </td>
-
-
-                <td>
-
-                    {% if venta.estado %}
-
-                        <span class="badge bg-success">
-                            Activa
-                        </span>
-
-                    {% else %}
-
-                        <span class="badge bg-danger">
-                            Anulada
-                        </span>
-
-                    {% endif %}
-
-
-                </td>
-
-
-
-                <td>
-
-
-                    <a href="{% url 'ventas:detalle_venta' venta.id_venta %}"
-                       class="btn btn-info btn-sm">
-
-                        Ver
-
-                    </a>
-
-
-
-                    {% if venta.estado %}
-
-                    <a href="{% url 'ventas:anular_venta' venta.id_venta %}"
-                       class="btn btn-danger btn-sm">
-
-                        Anular
-
-                    </a>
-
-                    {% endif %}
-
-
-
-                </td>
-
-
-            </tr>
-
-
-        {% empty %}
-
-
-            <tr>
-
-                <td colspan="6">
-
-                    No existen ventas registradas.
-
-                </td>
-
-            </tr>
-
-
-        {% endfor %}
-
-
-        </tbody>
-
-
-    </table>
-
+    <!-- TARJETAS DE MÉTRICAS SIMÉTRICAS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+                <div class="card-body d-flex flex-column justify-content-center py-3">
+                    <span class="text-muted text-uppercase fw-bold small">Total Recaudado</span>
+                    <h3 class="fw-bold text-primary mb-0 mt-1">₡{{ total_recaudado|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                <div class="card-body d-flex flex-column justify-content-center py-3">
+                    <span class="text-muted text-uppercase fw-bold small">Ventas Activas Registradas</span>
+                    <h3 class="fw-bold text-success mb-0 mt-1">{{ cantidad_ventas }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="buscarVentas" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por número o cliente...">
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA DE VENTAS CON TABULATOR -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="tablaVentas" class="w-100"></div>
+        </div>
+    </div>
 
 </div>
 
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ ventas_json|json_script:"ventas-data" }}
 
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ventasElement = document.getElementById("ventas-data");
+    const ventas = ventasElement ? JSON.parse(ventasElement.textContent) : [];
+
+    SIGEPAN.table.create({
+        selector: "#tablaVentas",
+        search: "#buscarVentas",
+        data: ventas,
+        columns: [
+            { title: "Número", field: "numero_venta", headerHozAlign: "left" },
+            { title: "Cliente", field: "cliente" },
+            { title: "Hora", field: "hora", hozAlign: "center" },
+            {
+                title: "Total",
+                field: "total",
+                hozAlign: "right",
+                formatter(cell) {
+                    return `<span class="fw-bold text-success">₡${parseFloat(cell.getValue() || 0).toFixed(2)}</span>`;
+                }
+            },
+            {
+                title: "Estado",
+                field: "estado",
+                hozAlign: "center",
+                formatter(cell) {
+                    return cell.getValue()
+                        ? '<span class="badge bg-success bg-opacity-10 text-success px-2 py-1">Activa</span>'
+                        : '<span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">Anulada</span>';
+                }
+            },
+            {
+                title: "Acciones",
+                hozAlign: "center",
+                formatter(cell) {
+                    const data = cell.getRow().getData();
+                    let botones = '<div class="btn-group" role="group">';
+                    botones += `<a href="${data.detalle}" class="btn btn-outline-info btn-sm" title="Ver Detalle"><i class="fas fa-eye"></i> Ver</a>`;
+                    if (data.estado) {
+                        botones += `<a href="${data.anular}" class="btn btn-outline-danger btn-sm" title="Anular Venta"><i class="fas fa-trash-alt"></i> Anular</a>`;
+                    }
+                    botones += "</div>";
+                    return botones;
+                }
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}

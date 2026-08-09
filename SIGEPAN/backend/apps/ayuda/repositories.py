@@ -52,3 +52,19 @@ class AyudaRepository:
         ayuda.estado = estado
         ayuda.save(update_fields=["estado"])
         return ayuda
+
+    @staticmethod
+    def obtener_por_modulo_pantalla(nombre_modulo, pantalla):
+        """
+        Obtiene la ayuda activa asociada a un módulo y pantalla específicos.
+        """
+        return (
+            Ayuda.objects
+            .select_related("modulo")
+            .filter(
+                modulo__nombre=nombre_modulo,
+                pantalla=pantalla,
+                estado=True,
+            )
+            .first()
+        )

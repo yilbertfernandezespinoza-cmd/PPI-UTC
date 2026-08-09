@@ -1,18 +1,294 @@
 /* ===================================
    SIGEPAN
-   Framework Visual
+   Framework Visual Global
+=================================== */
+
+
+/* ===================================
+   VARIABLES DEL SISTEMA
 =================================== */
 
 :root{
 
+
+    /* ================================
+       Colores principales
+    ================================= */
+
     --sigepan-primary:#0d6efd;
+
     --sigepan-secondary:#343a40;
+
     --sigepan-success:#198754;
+
+    --sigepan-warning:#ffc107;
+
+    --sigepan-danger:#dc3545;
+
+
+
+    /* ================================
+       Estados
+    ================================= */
+
+    --sigepan-active:#198754;
+
+    --sigepan-inactive:#6c757d;
+
+
+
+    /* ================================
+       Diseño
+    ================================= */
+
+    --sigepan-radius:12px;
+
+
+    --sigepan-shadow:
+        0 2px 8px rgba(0,0,0,.08);
+
+
+
+    /* ================================
+       Espaciados
+    ================================= */
+
+    --sigepan-padding-card:1.25rem;
+
 
 }
 
+
+
+
+
+
+
+/* ===================================
+   CONFIGURACIÓN GENERAL
+=================================== */
+
+
 body{
 
-    font-family: "Segoe UI", sans-serif;
+
+    font-family:
+    "Segoe UI",
+    sans-serif;
+
+
+}
+
+
+
+
+
+
+
+/* ===================================
+   TARJETAS SIGEPAN
+=================================== */
+
+
+.sigepan-card{
+
+
+    border-radius:
+    var(--sigepan-radius);
+
+
+    box-shadow:
+    var(--sigepan-shadow);
+
+
+    border:
+    none;
+
+
+}
+
+
+
+.sigepan-card .card-header{
+
+
+    border-radius:
+    var(--sigepan-radius)
+    var(--sigepan-radius)
+    0
+    0;
+
+
+}
+
+
+
+
+
+
+
+
+/* ===================================
+   BOTONES TÁCTILES
+   Uso en POS y módulos operativos
+=================================== */
+
+
+.sigepan-btn-touch{
+
+
+    min-height:
+    55px;
+
+
+    padding:
+    0.75rem 1.25rem;
+
+
+    font-size:
+    1.05rem;
+
+
+    font-weight:
+    600;
+
+
+    border-radius:
+    10px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ===================================
+   ICONOS GRANDES PARA ACCIONES
+=================================== */
+
+
+.sigepan-icon{
+
+
+    font-size:
+    1.4rem;
+
+
+    vertical-align:
+    middle;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ===================================
+   BADGES DE ESTADO
+=================================== */
+
+
+.sigepan-badge-active{
+
+
+    background:
+    var(--sigepan-active);
+
+
+    color:white;
+
+
+}
+
+
+
+.sigepan-badge-inactive{
+
+
+    background:
+    var(--sigepan-inactive);
+
+
+    color:white;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ===================================
+   TABLAS DEL SISTEMA
+=================================== */
+
+
+.sigepan-table{
+
+
+    vertical-align:
+    middle;
+
+
+}
+
+
+.sigepan-table th{
+
+
+    font-weight:
+    600;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ===================================
+   TEXTO DE TÍTULOS DE MÓDULOS
+=================================== */
+
+
+.sigepan-title{
+
+
+    font-weight:
+    700;
+
+
+}
+
+
+
+.sigepan-subtitle{
+
+
+    color:
+    #6c757d;
+
+
+    font-size:
+    .95rem;
+
 
 }

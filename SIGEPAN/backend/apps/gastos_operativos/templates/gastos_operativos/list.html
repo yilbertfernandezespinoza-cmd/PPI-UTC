@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% load ayuda_tags %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    {% boton_ayuda "Gastos Operativos" "gastos_operativos" %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Gastos operativos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-cash-coin text-secondary"></i> Gastos operativos</h2>
+        <a href="{% url 'gastos_operativos:registrar' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Registrar gasto
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Sucursal</label>
+                    <select name="sucursal" class="form-select">
+                        <option value="">Todas</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id_sucursal }}" {% if filtro_sucursal == sucursal.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                            {{ sucursal.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria }}" {% if filtro_categoria == categoria %}selected{% endif %}>{{ categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="desde" class="form-control" value="{{ filtro_desde }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="hasta" class="form-control" value="{{ filtro_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contenedor con el token CSRF para deshabilitar/activar por AJAX -->
+    <div id="gasto-config" data-csrf="{{ csrf_token }}" data-puede-eliminar="{{ puede_eliminar|yesno:'true,false' }}" class="d-none"></div>
+
+    <!-- Barra de búsqueda -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="buscarGastos" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar por descripción, categoría o sucursal...">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div id="tablaGastos" class="w-100"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Inyectamos los datos de forma segura mediante JSON -->
+{{ gastos_json|json_script:"gastos-data" }}
+
+{% endblock %}
+
+{# Migrado (07-08): mismo patrón Tabulator que el resto del sistema. #}
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const configEl = document.getElementById("gasto-config");
+    const csrfTokenGlobal = configEl ? configEl.dataset.csrf : "";
+    const puedeEliminar = configEl ? configEl.dataset.puedeEliminar === "true" : false;
+
+    const gastosElement = document.getElementById("gastos-data");
+    const gastos = gastosElement ? JSON.parse(gastosElement.textContent) : [];
+    gastos.forEach(g => { g.csrfToken = csrfTokenGlobal; });
+
+    const columnas = [
+        { title: "Fecha", field: "fecha_gasto" },
+        { title: "Sucursal", field: "sucursal" },
+        { title: "Categoría", field: "categoria" },
+        { title: "Descripción", field: "descripcion" },
+        {
+            title: "Monto",
+            field: "monto",
+            hozAlign: "right",
+            formatter(cell) {
+                return `₡${parseFloat(cell.getValue() || 0).toFixed(2)}`;
+            }
+        },
+        {
+            title: "Comprobante",
+            field: "comprobante",
+            hozAlign: "center",
+            formatter(cell) {
+                const valor = cell.getValue();
+                if (!valor) return '<span class="text-muted">—</span>';
+                return `<a href="${valor}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-paperclip"></i> Ver</a>`;
+            }
+        },
+        {
+            title: "Caja",
+            field: "caja",
+            hozAlign: "center",
+            formatter(cell) {
+                const valor = cell.getValue();
+                return valor
+                    ? `<span class="badge bg-info bg-opacity-10 text-info">${valor}</span>`
+                    : '<span class="text-muted">—</span>';
+            }
+        },
+        { title: "Usuario", field: "usuario" },
+        {
+            title: "Estado",
+            field: "estado",
+            hozAlign: "center",
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success bg-opacity-10 text-success">Activo</span>'
+                    : '<span class="badge bg-danger bg-opacity-10 text-danger">Inactivo</span>';
+            }
+        },
+    ];
+
+    if (puedeEliminar) {
+        columnas.push({
+            title: "",
+            hozAlign: "center",
+            formatter(cell) {
+                const data = cell.getRow().getData();
+                const clase = data.estado ? "btn-outline-danger" : "btn-outline-success";
+                const icono = data.estado ? "bi-ban" : "bi-check-circle";
+                const texto = data.estado ? "Deshabilitar" : "Activar";
+                return `<button class="btn ${clase} btn-sm btn-toggle-estado"><i class="bi ${icono}"></i> ${texto}</button>`;
+            },
+            cellClick(e, cell) {
+                if (!e.target.closest(".btn-toggle-estado")) return;
+                const data = cell.getRow().getData();
+                SIGEPAN.table.postAction({
+                    url: data.estado_url,
+                    csrfToken: data.csrfToken,
+                    message: data.estado
+                        ? "¿Desea deshabilitar este gasto?"
+                        : "¿Desea habilitar este gasto?",
+                });
+            }
+        });
+    }
+
+    SIGEPAN.table.create({
+        selector: "#tablaGastos",
+        search: "#buscarGastos",
+        data: gastos,
+        placeholder: "No hay gastos operativos registrados.",
+        columns: columnas,
+    });
+});
+</script>
+{% endblock %}

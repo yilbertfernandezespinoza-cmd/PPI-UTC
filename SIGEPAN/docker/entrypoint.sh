@@ -24,8 +24,15 @@ print("No se pudo conectar a MySQL a tiempo.")
 sys.exit(1)
 PYEOF
 
-echo "Aplicando migraciones internas de Django (sessions/admin/contenttypes/auth)..."
-python manage.py migrate --noinput
+# Corrección (08-08): NO correr "migrate" aquí. database/ddl/02_create_tables.sql
+# ya incluye las tablas internas de Django (django_content_type,
+# django_migrations, django_session, auth_user, etc.) porque es un volcado
+# real de la base de datos del proyecto — son las mismas tablas que
+# "migrate" intentaría crear, y como django_migrations queda vacía (se
+# creó por SQL, no por migrate), Django no sabe que ya existen y falla con
+# "Table ... already exists". El DDL ya es la única fuente de verdad del
+# esquema (ver database/ddl/ y la regla del proyecto de no usar
+# `manage.py migrate` — ver README.md).
 
 echo "Recolectando archivos estáticos..."
 python manage.py collectstatic --noinput

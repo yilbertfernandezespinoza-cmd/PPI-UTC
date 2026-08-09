@@ -24,7 +24,13 @@ class ClienteListView(
     PermissionRequiredMixin,
     ListView,
 ):
-    permission_module = "clientes"
+    # Corrección (08-08): estaba en minúscula ("clientes"), inconsistente
+    # con el resto del sistema (todos los demás módulos usan mayúscula
+    # inicial: "Productos", "Ventas", "Caja", etc.) y con menu.py, que ya
+    # usaba "Clientes" — esa diferencia hacía que el ítem del menú
+    # desapareciera para cualquier rol, porque el permiso real nunca
+    # coincidía con lo que el menú buscaba.
+    permission_module = "Clientes"
     permission_action = "CONSULTAR"
 
     model = Cliente
@@ -82,7 +88,13 @@ class ClienteCreateView(
     AuditMixin,
     CreateView,
 ):
-    permission_module = "clientes"
+    # Corrección (08-08): estaba en minúscula ("clientes"), inconsistente
+    # con el resto del sistema (todos los demás módulos usan mayúscula
+    # inicial: "Productos", "Ventas", "Caja", etc.) y con menu.py, que ya
+    # usaba "Clientes" — esa diferencia hacía que el ítem del menú
+    # desapareciera para cualquier rol, porque el permiso real nunca
+    # coincidía con lo que el menú buscaba.
+    permission_module = "Clientes"
     permission_action = "CREAR"
 
     audit_module = "clientes"
@@ -118,7 +130,13 @@ class ClienteUpdateView(
     AuditMixin,
     UpdateView,
 ):
-    permission_module = "clientes"
+    # Corrección (08-08): estaba en minúscula ("clientes"), inconsistente
+    # con el resto del sistema (todos los demás módulos usan mayúscula
+    # inicial: "Productos", "Ventas", "Caja", etc.) y con menu.py, que ya
+    # usaba "Clientes" — esa diferencia hacía que el ítem del menú
+    # desapareciera para cualquier rol, porque el permiso real nunca
+    # coincidía con lo que el menú buscaba.
+    permission_module = "Clientes"
     permission_action = "MODIFICAR"
 
     audit_module = "clientes"
@@ -158,7 +176,13 @@ class ClienteDisableView(
     AuditMixin,
     View,
 ):
-    permission_module = "clientes"
+    # Corrección (08-08): estaba en minúscula ("clientes"), inconsistente
+    # con el resto del sistema (todos los demás módulos usan mayúscula
+    # inicial: "Productos", "Ventas", "Caja", etc.) y con menu.py, que ya
+    # usaba "Clientes" — esa diferencia hacía que el ítem del menú
+    # desapareciera para cualquier rol, porque el permiso real nunca
+    # coincidía con lo que el menú buscaba.
+    permission_module = "Clientes"
     permission_action = "ELIMINAR"
 
     audit_module = "clientes"

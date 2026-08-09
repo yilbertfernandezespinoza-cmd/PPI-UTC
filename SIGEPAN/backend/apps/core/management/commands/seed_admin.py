@@ -49,12 +49,12 @@ class Command(BaseCommand):
         "Configuración": ["CONSULTAR", "CREAR", "MODIFICAR", "ELIMINAR"],
         "Categorías": ["CONSULTAR", "CREAR", "MODIFICAR", "ELIMINAR"],
         "Productos": ["CONSULTAR", "CREAR", "MODIFICAR", "ELIMINAR"],
-        # OJO: el permission_module real de Clientes está en minúscula
-        # ("clientes") en apps/clientes/views.py — se respeta tal cual
-        # está en el código, aunque es inconsistente con el resto
-        # (title case). No se corrige aquí para no cambiar comportamiento
-        # existente como efecto secundario de este comando.
-        "clientes": ["CONSULTAR", "CREAR", "MODIFICAR", "ELIMINAR"],
+        # Corrección (08-08): apps/clientes/views.py tenía permission_module
+        # en minúscula ("clientes"), inconsistente con el resto del sistema
+        # y con menu.py (que ya usaba "Clientes") — eso hacía que el ítem
+        # de Clientes desapareciera del menú para cualquier rol. Ya se
+        # corrigió en views.py a "Clientes"; aquí se sigue el mismo nombre.
+        "Clientes": ["CONSULTAR", "CREAR", "MODIFICAR", "ELIMINAR"],
         "Proveedores": ["CONSULTAR", "CREAR", "MODIFICAR", "ELIMINAR"],
         "Inventario": ["CONSULTAR", "CREAR", "MODIFICAR"],
         "Compras": ["CONSULTAR", "CREAR", "ELIMINAR"],

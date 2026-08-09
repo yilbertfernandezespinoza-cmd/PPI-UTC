@@ -600,6 +600,7 @@ CREATE TABLE `gasto_operativo` (
   `monto` decimal(12,2) NOT NULL,
   `fecha_gasto` datetime NOT NULL,
   `observaciones` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
+  `comprobante` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `estado` tinyint(1) NOT NULL DEFAULT '1',
   `fecha_creacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `fecha_actualizacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

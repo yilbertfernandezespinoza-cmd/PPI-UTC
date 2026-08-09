@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    {% include "dashboard/partials/bienvenida.html" %}
+
+    {% if mostrar_kpis %}
+        {% include "dashboard/partials/kpis.html" %}
+    {% endif %}
+
+    {% if mostrar_accesos %}
+        {% include "dashboard/partials/accesos.html" %}
+    {% endif %}
+
+    {% if mostrar_actividad %}
+        {% include "dashboard/partials/actividad.html" %}
+    {% endif %}
+
+    {% if mostrar_alertas %}
+        {% include "dashboard/partials/alertas.html" %}
+    {% endif %}
+
+</div>
+
+{% endblock %}

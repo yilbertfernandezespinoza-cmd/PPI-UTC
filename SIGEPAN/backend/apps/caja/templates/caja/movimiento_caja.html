@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Registrar movimiento
+</h2>
+
+
+
+<form method="POST">
+
+
+{% csrf_token %}
+
+
+{{ form.as_p }}
+
+
+
+<button class="btn btn-success">
+
+Guardar movimiento
+
+</button>
+
+
+
+<a href="{% url 'caja:detalle_caja' apertura.id_apertura %}"
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+
+</form>
+
+
+</div>
+
+
+{% endblock %}

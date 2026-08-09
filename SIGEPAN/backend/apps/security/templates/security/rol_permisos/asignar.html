@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Asignación de Permisos</h2>
+
+<div class="row mb-3">
+
+    <div class="col-md-4">
+
+        <label
+            for="buscarRol"
+            class="form-label"
+        >
+            Buscar Rol
+        </label>
+
+        <input
+            type="text"
+            id="buscarRol"
+            class="form-control"
+            placeholder="Buscar por nombre del rol"
+            oninput="filtrarRoles()"
+        >
+
+    </div>
+
+</div>
+
+<form method="get">
+
+    <div class="row mb-4">
+
+    <div class="col-md-4">
+
+        <label class="form-label">
+
+            Rol
+
+        </label>
+
+        <select
+            id= "selectRol"
+            name="rol"
+            class="form-select"
+            onchange="this.form.submit()"
+        >
+
+            {% for rol in roles %}
+
+            <option
+                value="{{ rol.id_rol }}"
+                data-nombre="{{ rol.nombre }}"
+                data-descripcion="{{ rol.descripcion|default:'' }}"
+                data-estado="{{ rol.estado|yesno:'true,false' }}"
+                {% if rol.id_rol == rol_seleccionado %}
+                    selected
+                {% endif %}
+            >
+
+                {{ rol.nombre }}
+
+                {% if not rol.estado%}
+                    (Inactivo)
+                {% endif %}   
+
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+    <div class="col-md-8 d-flex align-items-end gap-2">
+
+        <button
+            type="button"
+            class="btn btn-success"
+            onclick="mostrarPanelRol()"
+        >
+
+            <i class="bi bi-plus-circle"></i>
+
+            Nuevo Rol
+
+        </button>
+
+        <button
+            type="button"
+            class="btn btn-warning"
+            onclick="mostrarPanelEditarRol()"
+        >
+
+            <i class="bi bi-pencil"></i>
+
+            Editar
+
+        </button>
+
+        <button
+            type="button"
+            class="btn btn-danger"
+            onclick="deshabilitarRol()"
+        >
+
+            <i class="bi bi-trash"></i>
+
+            Deshabilitar
+
+        </button>
+
+    </div>
+
+</div>
+
+</form>
+
+<form
+    id="formDeshabilitarRol"
+    method="post"
+    style="display:none;"
+>
+
+    {% csrf_token %}
+
+    <input
+        type="hidden"
+        name="accion"
+        value="deshabilitar_rol"
+    >
+
+    <input
+        type="hidden"
+        id="rolIdDeshabilitar"
+        name="rol_id"
+        value=""
+    >
+
+</form>
+
+
+<div
+    id="panelRol"
+    class="card mt-3"
+    style="display:none;"
+>
+
+    <div class="card-header">
+
+        <strong id="tituloPanelRol">
+
+            Nuevo Rol
+
+        </strong>
+
+    </div>
+
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <input
+                type="hidden"
+                id="accionRol"
+                name="accion"
+                value="crear_rol"
+            >
+
+            <input
+                type="hidden"
+                id="rolIdEditar"
+                name="rol_id"
+                value=""
+            >
+
+            {{ rol_form.as_p }}
+        
+            <div class="d-flex justify-content-end gap-2 mt-3">
+
+                <button
+                    type="submit" class="btn btn-success">
+
+                    <i class="bi bi-check-circle"></i>
+
+                    Guardar
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="ocultarPanelRol()"
+                >
+                    Cancelar
+                </button>
+
+            </div>
+        </form>
+    </div>
+
+</div>
+
+
+
+    <hr>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <input
+            type="hidden"
+            name="accion"
+            value="guardar_permisos"
+        >
+
+        <input
+            type="hidden"
+            name="rol"
+            value="{{ rol_seleccionado }}"
+        >
+
+    <table class="table table-bordered">
+
+        <thead>
+
+            <tr>
+
+                <th>Módulo</th>
+                <th class="text-center">Consultar</th>
+                <th class="text-center">Crear</th>
+                <th class="text-center">Modificar</th>
+                <th class="text-center">Eliminar</th>    
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for fila in matriz_permisos %}
+
+            <tr>
+
+                <td>
+
+                    {{ fila.modulo.nombre }}
+
+                </td>
+
+                {% for permiso in fila.permisos %}
+
+                <td class="text-center">
+
+                    <input
+                        type="checkbox"
+                        name="permisos"
+                        value="{{ permiso.valor }}"
+                        {% if permiso.marcado %}
+                            checked
+                        {% endif %}                        
+                    >
+
+                </td>
+
+                {% endfor %}
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+
+                <td colspan="5" class="text-center">
+
+                    No existen módulos registrados.
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <div class="mt-3">
+
+        <button
+            class="btn btn-success"
+            type="submit"
+        >
+
+            Guardar Permisos
+
+        </button>
+
+    </div>
+
+</form>
+
+<script>
+
+function mostrarPanelRol(){
+
+    document
+        .getElementById("panelRol")
+        .style.display = "block";
+
+}
+function ocultarPanelRol(){
+
+    document
+        .getElementById("panelRol")
+        .style.display = "none";
+
+}
+
+function mostrarPanelEditarRol(){
+    const selectRol = document.getElementById("selectRol");
+
+    const opcionSeleccionada = selectRol.options[selectRol.selectedIndex];
+
+    document
+        .getElementById("rolIdEditar")
+        .value = opcionSeleccionada.value;
+
+    document
+        .getElementById("accionRol")
+        .value = "editar_rol";
+
+    document
+        .getElementById("tituloPanelRol")
+        .textContent = "Editar Rol";
+
+    document
+        .getElementById("id_nombre")
+        .value = opcionSeleccionada.dataset.nombre;
+    
+    document
+        .getElementById("id_descripcion")
+        .value = opcionSeleccionada.dataset.descripcion;
+
+    document
+        .getElementById("id_estado")
+        .cheacked = opcionSeleccionada.dataset.estado === "true";        
+
+    document
+        .getElementById("panelRol")
+        .style.display = "block";   
+}
+function deshabilitarRol(){
+
+    const selectRol =
+        document.getElementById("selectRol");
+
+    const opcionSeleccionada =
+        selectRol.options[selectRol.selectedIndex];
+
+    const rolId =
+        opcionSeleccionada.value;
+
+    const nombreRol =
+        opcionSeleccionada.dataset.nombre;
+
+    const confirmar = confirm(
+        `¿Está seguro de deshabilitar el rol "${nombreRol}"?`
+    );
+
+    if (!confirmar){
+        return;
+    }
+
+    document
+        .getElementById("rolIdDeshabilitar")
+        .value = rolId;
+
+    document
+        .getElementById("formDeshabilitarRol")
+        .submit();
+}
+
+function filtrarRoles(){
+
+    const busqueda = document
+        .getElementById("buscarRol")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const selectRol =
+        document.getElementById("selectRol");
+
+    for (const opcion of selectRol.options){
+
+        const nombre =
+            opcion.dataset.nombre.toLowerCase();
+
+        opcion.hidden = !nombre.includes(busqueda);
+    }
+
+    const opcionesVisibles = Array
+        .from(selectRol.options)
+        .filter(opcion => !opcion.hidden);
+
+    if (
+        busqueda &&
+        opcionesVisibles.length === 1
+    ){
+
+        const rolEncontrado =
+            opcionesVisibles[0];
+
+        if (
+            selectRol.value !== rolEncontrado.value
+        ){
+
+            selectRol.value =
+                rolEncontrado.value;
+
+            selectRol.form.submit();
+        }
+    }
+}
+
+</script>
+
+{% endblock %}

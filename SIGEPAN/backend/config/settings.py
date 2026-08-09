@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import sys, os
 from dotenv import load_dotenv
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -58,6 +59,8 @@ INSTALLED_APPS = [
     'apps.caja',
     'apps.reportes',
     'apps.configuracion',
+    'apps.dashboard',
+    'apps.ayuda',
 ]
 
 MIDDLEWARE = [
@@ -82,6 +85,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "apps.security.context_processors.menu_usuario",
             ],
         },
     },
@@ -162,3 +166,61 @@ MEDIA_URL = 'media/'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 
+
+# ---------------------------------------------------------
+# Configuración de correo electrónico
+# ---------------------------------------------------------
+
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+
+EMAIL_HOST = os.getenv(
+    "EMAIL_HOST",
+    "",
+)
+
+EMAIL_PORT = int(
+    os.getenv("EMAIL_PORT", "587")
+)
+
+EMAIL_USE_TLS = (
+    os.getenv("EMAIL_USE_TLS", "True").lower()
+    == "true"
+)
+
+EMAIL_HOST_USER = os.getenv(
+    "EMAIL_HOST_USER",
+    "",
+)
+
+EMAIL_HOST_PASSWORD = os.getenv(
+    "EMAIL_HOST_PASSWORD",
+    "",
+)
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "Y&C SYSTEMS <soporte@ycsystemscr.com>",
+)
+
+
+# ==========================================================
+# GOOGLE OAUTH
+# ==========================================================
+
+GOOGLE_CLIENT_ID = config(
+    "GOOGLE_CLIENT_ID",
+    default=""
+)
+
+GOOGLE_CLIENT_SECRET = config(
+    "GOOGLE_CLIENT_SECRET",
+    default=""
+)
+
+GOOGLE_REDIRECT_URI = config(
+    "GOOGLE_REDIRECT_URI",
+    default=""
+)

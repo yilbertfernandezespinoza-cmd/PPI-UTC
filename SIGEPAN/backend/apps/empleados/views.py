@@ -5,26 +5,43 @@ from django.views.generic import ListView, CreateView, UpdateView
 from .models import Cargo, Empleado
 from .forms import CargoForm, EmpleadoForm
 from apps.security.mixins import SessionRequiredMixin
+from apps.security.audit import AuditMixin
+from apps.security.permissions import PermissionRequiredMixin
 
-
-class CargoListView(SessionRequiredMixin, ListView):
+class CargoListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_module = "Configuración"
+    permission_action = "CONSULTAR"
+    
     model = Cargo
     template_name = "empleados/cargos/list.html"
     context_object_name = "cargos"
 
 
-class CargoCreateView(SessionRequiredMixin, CreateView):
+class CargoCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
+    permission_module = "Configuración"
+    permission_action = "CREAR"
+    
+    audit_module = "Configuración"
     model = Cargo
     form_class = CargoForm
     template_name = "empleados/cargos/form.html"
     success_url = reverse_lazy("empleados:cargo_list")
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+        self.registrar_auditoria(
+            tipo_accion="CREAR",
+            descripcion=f"Se creó el cargo {self.object.nombre}",
+        )
         messages.success(self.request, "Cargo creado correctamente.")
-        return super().form_valid(form)
+        return response
 
 
-class CargoUpdateView(SessionRequiredMixin, UpdateView):
+class CargoUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, UpdateView):
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+
+    audit_module = "Configuración"
     model = Cargo
     form_class = CargoForm
     template_name = "empleados/cargos/form.html"
@@ -32,10 +49,18 @@ class CargoUpdateView(SessionRequiredMixin, UpdateView):
     pk_url_kwarg = "id_cargo"
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+        self.registrar_auditoria(
+            tipo_accion="MODIFICAR",
+            descripcion=f"Se actualizó el cargo {self.object.nombre}",
+        )
         messages.success(self.request, "Cargo actualizado correctamente.")
-        return super().form_valid(form)
+        return response
     
-class EmpleadoListView(SessionRequiredMixin, ListView):
+class EmpleadoListView(SessionRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_module = "Configuración"
+    permission_action = "CONSULTAR"
+
     model = Empleado
     template_name = "empleados/empleados/list.html"
     context_object_name = "empleados"
@@ -48,18 +73,33 @@ class EmpleadoListView(SessionRequiredMixin, ListView):
         )
 
 
-class EmpleadoCreateView(SessionRequiredMixin, CreateView):
+class EmpleadoCreateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, CreateView):
+    permission_module = "Configuración"
+    permission_action = "CREAR"
+
+    audit_module = "Configuración"
+    
     model = Empleado
     form_class = EmpleadoForm
     template_name = "empleados/empleados/form.html"
     success_url = reverse_lazy("empleados:empleado_list")
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+        self.registrar_auditoria(
+            tipo_accion="CREAR",
+            descripcion=f"Se creó el empleado {self.object.nombre} {self.object.apellido1}",
+        )
         messages.success(self.request, "Empleado creado correctamente.")
-        return super().form_valid(form)
+        return response
 
 
-class EmpleadoUpdateView(SessionRequiredMixin, UpdateView):
+class EmpleadoUpdateView(SessionRequiredMixin, PermissionRequiredMixin, AuditMixin, UpdateView):
+    permission_module = "Configuración"
+    permission_action = "MODIFICAR"
+
+    audit_module = "Configuración"
+    
     model = Empleado
     form_class = EmpleadoForm
     template_name = "empleados/empleados/form.html"
@@ -67,5 +107,10 @@ class EmpleadoUpdateView(SessionRequiredMixin, UpdateView):
     pk_url_kwarg = "id_empleado"
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+        self.registrar_auditoria(
+            tipo_accion="MODIFICAR",
+            descripcion=f"Se actualizó el empleado {self.object.nombre} {self.object.apellido1}",
+        )
         messages.success(self.request, "Empleado actualizado correctamente.")
-        return super().form_valid(form)    
+        return response    

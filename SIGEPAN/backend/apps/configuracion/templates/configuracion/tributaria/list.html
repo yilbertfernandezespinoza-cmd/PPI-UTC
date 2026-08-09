@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}
+Configuración Tributaria | SIGEPAN
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+            <h1 class="h3 mb-0">
+                Configuración Tributaria
+            </h1>
+
+            <p class="text-muted mb-0">
+                Administración de impuestos y porcentajes tributarios.
+            </p>
+        </div>
+        {%if puede_crear%}
+        <a
+            href="{% url 'configuracion:tributaria_create' %}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-plus-circle"></i>
+            Nueva configuración
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <div id="tablaConfiguracionTributaria"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const configuraciones = [
+
+{% for configuracion in configuraciones_tributarias %}
+
+{
+    id: {{ configuracion.id_configuracion_tributaria }},
+    nombre: "{{ configuracion.nombre|escapejs }}",
+    descripcion: "{{ configuracion.descripcion|default:'-'|escapejs }}",
+    porcentaje: "{{ configuracion.porcentaje }}%",
+    compras: {{ configuracion.aplica_compras|yesno:"true,false" }},
+    ventas: {{ configuracion.aplica_ventas|yesno:"true,false" }},
+    estado: {{ configuracion.estado|yesno:"true,false" }},
+    editar: "{% url 'configuracion:tributaria_update' configuracion.id_configuracion_tributaria %}"
+}{% if not forloop.last %},{% endif %}
+
+{% endfor %}
+
+];
+
+console.log("Configuraciones Tributarias:", configuraciones);
+
+SIGEPAN.table.create({
+
+    selector: "#tablaConfiguracionTributaria",
+
+    data: configuraciones,
+
+    columns: [
+
+        {
+            title: "Nombre",
+            field: "nombre"
+        },
+
+        {
+            title: "Descripción",
+            field: "descripcion"
+        },
+
+        {
+            title: "Porcentaje",
+            field: "porcentaje"
+        },
+
+        {
+            title: "Compras",
+            field: "compras",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Sí</span>'
+                    : '<span class="badge bg-secondary">No</span>';
+            }
+        },
+
+        {
+            title: "Ventas",
+            field: "ventas",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Sí</span>'
+                    : '<span class="badge bg-secondary">No</span>';
+            }
+        },
+
+        {
+            title: "Estado",
+            field: "estado",
+            hozAlign: "center",
+
+            formatter(cell) {
+                return cell.getValue()
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-danger">Inactivo</span>';
+            }
+        }
+
+        {% if puede_modificar %}
+
+        ,
+        {
+            title: "Acciones",
+            hozAlign: "center",
+
+            formatter(cell) {
+
+                const data = cell.getRow().getData();
+
+                return `
+                    <div class="d-flex justify-content-center">
+
+                        <a
+                            href="${data.editar}"
+                            class="btn btn-warning btn-sm"
+                        >
+                            Editar
+                        </a>
+
+                    </div>
+                `;
+
+            }
+
+        }
+
+        {% endif %}
+
+    ]
+
+});
+
+
+</script>
+
+{% endblock %}

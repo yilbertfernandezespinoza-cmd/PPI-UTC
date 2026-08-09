@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Bitácora de Movimientos</h2>
+
+<hr>
+
+<div class="card">
+
+    <div class="card-body">
+
+        <div class="row mb-3">
+
+            <div class="col-md-4">
+
+                <div class="input-group">
+
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+
+                    <input
+                        type="text"
+                        id="buscarBitacora"
+                        class="form-control"
+                        placeholder="Escriba para buscar en la tabla..."
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="tablaBitacora"></div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+<script>
+
+const registros = [
+    {% for registro in registros %}
+    {
+        usuario: "{{ registro.id_usuario.username|escapejs }}",
+        modulo: "{{ registro.id_modulo.nombre|escapejs }}",
+        accion: "{{ registro.tipo_accion|escapejs }}",
+        descripcion: "{{ registro.descripcion|escapejs }}",
+        ip: "{{ registro.ip_origen|default:'-'|escapejs }}",
+        fecha: "{{ registro.fecha_hora|date:'d/m/Y H:i:s' }}"
+    },
+    {% endfor %}
+];
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const tabla = SIGEPAN.table.create({
+        selector: "#tablaBitacora",
+        search: "#buscarBitacora",
+
+        data: registros,
+
+        columns: [
+            { title: "Usuario", field: "usuario" },
+            { title: "Módulo", field: "modulo" },
+            { title: "Acción", field: "accion" },
+            { title: "Descripción", field: "descripcion" },
+            { title: "IP Origen", field: "ip" },
+            { title: "Fecha y Hora", field: "fecha" }
+        ]
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

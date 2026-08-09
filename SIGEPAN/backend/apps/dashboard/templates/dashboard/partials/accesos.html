@@ -1,0 +1,34 @@
+<div class="card mb-4">
+
+    <div class="card-header">
+        <strong>Accesos rápidos</strong>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            {% for acceso in accesos_rapidos %}
+
+                <div class="col-lg-3 col-md-6">
+
+                    <a href="{{ acceso.url }}"
+                       class="btn btn-outline-{{ acceso.color }} w-100 py-4 h-100">
+
+                        <i class="bi {{ acceso.icono }} display-6 d-block mb-3"></i>
+
+                        <span class="fw-semibold">
+                            {{ acceso.titulo }}
+                        </span>
+
+                    </a>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>

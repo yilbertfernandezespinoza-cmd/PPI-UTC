@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+
+<h2>
+Venta {{ venta.numero_venta }}
+</h2>
+
+
+<div class="card mb-3">
+
+<div class="card-body">
+
+
+<p>
+Cliente:
+{{ venta.cliente|default:"Cliente general" }}
+</p>
+
+
+<p>
+Fecha:
+{{ venta.fecha }}
+</p>
+
+
+<p>
+Total:
+₡ {{ venta.total }}
+</p>
+
+
+<p>
+
+Estado:
+
+{% if venta.estado %}
+
+<span class="badge bg-success">
+ACTIVA
+</span>
+
+{% else %}
+
+<span class="badge bg-danger">
+ANULADA
+</span>
+
+{% endif %}
+
+
+</p>
+
+
+</div>
+
+</div>
+
+
+
+<h4>
+Productos
+</h4>
+
+
+<table class="table">
+
+
+<tr>
+
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Precio</th>
+<th>Total</th>
+
+</tr>
+
+
+{% for detalle in detalles %}
+
+
+<tr>
+
+<td>
+{{ detalle.producto }}
+</td>
+
+
+<td>
+{{ detalle.cantidad }}
+</td>
+
+
+<td>
+₡ {{ detalle.precio_unitario }}
+</td>
+
+
+<td>
+₡ {{ detalle.subtotal }}
+</td>
+
+
+</tr>
+
+
+{% endfor %}
+
+
+</table>
+
+
+
+<h4>
+Pagos
+</h4>
+
+
+<table class="table">
+
+
+<tr>
+
+<th>Método</th>
+<th>Monto</th>
+
+</tr>
+
+
+
+{% for pago in pagos %}
+
+
+<tr>
+
+<td>
+{{ pago.metodo_pago }}
+</td>
+
+
+<td>
+₡ {{ pago.monto }}
+</td>
+
+
+</tr>
+
+
+{% endfor %}
+
+
+</table>
+
+
+
+<a href="#"
+class="btn btn-primary">
+
+Imprimir factura
+
+</a>
+
+
+
+<a href="#"
+class="btn btn-warning">
+
+Enviar correo
+
+</a>
+
+
+
+</div>
+
+
+{% endblock %}

@@ -45,14 +45,6 @@ class Usuario(BaseModel):
         db_column="password"
     )
 
-    email = models.EmailField(
-        max_length=150,
-        blank=True,
-        null=True,
-        unique=True,
-        db_column="email"
-    )
-
     google_email = models.CharField(
         max_length=150,
         blank=True,
@@ -122,7 +114,6 @@ class Rol(BaseModel):
     def __str__(self):
         return self.nombre
     
-
 class Permiso(BaseModel):
     """
     Modelo que representa la tabla permiso.
@@ -162,4 +153,108 @@ class Permiso(BaseModel):
 
     def __str__(self):
         return f"{self.id_modulo.nombre} - {self.accion}" 
-    
+
+class RolPermiso(models.Model):
+    """
+    Modelo que representa la tabla rol_permiso.
+    """
+
+    id_rol_permiso = models.AutoField(
+        primary_key=True,
+        db_column="id_rol_permiso"
+    )
+
+    id_rol = models.ForeignKey(
+        Rol,
+        on_delete=models.DO_NOTHING,
+        db_column="id_rol",
+        verbose_name="Rol"
+    )
+
+    id_permiso = models.ForeignKey(
+        Permiso,
+        on_delete=models.DO_NOTHING,
+        db_column="id_permiso",
+        verbose_name="Permiso"
+    )
+
+    fecha_creacion = models.DateTimeField(
+        db_column="fecha_creacion"
+    )
+
+    class Meta:
+        db_table = "rol_permiso"
+        verbose_name = "Rol - Permiso"
+        verbose_name_plural = "Roles - Permisos"
+
+    def __str__(self):
+        return f"{self.id_rol} - {self.id_permiso}"
+
+class LogAcciones(models.Model):
+
+    id_log = models.AutoField(
+        primary_key=True,
+        db_column="id_log"
+    )
+
+    id_usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.DO_NOTHING,
+        db_column="id_usuario"
+    )
+
+    id_modulo = models.ForeignKey(
+        "configuracion.Modulo",
+        on_delete=models.DO_NOTHING,
+        db_column="id_modulo"
+    )
+
+    TIPO_ACCIONES = [
+        ("LOGIN", "LOGIN"),
+        ("LOGOUT", "LOGOUT"),
+        ("CREAR", "CREAR"),
+        ("MODIFICAR", "MODIFICAR"),
+        ("ELIMINAR", "ELIMINAR"),
+        ("CONSULTAR","CONSULTAR"),
+        ("EXPORTAR","EXPORTAR"),
+        ("IMPORTAR","IMPORTAR"),
+        ("ERROR","ERROR"),
+        ("ACCESO_DENEGADO","ACCESO DENEGADO"),
+        ("RECUPERAR_PASSWORD","RECUPERAR CONTRASEÑA"),
+        ("CAMBIAR_PASSWORD","CAMBIAR CONTRASEÑA"),
+    ]
+
+    tipo_accion = models.CharField(
+        max_length=20,
+        choices=TIPO_ACCIONES,
+        db_column="tipo_accion"
+    )
+
+    descripcion = models.CharField(
+        max_length=500,
+        db_column="descripcion"
+    )
+
+    ip_origen = models.CharField(
+        max_length=45,
+        blank=True,
+        null=True,
+        db_column="ip_origen"
+    )
+
+    navegador = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        db_column="navegador"
+    )
+
+    fecha_hora = models.DateTimeField(
+        auto_now_add=True,
+        db_column="fecha_hora"
+    )
+
+    class Meta:
+        db_table = "log_acciones"
+        verbose_name = "Log de acciones"
+        verbose_name_plural = "Logs de acciones"    

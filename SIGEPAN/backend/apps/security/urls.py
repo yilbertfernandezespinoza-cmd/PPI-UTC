@@ -3,15 +3,26 @@ from django.urls import path
 from .views import (
     login_view,
     logout_view,
-    RolListView,
-    RolCreateView,
-    RolUpdateView,
-    PermisoListView,
-    PermisoCreateView,
-    PermisoUpdateView,
+
     UsuarioListView,
     UsuarioCreateView,
     UsuarioUpdateView,
+    UsuarioDisableView,
+    UsuarioEmpleadoDatosView,
+
+    RolPermisoListView,
+    
+    BitacoraIngresosListView,
+    BitacoraMovimientosListView,
+
+    recuperar_password_view,
+    restablecer_password_view,
+
+    PerfilView,
+    google_vincular,
+    google_callback,
+    google_desvincular,
+    
 )
 
 app_name = "security"
@@ -24,62 +35,93 @@ urlpatterns = [
     ),
 
     path(
+        "recuperar-contrasena/",
+        recuperar_password_view,
+        name="recuperar_password",
+    ),
+
+    path(
+        "restablecer-contrasena/<str:token>/",
+        restablecer_password_view,
+        name="restablecer_password",
+    ),
+
+    path(
         "logout/",
         logout_view,
         name="logout",
     ),
 
     path(
-        "roles/",
-        RolListView.as_view(),
-        name="rol_list",
+        "rol-permisos/",
+        RolPermisoListView.as_view(),
+        name="rol_permiso_list",
     ),
 
     path(
-        "roles/nuevo/",
-        RolCreateView.as_view(),
-        name="rol_create",
+        "usuarios/",
+        UsuarioListView.as_view(),
+        name="usuario_list",
     ),
 
     path(
-        "roles/<int:id_rol>/editar/",
-        RolUpdateView.as_view(),
-        name="rol_update",
+        "usuarios/nuevo/",
+        UsuarioCreateView.as_view(),
+        name="usuario_create",
     ),
 
     path(
-    "permisos/",
-    PermisoListView.as_view(),
-    name="permiso_list",
+        "usuarios/empleado/<int:id_empleado>/datos/",
+        UsuarioEmpleadoDatosView.as_view(),
+        name="usuario_empleado_datos",
     ),
 
     path(
-    "permisos/nuevo/",
-    PermisoCreateView.as_view(),
-    name="permiso_create",
+        "usuarios/<int:id_usuario>/editar/",
+        UsuarioUpdateView.as_view(),
+        name="usuario_update",
+    ),
+    path(
+        "usuarios/<int:id_usuario>/deshabilitar/",
+        UsuarioDisableView.as_view(),
+        name="usuario_disable",
     ),
 
     path(
-    "permisos/<int:id_permiso>/editar/",
-    PermisoUpdateView.as_view(),
-    name="permiso_update",
-    ),
-    path(
-    "usuarios/",
-    UsuarioListView.as_view(),
-    name="usuario_list",
+        "bitacoras/ingresos/",
+        BitacoraIngresosListView.as_view(),
+        name="bitacora_ingresos",
     ),
 
     path(
-    "usuarios/nuevo/",
-    UsuarioCreateView.as_view(),
-    name="usuario_create",
+        "bitacoras/movimientos/",
+        BitacoraMovimientosListView.as_view(),
+        name="bitacora_movimientos",
     ),
 
     path(
-    "usuarios/<int:id_usuario>/editar/",
-    UsuarioUpdateView.as_view(),
-    name="usuario_update",
-),
+        "perfil/",
+        PerfilView.as_view(),
+        name="perfil",
+    ),
+
+    path(
+        "perfil/google/vincular/",
+        google_vincular,
+        name="google_vincular",
+    ),
+
+    path(
+        "perfil/google/callback/",
+        google_callback,
+        name="google_callback",
+    ),
+
+    path(
+        "perfil/google/desvincular/",
+        google_desvincular,
+        name="google_desvincular",
+    ),
+
 ]
 

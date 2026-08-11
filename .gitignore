@@ -30,6 +30,7 @@ staticfiles/
 # ===============================
 backend/.env
 .env
+.env.production
 
 # ===============================
 # IDE

@@ -12,10 +12,11 @@ from apps.productos.services import ProductoService
 class Command(BaseCommand):
     """
     Agregado 07-08: siembra (idempotente) un catálogo de demostración de
-    20 productos de panadería, sus categorías y su inventario inicial en
+    23 productos de panadería, sus categorías y su inventario inicial en
     "Sucursal Principal", para que el sistema tenga datos con qué
     funcionar apenas se termina de instalar (POS, reportes, dashboard,
     alertas de stock bajo, etc.) en vez de arrancar completamente vacío.
+    Las 6 categorías quedan con 3 productos como mínimo cada una.
 
     No es un catálogo obligatorio del sistema (a diferencia de
     seed_permisos_modulos o seed_metodos_pago): es contenido de ejemplo,
@@ -41,7 +42,7 @@ class Command(BaseCommand):
     """
 
     help = (
-        "Crea 20 productos de ejemplo (panadería), sus categorías e "
+        "Crea 23 productos de ejemplo (panadería), sus categorías e "
         "inventario inicial en Sucursal Principal, si todavía no existen."
     )
 
@@ -71,11 +72,19 @@ class Command(BaseCommand):
         ("PAS-003", "Cheesecake (porción)", "Pasteles", "800.00", Producto.UNIDAD_UNIDAD),
         ("GAL-001", "Galleta de Avena", "Galletas", "120.00", Producto.UNIDAD_UNIDAD),
         ("GAL-002", "Galleta Chispas de Chocolate", "Galletas", "120.00", Producto.UNIDAD_UNIDAD),
+        # Agregado (seed de pruebas, ago-2026): Galletas y Snacks se
+        # quedaron con 2 y 1 producto respectivamente, por debajo del
+        # mínimo de 3 productos por categoría que pide el checklist de
+        # datos de prueba. Mismo criterio y misma fórmula de precio que
+        # el resto de la lista, no se toca ningún producto existente.
+        ("GAL-003", "Galleta de Mantequilla", "Galletas", "120.00", Producto.UNIDAD_UNIDAD),
         ("BEB-001", "Café Americano", "Bebidas", "350.00", Producto.UNIDAD_UNIDAD),
         ("BEB-002", "Café con Leche", "Bebidas", "450.00", Producto.UNIDAD_UNIDAD),
         ("BEB-003", "Jugo Natural", "Bebidas", "400.00", Producto.UNIDAD_UNIDAD),
         ("BEB-004", "Agua Embotellada", "Bebidas", "250.00", Producto.UNIDAD_UNIDAD),
         ("SNK-001", "Sandwich Jamón y Queso", "Snacks", "800.00", Producto.UNIDAD_UNIDAD),
+        ("SNK-002", "Sandwich de Pollo", "Snacks", "850.00", Producto.UNIDAD_UNIDAD),
+        ("SNK-003", "Wrap Vegetariano", "Snacks", "820.00", Producto.UNIDAD_UNIDAD),
     ]
 
     # codigo -> (stock_actual, stock_minimo, stock_maximo)
@@ -96,11 +105,14 @@ class Command(BaseCommand):
         "PAS-003": (3, 5, 20),    # bajo stock (a propósito)
         "GAL-001": (50, 20, 100),
         "GAL-002": (50, 20, 100),
+        "GAL-003": (45, 20, 100),
         "BEB-001": (100, 30, 200),
         "BEB-002": (80, 30, 200),
         "BEB-003": (40, 15, 80),
         "BEB-004": (25, 30, 100),  # bajo stock (a propósito)
         "SNK-001": (20, 10, 40),
+        "SNK-002": (18, 10, 40),
+        "SNK-003": (15, 10, 40),
     }
 
     def handle(self, *args, **options):
